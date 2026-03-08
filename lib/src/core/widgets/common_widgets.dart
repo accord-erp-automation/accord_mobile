@@ -152,32 +152,10 @@ class ActionDock extends StatelessWidget {
     ];
 
     return Padding(
-      padding: const EdgeInsets.only(top: 6, bottom: 6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: const Color(0xCC090909),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: const Color(0xFF2A2A2A), width: 1.35),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x24000000),
-              blurRadius: 18,
-              offset: Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: buttons
-              .map(
-                (button) => SizedBox(
-                  width: 54,
-                  child: Center(child: button),
-                ),
-              )
-              .toList(),
-        ),
+      padding: const EdgeInsets.only(top: 10, bottom: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: buttons,
       ),
     );
   }
@@ -211,8 +189,8 @@ class DockButton extends StatelessWidget {
       child: AnimatedContainer(
         duration: AppMotion.medium,
         curve: AppMotion.smooth,
-        height: primary ? 58 : 50,
-        width: primary ? 58 : 50,
+        height: primary ? 54 : 44,
+        width: primary ? 54 : 44,
         decoration: BoxDecoration(
           color: background,
           shape: BoxShape.circle,
