@@ -152,13 +152,13 @@ class ActionDock extends StatelessWidget {
     ];
 
     return Padding(
-      padding: const EdgeInsets.only(top: 10, bottom: 10),
+      padding: const EdgeInsets.only(top: 16, bottom: 4),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             height: 1.2,
-            margin: const EdgeInsets.only(bottom: 14),
+            margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
               color: const Color(0xFF1F1F1F),
               borderRadius: BorderRadius.circular(999),
@@ -166,7 +166,14 @@ class ActionDock extends StatelessWidget {
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: buttons,
+            children: buttons
+                .map(
+                  (button) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
+                    child: button,
+                  ),
+                )
+                .toList(),
           ),
         ],
       ),
@@ -202,8 +209,8 @@ class DockButton extends StatelessWidget {
       child: AnimatedContainer(
         duration: AppMotion.medium,
         curve: AppMotion.smooth,
-        height: primary ? 54 : 44,
-        width: primary ? 54 : 44,
+        height: primary ? 54 : 48,
+        width: primary ? 54 : 48,
         decoration: BoxDecoration(
           color: background,
           shape: BoxShape.circle,
@@ -221,7 +228,7 @@ class DockButton extends StatelessWidget {
                 ]
               : null,
         ),
-        child: Icon(icon, color: foreground, size: primary ? 24 : 22),
+        child: Icon(icon, color: foreground, size: primary ? 24 : 23),
       ),
     );
   }
