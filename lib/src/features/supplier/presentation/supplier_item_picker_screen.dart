@@ -49,7 +49,7 @@ class _SupplierItemPickerScreenState extends State<SupplierItemPickerScreen> {
             controller: controller,
             onChanged: (_) => setState(() {}),
             decoration: const InputDecoration(
-              hintText: 'Kod yoki nom bo‘yicha qidiring',
+              hintText: 'Nom bo‘yicha qidiring',
               prefixIcon: Icon(Icons.search),
             ),
           ),
@@ -74,8 +74,7 @@ class _SupplierItemPickerScreenState extends State<SupplierItemPickerScreen> {
                   if (query.isEmpty) {
                     return true;
                   }
-                  return item.code.toLowerCase().contains(query) ||
-                      item.name.toLowerCase().contains(query);
+                  return item.name.toLowerCase().contains(query);
                 }).toList();
                 if (filtered.isEmpty) {
                   return Center(
@@ -100,8 +99,8 @@ class _SupplierItemPickerScreenState extends State<SupplierItemPickerScreen> {
                       color: Colors.transparent,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(18),
-                      onTap: () => Navigator.of(context)
-                          .pushNamed(AppRoutes.supplierQty, arguments: item),
+                        onTap: () => Navigator.of(context)
+                            .pushNamed(AppRoutes.supplierQty, arguments: item),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 6,
@@ -110,25 +109,9 @@ class _SupplierItemPickerScreenState extends State<SupplierItemPickerScreen> {
                           child: Row(
                             children: [
                               Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.code,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleLarge,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(item.name),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      '${item.uom}  •  ${item.warehouse}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall,
-                                    ),
-                                  ],
+                                child: Text(
+                                  item.name.isEmpty ? item.code : item.name,
+                                  style: Theme.of(context).textTheme.titleLarge,
                                 ),
                               ),
                               const SizedBox(width: 12),
