@@ -32,6 +32,8 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+.mobileapi.log
+.mobileapi.pid
 
 # Symbolication related
 app.*.symbols

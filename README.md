@@ -27,21 +27,11 @@ cd /home/wikki/local.git/erpnext_stock_telegram/mobile_app
 make run
 ```
 
+Bu target kerak bo'lsa `mobileapi` backend’ni ham o'zi ko'taradi.
+
 ## Muhim
 
-Mobile app ishlashi uchun backend ham turishi kerak:
-
-```bash
-cd /home/wikki/local.git/erpnext_stock_telegram
-go run ./cmd/mobileapi
-```
-
-Keyin alohida terminalda mobile app:
-
-```bash
-cd /home/wikki/local.git/erpnext_stock_telegram/mobile_app
-./run_linux_preview.sh
-```
+`make run` va `make web` backend healthcheck qiladi, backend ishlamasa o'zi yoqadi.
 
 ## Optional web preview
 
