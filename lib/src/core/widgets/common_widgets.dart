@@ -191,12 +191,6 @@ class ActionDock extends StatelessWidget implements BottomInsetWidget {
       height: bottomInsetForWidth(width),
       decoration: BoxDecoration(
         color: AppTheme.cardBackground(context),
-        border: Border(
-          top: BorderSide(
-            color: AppTheme.dockDivider(context),
-            width: 1.2,
-          ),
-        ),
       ),
       child: Align(
         alignment: Alignment.bottomCenter,
