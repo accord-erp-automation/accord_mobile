@@ -206,7 +206,11 @@ class ActionDock extends StatelessWidget implements BottomInsetWidget {
           Positioned(
             left: 0,
             right: 0,
-            bottom: 0,
+            bottom: switch (deviceClass) {
+              _DockDeviceClass.small => -22,
+              _DockDeviceClass.medium => -24,
+              _DockDeviceClass.large => -28,
+            },
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: buttons
