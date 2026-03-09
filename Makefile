@@ -1,5 +1,6 @@
 API_URL ?= http://127.0.0.1:8081
 JDK_HOME ?= /usr/lib/jvm/java-17-openjdk
+APK_NAME ?= accord-vision-debug.apk
 
 .PHONY: run web analyze test deps backend-up backend-stop core-up core-stop remote-up remote-stop remote-url apk-remote run-remote android-sdk-setup domain-up domain-url apk-domain run-domain
 
@@ -69,13 +70,15 @@ run-domain: deps domain-up
 apk-remote: deps remote-up android-sdk-setup
 	@REMOTE_URL="$$(cat .core_tunnel_url)" && \
 	JAVA_HOME="$(JDK_HOME)" PATH="$(JDK_HOME)/bin:$$PATH" flutter build apk --debug --dart-define=MOBILE_API_BASE_URL="$$REMOTE_URL" && \
-	echo "APK tayyor: build/app/outputs/flutter-apk/app-debug.apk" && \
+	cp build/app/outputs/flutter-apk/app-debug.apk build/app/outputs/flutter-apk/$(APK_NAME) && \
+	echo "APK tayyor: build/app/outputs/flutter-apk/$(APK_NAME)" && \
 	echo "Core URL: $$REMOTE_URL"
 
 apk-domain: deps domain-up android-sdk-setup
 	@DOMAIN_URL="$$(cat .core_domain_url)" && \
 	JAVA_HOME="$(JDK_HOME)" PATH="$(JDK_HOME)/bin:$$PATH" flutter build apk --debug --dart-define=MOBILE_API_BASE_URL="$$DOMAIN_URL" && \
-	echo "APK tayyor: build/app/outputs/flutter-apk/app-debug.apk" && \
+	cp build/app/outputs/flutter-apk/app-debug.apk build/app/outputs/flutter-apk/$(APK_NAME) && \
+	echo "APK tayyor: build/app/outputs/flutter-apk/$(APK_NAME)" && \
 	echo "Core URL: $$DOMAIN_URL"
 
 analyze:

@@ -2,7 +2,7 @@ name: erpnext_stock_mobile
 description: Android-first operational app for supplier and warehouse workflows.
 publish_to: none
 
-version: 0.1.0+1
+version: 0.1.0+2
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
