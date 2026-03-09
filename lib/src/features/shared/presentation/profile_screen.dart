@@ -143,189 +143,220 @@ class _ProfileScreenState extends State<ProfileScreen> {
       bottom: role == UserRole.supplier
           ? const SupplierDock(activeTab: SupplierDockTab.profile)
           : const WerkaDock(activeTab: WerkaDockTab.profile),
-      child: Column(
-        children: [
-          SoftCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 42,
-                        backgroundColor: const Color(0xFF121212),
-                        backgroundImage: cachedAvatar != null
-                            ? FileImage(cachedAvatar!)
-                            : null,
-                        child: cachedAvatar == null
-                            ? Text(
-                                (current.displayName.isNotEmpty
-                                        ? current.displayName[0]
-                                        : 'U')
-                                    .toUpperCase(),
-                                style:
-                                    Theme.of(context).textTheme.headlineMedium,
-                              )
-                            : null,
-                      ),
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: GestureDetector(
-                          onTap: uploadingAvatar ? null : _pickAvatar,
-                          child: Container(
-                            height: 30,
-                            width: 30,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.black, width: 2),
-                            ),
-                            child: uploadingAvatar
-                                ? const Padding(
-                                    padding: EdgeInsets.all(7),
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Column(
+          children: [
+            SoftCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Stack(
+                      children: [
+                        _AvatarPreview(
+                          displayName: current.displayName,
+                          cachedAvatar: cachedAvatar,
+                        ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: GestureDetector(
+                            onTap: uploadingAvatar ? null : _pickAvatar,
+                            child: Container(
+                              height: 30,
+                              width: 30,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                border:
+                                    Border.all(color: Colors.black, width: 2),
+                              ),
+                              child: uploadingAvatar
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(7),
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.black,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.camera_alt_rounded,
+                                      size: 16,
                                       color: Colors.black,
                                     ),
-                                  )
-                                : const Icon(
-                                    Icons.camera_alt_rounded,
-                                    size: 16,
-                                    color: Colors.black,
-                                  ),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 18),
-                Text(
-                  current.displayName,
-                  style: Theme.of(context)
-                      .textTheme
-                      .displaySmall
-                      ?.copyWith(fontSize: 30),
-                ),
-                const SizedBox(height: 10),
-                Text(subtitle, style: Theme.of(context).textTheme.bodyLarge),
-                const SizedBox(height: 16),
-                Text(
-                  role == UserRole.supplier
-                      ? 'Supplier account'
-                      : 'Werka account',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
+                  const SizedBox(height: 18),
+                  Text(
+                    current.displayName,
+                    style: Theme.of(context)
+                        .textTheme
+                        .displaySmall
+                        ?.copyWith(fontSize: 30),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(subtitle, style: Theme.of(context).textTheme.bodyLarge),
+                  const SizedBox(height: 16),
+                  Text(
+                    role == UserRole.supplier
+                        ? 'Supplier account'
+                        : 'Werka account',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 18),
-          SoftCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Nickname', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: nicknameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nickname',
-                    hintText: 'O‘zingizga ko‘rinadigan ism',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: savingNickname ? null : _saveNickname,
-                    child: savingNickname
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.black,
-                            ),
-                          )
-                        : const Text('Nickname saqlash'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-          SoftCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Telefon', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 10),
-                TextField(
-                  enabled: false,
-                  decoration: const InputDecoration(
-                    labelText: 'Telefon raqam',
-                  ),
-                  controller: TextEditingController.fromValue(
-                    TextEditingValue(text: current.phone),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Telefon raqam faqat ko‘rish uchun. Uni ilovadan o‘zgartirib bo‘lmaydi.',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-          SoftCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Asl ism', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 8),
-                Text(
-                  current.legalName.isEmpty
-                      ? current.displayName
-                      : current.legalName,
-                ),
-                const SizedBox(height: 18),
-                Text('Session', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 8),
-                Text(
-                  'Bu yerdan hisobdan chiqishingiz mumkin. Keyingi login bilan role qayta tanlanadi.',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ],
-            ),
-          ),
-          if (errorMessage != null) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: 18),
             SoftCard(
-              child: Text(errorMessage!),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Nickname',
+                      style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: nicknameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Nickname',
+                      hintText: 'O‘zingizga ko‘rinadigan ism',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: savingNickname ? null : _saveNickname,
+                      child: savingNickname
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.black,
+                              ),
+                            )
+                          : const Text('Nickname saqlash'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            SoftCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Telefon',
+                      style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 10),
+                  SelectableText(
+                    current.phone,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Telefon raqam faqat ko‘rish uchun. Uni ilovadan o‘zgartirib bo‘lmaydi.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            SoftCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Asl ism',
+                      style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 8),
+                  Text(
+                    current.legalName.isEmpty
+                        ? current.displayName
+                        : current.legalName,
+                  ),
+                  const SizedBox(height: 18),
+                  Text('Session',
+                      style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Bu yerdan hisobdan chiqishingiz mumkin. Keyingi login bilan role qayta tanlanadi.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+            if (errorMessage != null) ...[
+              const SizedBox(height: 14),
+              SoftCard(
+                child: Text(errorMessage!),
+              ),
+            ],
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () async {
+                  final navigator = Navigator.of(context);
+                  await MobileApi.instance.logout();
+                  if (!mounted) {
+                    return;
+                  }
+                  navigator.pushNamedAndRemoveUntil(
+                    '/',
+                    (route) => false,
+                  );
+                },
+                child: const Text('Logout'),
+              ),
             ),
           ],
-          const Spacer(),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () async {
-                final navigator = Navigator.of(context);
-                await MobileApi.instance.logout();
-                if (!mounted) {
-                  return;
-                }
-                navigator.pushNamedAndRemoveUntil(
-                  '/',
-                  (route) => false,
-                );
-              },
-              child: const Text('Logout'),
-            ),
-          ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AvatarPreview extends StatelessWidget {
+  const _AvatarPreview({
+    required this.displayName,
+    required this.cachedAvatar,
+  });
+
+  final String displayName;
+  final File? cachedAvatar;
+
+  @override
+  Widget build(BuildContext context) {
+    final fallback = Container(
+      height: 84,
+      width: 84,
+      decoration: const BoxDecoration(
+        color: Color(0xFF121212),
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        (displayName.isNotEmpty ? displayName[0] : 'U').toUpperCase(),
+        style: Theme.of(context).textTheme.headlineMedium,
+      ),
+    );
+
+    if (cachedAvatar == null) {
+      return fallback;
+    }
+
+    return ClipOval(
+      child: Image.file(
+        cachedAvatar!,
+        height: 84,
+        width: 84,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => fallback,
       ),
     );
   }
