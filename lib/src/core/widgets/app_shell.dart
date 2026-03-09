@@ -97,7 +97,7 @@ class AppShell extends StatelessWidget {
               ),
               if (bottom != null)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, -8),
                   child: bottom,
                 ),
             ],

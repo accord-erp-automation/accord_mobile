@@ -1,4 +1,5 @@
 import '../../../core/api/mobile_api.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_shell.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/motion_widgets.dart';
@@ -144,7 +145,7 @@ class SupplierHomeScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const Divider(height: 1, color: Color(0xFF1F1F1F)),
+                      Divider(height: 1, color: AppTheme.dockDivider(context)),
                       ...history.asMap().entries.map((entry) {
                         final index = entry.key;
                         final record = entry.value;
@@ -204,8 +205,7 @@ class SupplierHomeScreen extends StatelessWidget {
                                 ),
                               ),
                               if (index != history.length - 1)
-                                const Divider(
-                                    height: 1, color: Color(0xFF1F1F1F)),
+                                Divider(height: 1, color: AppTheme.dockDivider(context)),
                             ],
                           ),
                         );
@@ -239,12 +239,18 @@ class _EnterpriseHero extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFF2A2A2A), width: 1.35),
-        gradient: const LinearGradient(
+        border: Border.all(color: AppTheme.cardBorder(context), width: 1.35),
+        gradient: LinearGradient(
           colors: [
-            Color(0xFF080808),
-            Color(0xFF121212),
-            Color(0xFF0A0A0A),
+            AppTheme.isDark(context)
+                ? const Color(0xFF080808)
+                : const Color(0xFFFFFFFF),
+            AppTheme.isDark(context)
+                ? const Color(0xFF121212)
+                : const Color(0xFFF8F8F6),
+            AppTheme.isDark(context)
+                ? const Color(0xFF0A0A0A)
+                : const Color(0xFFF3F3F0),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -260,14 +266,14 @@ class _EnterpriseHero extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF151515),
+                  color: AppTheme.actionSurface(context),
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: const Color(0xFF242424)),
+                  border: Border.all(color: AppTheme.cardBorder(context)),
                 ),
                 child: Text(
                   'Operations Overview',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w700,
                       ),
                 ),
@@ -337,9 +343,9 @@ class _HeroStat extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF111111),
+        color: AppTheme.actionSurface(context),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF212121)),
+        border: Border.all(color: AppTheme.cardBorder(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -417,9 +423,9 @@ class _EnterpriseMetricTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF080808),
+        color: AppTheme.cardBackground(context),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFF252525), width: 1.2),
+        border: Border.all(color: AppTheme.cardBorder(context), width: 1.2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,7 +472,11 @@ class _StatusMixBar extends StatelessWidget {
         child: Container(
           height: 16,
           decoration: BoxDecoration(
-            color: value == 0 ? const Color(0xFF101010) : color,
+            color: value == 0
+                ? (AppTheme.isDark(context)
+                    ? const Color(0xFF101010)
+                    : const Color(0xFFE9E7E0))
+                : color,
             borderRadius: BorderRadius.circular(999),
           ),
         ),
