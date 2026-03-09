@@ -3,10 +3,6 @@ import '../theme/app_motion.dart';
 import '../theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
-abstract class BottomInsetWidget {
-  double bottomInsetForContext(BuildContext context);
-}
-
 enum _DockDeviceClass {
   small,
   medium,
@@ -150,7 +146,7 @@ class MetricBadge extends StatelessWidget {
   }
 }
 
-class ActionDock extends StatelessWidget implements BottomInsetWidget {
+class ActionDock extends StatelessWidget {
   const ActionDock({
     super.key,
     required this.leading,
@@ -162,9 +158,12 @@ class ActionDock extends StatelessWidget implements BottomInsetWidget {
   final List<Widget> trailing;
   final Widget center;
 
-  @override
-  double bottomInsetForContext(BuildContext context) {
-    return MediaQuery.viewPaddingOf(context).bottom + 10;
+  double _hostHeightForDevice(_DockDeviceClass deviceClass) {
+    return switch (deviceClass) {
+      _DockDeviceClass.small => 72,
+      _DockDeviceClass.medium => 76,
+      _DockDeviceClass.large => 78,
+    };
   }
 
   @override
@@ -181,13 +180,12 @@ class ActionDock extends StatelessWidget implements BottomInsetWidget {
       ...trailing,
     ];
 
-    final double safeBottom = MediaQuery.viewPaddingOf(context).bottom;
-    final double panelHeight = safeBottom + 10;
+    final double panelHeight = 10;
+    final double hostHeight = _hostHeightForDevice(deviceClass);
 
     return SizedBox(
-      height: panelHeight,
+      height: hostHeight,
       child: Stack(
-        clipBehavior: Clip.none,
         children: [
           Positioned(
             left: 0,
@@ -201,7 +199,7 @@ class ActionDock extends StatelessWidget implements BottomInsetWidget {
           Positioned(
             left: 0,
             right: 0,
-            bottom: safeBottom > 0 ? safeBottom - 2 : 0,
+            bottom: 0,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: buttons
