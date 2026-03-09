@@ -152,7 +152,7 @@ class ActionDock extends StatelessWidget {
     ];
 
     return Transform.translate(
-      offset: const Offset(0, -9),
+      offset: const Offset(0, -10),
       child: Container(
         padding: EdgeInsets.zero,
         decoration: BoxDecoration(
@@ -164,7 +164,7 @@ class ActionDock extends StatelessWidget {
           ),
         ),
         child: Transform.translate(
-          offset: const Offset(0, 9),
+          offset: const Offset(0, 10),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: buttons
