@@ -18,28 +18,37 @@ class WerkaSuccessScreen extends StatelessWidget {
       title: 'Qabul qilindi',
       subtitle:
           'Receipt submit bo‘lganidan keyin supplierga ham status qaytadi.',
-      bottom: ElevatedButton(
-        onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
-          AppRoutes.werkaHome,
-          (route) => route.isFirst,
-        ),
-        child: const Text('Pending listga qaytish'),
-      ),
-      child: Center(
-        child: SoftCard(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.verified_rounded,
-                  size: 72, color: Color(0xFFFFFFFF)),
-              const SizedBox(height: 16),
-              Text(record.id, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 8),
-              Text(
-                  '${record.acceptedQty.toStringAsFixed(2)} ${record.uom} qabul qilindi'),
-            ],
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Center(
+            child: SoftCard(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.verified_rounded,
+                      size: 72, color: Color(0xFFFFFFFF)),
+                  const SizedBox(height: 16),
+                  Text(record.id, style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 8),
+                  Text(
+                      '${record.acceptedQty.toStringAsFixed(2)} ${record.uom} qabul qilindi'),
+                ],
+              ),
+            ),
           ),
-        ),
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
+                AppRoutes.werkaHome,
+                (route) => route.isFirst,
+              ),
+              child: const Text('Pending listga qaytish'),
+            ),
+          ),
+        ],
       ),
     );
   }

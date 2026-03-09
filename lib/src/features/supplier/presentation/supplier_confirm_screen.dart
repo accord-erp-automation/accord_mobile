@@ -28,42 +28,49 @@ class SupplierConfirmScreen extends StatelessWidget {
     return AppShell(
       title: 'Tasdiqlash',
       subtitle: 'Yuborishdan oldin ma’lumotlarni yana bir ko‘rib chiqing.',
-      bottom: Column(
+      child: Column(
         children: [
-          ElevatedButton(
-            onPressed: () async {
-              final DispatchRecord record =
-                  await MobileApi.instance.createDispatch(
-                itemCode: args.item.code,
-                qty: args.qty,
-              );
-              if (!context.mounted) {
-                return;
-              }
-              Navigator.of(context)
-                  .pushNamed(AppRoutes.supplierSuccess, arguments: record);
-            },
-            child: const Text('Ha, jo‘natishni saqlash'),
+          SoftCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _Row(label: 'Mahsulot', value: args.item.code),
+                _Row(label: 'Nomi', value: args.item.name),
+                _Row(
+                    label: 'Miqdor',
+                    value: '${args.qty.toStringAsFixed(2)} ${args.item.uom}'),
+                _Row(label: 'Ombor', value: args.item.warehouse),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () async {
+                final DispatchRecord record =
+                    await MobileApi.instance.createDispatch(
+                  itemCode: args.item.code,
+                  qty: args.qty,
+                );
+                if (!context.mounted) {
+                  return;
+                }
+                Navigator.of(context)
+                    .pushNamed(AppRoutes.supplierSuccess, arguments: record);
+              },
+              child: const Text('Ha, jo‘natishni saqlash'),
+            ),
           ),
           const SizedBox(height: 10),
-          OutlinedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Orqaga qaytish'),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Orqaga qaytish'),
+            ),
           ),
         ],
-      ),
-      child: SoftCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _Row(label: 'Mahsulot', value: args.item.code),
-            _Row(label: 'Nomi', value: args.item.name),
-            _Row(
-                label: 'Miqdor',
-                value: '${args.qty.toStringAsFixed(2)} ${args.item.uom}'),
-            _Row(label: 'Ombor', value: args.item.warehouse),
-          ],
-        ),
       ),
     );
   }

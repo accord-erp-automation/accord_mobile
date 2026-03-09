@@ -3,7 +3,6 @@ import '../../../core/api/mobile_api.dart';
 import '../../../core/widgets/app_shell.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../shared/models/app_models.dart';
-import 'widgets/supplier_dock.dart';
 import 'package:flutter/material.dart';
 
 class SupplierItemPickerScreen extends StatefulWidget {
@@ -39,10 +38,6 @@ class _SupplierItemPickerScreenState extends State<SupplierItemPickerScreen> {
       ),
       title: 'Mahsulot tanlash',
       subtitle: 'Faqat sizga biriktirilgan itemlar ko‘rinadi.',
-      bottom: const SupplierDock(
-        activeTab: SupplierDockTab.home,
-        centerActive: true,
-      ),
       child: Column(
         children: [
           TextField(

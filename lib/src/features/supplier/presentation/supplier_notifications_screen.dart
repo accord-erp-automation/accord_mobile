@@ -3,7 +3,6 @@ import '../../../core/widgets/app_shell.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/motion_widgets.dart';
 import '../../shared/models/app_models.dart';
-import 'widgets/supplier_dock.dart';
 import 'package:flutter/material.dart';
 
 class SupplierNotificationsScreen extends StatelessWidget {
@@ -14,7 +13,6 @@ class SupplierNotificationsScreen extends StatelessWidget {
     return AppShell(
       title: 'Notifications',
       subtitle: 'Werka mahsulotni oldimi yoki yo‘qmi, shu yerda ko‘rasiz.',
-      bottom: const SupplierDock(activeTab: SupplierDockTab.notifications),
       child: FutureBuilder<List<DispatchRecord>>(
         future: MobileApi.instance.supplierHistory(),
         builder: (context, snapshot) {

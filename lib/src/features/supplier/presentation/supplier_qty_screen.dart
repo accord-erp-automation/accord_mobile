@@ -31,19 +31,6 @@ class _SupplierQtyScreenState extends State<SupplierQtyScreen> {
     return AppShell(
       title: 'Miqdor',
       subtitle: '${widget.item.code} uchun jo‘natilayotgan miqdorni kiriting.',
-      bottom: ElevatedButton(
-        onPressed: () {
-          final double qty = double.tryParse(controller.text.trim()) ?? 0;
-          if (qty <= 0) {
-            return;
-          }
-          Navigator.of(context).pushNamed(
-            AppRoutes.supplierConfirm,
-            arguments: SupplierConfirmArgs(item: widget.item, qty: qty),
-          );
-        },
-        child: const Text('Davom etish'),
-      ),
       child: Column(
         children: [
           SoftCard(
@@ -71,6 +58,23 @@ class _SupplierQtyScreenState extends State<SupplierQtyScreen> {
           const SoftCard(
             child: Text(
                 'MVP preview: keyingi bosqichda son keyboard va validation state yanada silliqlanadi.'),
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                final double qty = double.tryParse(controller.text.trim()) ?? 0;
+                if (qty <= 0) {
+                  return;
+                }
+                Navigator.of(context).pushNamed(
+                  AppRoutes.supplierConfirm,
+                  arguments: SupplierConfirmArgs(item: widget.item, qty: qty),
+                );
+              },
+              child: const Text('Davom etish'),
+            ),
           ),
         ],
       ),

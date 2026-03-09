@@ -4,7 +4,6 @@ import '../../../core/widgets/app_shell.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/motion_widgets.dart';
 import '../../shared/models/app_models.dart';
-import 'widgets/supplier_dock.dart';
 import 'package:flutter/material.dart';
 
 class SupplierHomeScreen extends StatelessWidget {
@@ -15,7 +14,6 @@ class SupplierHomeScreen extends StatelessWidget {
     return AppShell(
       title: 'Supplier',
       subtitle: 'Jo‘natish va statuslarni shu yerdan boshqarasiz.',
-      bottom: const SupplierDock(activeTab: SupplierDockTab.home),
       child: FutureBuilder<List<DispatchRecord>>(
         future: MobileApi.instance.supplierHistory(),
         builder: (context, snapshot) {

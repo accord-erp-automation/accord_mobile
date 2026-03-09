@@ -6,8 +6,6 @@ import '../../../core/widgets/app_shell.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../data/profile_avatar_cache.dart';
 import '../models/app_models.dart';
-import '../../supplier/presentation/widgets/supplier_dock.dart';
-import '../../werka/presentation/widgets/werka_dock.dart';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -175,9 +173,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return AppShell(
       title: 'Profile',
       subtitle: 'Account va session boshqaruvi.',
-      bottom: role == UserRole.supplier
-          ? const SupplierDock(activeTab: SupplierDockTab.profile)
-          : const WerkaDock(activeTab: WerkaDockTab.profile),
       child: SingleChildScrollView(
         padding: const EdgeInsets.only(bottom: 8),
         child: Column(

@@ -38,22 +38,6 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
     return AppShell(
       title: 'Qabul qilish',
       subtitle: 'Real qabul qilingan miqdorni kiriting.',
-      bottom: ElevatedButton(
-        onPressed: () async {
-          final double qty = double.tryParse(controller.text.trim()) ?? 0;
-          final DispatchRecord accepted =
-              await MobileApi.instance.confirmReceipt(
-            receiptID: widget.record.id,
-            acceptedQty: qty,
-          );
-          if (!context.mounted) {
-            return;
-          }
-          Navigator.of(context)
-              .pushNamed(AppRoutes.werkaSuccess, arguments: accepted);
-        },
-        child: const Text('Qabul qilishni yakunlash'),
-      ),
       child: Column(
         children: [
           SoftCard(
@@ -80,6 +64,26 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
             decoration: InputDecoration(
               hintText: '0',
               suffixText: widget.record.uom,
+            ),
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () async {
+                final double qty = double.tryParse(controller.text.trim()) ?? 0;
+                final DispatchRecord accepted =
+                    await MobileApi.instance.confirmReceipt(
+                  receiptID: widget.record.id,
+                  acceptedQty: qty,
+                );
+                if (!context.mounted) {
+                  return;
+                }
+                Navigator.of(context)
+                    .pushNamed(AppRoutes.werkaSuccess, arguments: accepted);
+              },
+              child: const Text('Qabul qilishni yakunlash'),
             ),
           ),
         ],

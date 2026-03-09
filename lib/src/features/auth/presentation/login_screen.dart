@@ -157,10 +157,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return AppShell(
       title: 'Login',
       subtitle: '',
-      bottom: ElevatedButton(
-        onPressed: loading ? null : () => submitLogin(context),
-        child: Text(loading ? 'Kuting...' : 'Login'),
-      ),
       child: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
@@ -274,6 +270,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ],
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: loading ? null : () => submitLogin(context),
+                          child: Text(loading ? 'Kuting...' : 'Login'),
+                        ),
+                      ),
                     ],
                   ),
                 ),
