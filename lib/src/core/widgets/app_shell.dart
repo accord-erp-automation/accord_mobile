@@ -2,6 +2,12 @@ import '../theme/app_motion.dart';
 import '../theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
+enum _DockDeviceClass {
+  small,
+  medium,
+  large,
+}
+
 class AppShell extends StatelessWidget {
   const AppShell({
     super.key,
@@ -23,7 +29,12 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final bool compact = MediaQuery.sizeOf(context).width <= 375;
+    final width = MediaQuery.sizeOf(context).width;
+    final _DockDeviceClass deviceClass = width <= 375
+        ? _DockDeviceClass.small
+        : width <= 430
+            ? _DockDeviceClass.medium
+            : _DockDeviceClass.large;
 
     return Scaffold(
       body: DecoratedBox(
@@ -108,7 +119,14 @@ class AppShell extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 24, 0),
                     child: Transform.translate(
-                      offset: Offset(0, compact ? 0 : 12),
+                      offset: Offset(
+                        0,
+                        switch (deviceClass) {
+                          _DockDeviceClass.small => 0,
+                          _DockDeviceClass.medium => 7,
+                          _DockDeviceClass.large => 12,
+                        },
+                      ),
                       child: bottom,
                     ),
                   ),

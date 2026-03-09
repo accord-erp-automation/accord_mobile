@@ -3,6 +3,12 @@ import '../theme/app_motion.dart';
 import '../theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
+enum _DockDeviceClass {
+  small,
+  medium,
+  large,
+}
+
 class SoftCard extends StatelessWidget {
   const SoftCard({
     super.key,
@@ -155,7 +161,11 @@ class ActionDock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double width = MediaQuery.sizeOf(context).width;
-    final bool compact = width <= 375;
+    final _DockDeviceClass deviceClass = width <= 375
+        ? _DockDeviceClass.small
+        : width <= 430
+            ? _DockDeviceClass.medium
+            : _DockDeviceClass.large;
     final List<Widget> buttons = [
       ...leading,
       center,
@@ -173,13 +183,26 @@ class ActionDock extends StatelessWidget {
         ),
       ),
       child: Transform.translate(
-        offset: Offset(0, compact ? -2 : 0),
+        offset: Offset(
+          0,
+          switch (deviceClass) {
+            _DockDeviceClass.small => -2,
+            _DockDeviceClass.medium => -1,
+            _DockDeviceClass.large => 0,
+          },
+        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: buttons
               .map(
                 (button) => Padding(
-                  padding: EdgeInsets.symmetric(horizontal: compact ? 1 : 3),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: switch (deviceClass) {
+                      _DockDeviceClass.small => 1,
+                      _DockDeviceClass.medium => 2,
+                      _DockDeviceClass.large => 3,
+                    },
+                  ),
                   child: button,
                 ),
               )
@@ -207,7 +230,11 @@ class DockButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double width = MediaQuery.sizeOf(context).width;
-    final bool compact = width <= 375;
+    final _DockDeviceClass deviceClass = width <= 375
+        ? _DockDeviceClass.small
+        : width <= 430
+            ? _DockDeviceClass.medium
+            : _DockDeviceClass.large;
     final Color background = primary
         ? AppTheme.primaryButton(context)
         : active
@@ -223,11 +250,27 @@ class DockButton extends StatelessWidget {
         duration: AppMotion.medium,
         curve: AppMotion.smooth,
         height: primary
-            ? (compact ? 54 : 60)
-            : (compact ? 46 : 54),
+            ? switch (deviceClass) {
+                _DockDeviceClass.small => 54,
+                _DockDeviceClass.medium => 57,
+                _DockDeviceClass.large => 60,
+              }
+            : switch (deviceClass) {
+                _DockDeviceClass.small => 46,
+                _DockDeviceClass.medium => 50,
+                _DockDeviceClass.large => 54,
+              },
         width: primary
-            ? (compact ? 54 : 60)
-            : (compact ? 46 : 54),
+            ? switch (deviceClass) {
+                _DockDeviceClass.small => 54,
+                _DockDeviceClass.medium => 57,
+                _DockDeviceClass.large => 60,
+              }
+            : switch (deviceClass) {
+                _DockDeviceClass.small => 46,
+                _DockDeviceClass.medium => 50,
+                _DockDeviceClass.large => 54,
+              },
         decoration: BoxDecoration(
           color: background,
           shape: BoxShape.circle,
@@ -249,8 +292,16 @@ class DockButton extends StatelessWidget {
           icon,
           color: foreground,
           size: primary
-              ? (compact ? 24 : 27)
-              : (compact ? 22 : 25),
+              ? switch (deviceClass) {
+                  _DockDeviceClass.small => 24,
+                  _DockDeviceClass.medium => 25,
+                  _DockDeviceClass.large => 27,
+                }
+              : switch (deviceClass) {
+                  _DockDeviceClass.small => 22,
+                  _DockDeviceClass.medium => 23,
+                  _DockDeviceClass.large => 25,
+                },
         ),
       ),
     );
