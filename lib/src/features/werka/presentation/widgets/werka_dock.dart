@@ -31,10 +31,7 @@ class WerkaDock extends StatelessWidget {
             if (activeTab == WerkaDockTab.home) {
               return;
             }
-            Navigator.of(context).pushNamedAndRemoveUntil(
-              AppRoutes.werkaHome,
-              (route) => false,
-            );
+            Navigator.of(context).pushReplacementNamed(AppRoutes.werkaHome);
           },
         ),
         DockButton(
@@ -55,10 +52,10 @@ class WerkaDock extends StatelessWidget {
         icon: Icons.inventory_2_outlined,
         primary: true,
         onTap: () {
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            AppRoutes.werkaHome,
-            (route) => false,
-          );
+          if (activeTab == WerkaDockTab.home) {
+            return;
+          }
+          Navigator.of(context).pushReplacementNamed(AppRoutes.werkaHome);
         },
       ),
       trailing: [
@@ -77,7 +74,7 @@ class WerkaDock extends StatelessWidget {
             if (activeTab == WerkaDockTab.profile) {
               return;
             }
-            Navigator.of(context).pushNamed(
+            Navigator.of(context).pushReplacementNamed(
               AppRoutes.profile,
               arguments: ProfileArgs(
                 role: UserRole.werka,

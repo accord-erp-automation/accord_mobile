@@ -30,6 +30,14 @@ class AppRoutes {
 }
 
 class AppRouter {
+  static const Set<String> staticDockRoutes = {
+    AppRoutes.supplierHome,
+    AppRoutes.supplierNotifications,
+    AppRoutes.supplierRecent,
+    AppRoutes.werkaHome,
+    AppRoutes.profile,
+  };
+
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case AppRoutes.login:
@@ -76,6 +84,15 @@ class AppRouter {
   }
 
   static PageRoute<dynamic> _buildRoute(RouteSettings settings, Widget child) {
+    if (staticDockRoutes.contains(settings.name)) {
+      return PageRouteBuilder<dynamic>(
+        settings: settings,
+        pageBuilder: (context, animation, secondaryAnimation) => child,
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+      );
+    }
+
     return PageRouteBuilder<dynamic>(
       settings: settings,
       pageBuilder: (context, animation, secondaryAnimation) => child,

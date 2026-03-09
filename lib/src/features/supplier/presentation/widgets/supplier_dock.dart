@@ -32,10 +32,7 @@ class SupplierDock extends StatelessWidget {
             if (activeTab == SupplierDockTab.home) {
               return;
             }
-            Navigator.of(context).pushNamedAndRemoveUntil(
-              AppRoutes.supplierHome,
-              (route) => false,
-            );
+            Navigator.of(context).pushReplacementNamed(AppRoutes.supplierHome);
           },
         ),
         DockButton(
@@ -45,7 +42,8 @@ class SupplierDock extends StatelessWidget {
             if (activeTab == SupplierDockTab.notifications) {
               return;
             }
-            Navigator.of(context).pushNamed(AppRoutes.supplierNotifications);
+            Navigator.of(context)
+                .pushReplacementNamed(AppRoutes.supplierNotifications);
           },
         ),
       ],
@@ -63,7 +61,7 @@ class SupplierDock extends StatelessWidget {
             if (activeTab == SupplierDockTab.recent) {
               return;
             }
-            Navigator.of(context).pushNamed(AppRoutes.supplierRecent);
+            Navigator.of(context).pushReplacementNamed(AppRoutes.supplierRecent);
           },
         ),
         DockButton(
@@ -73,7 +71,7 @@ class SupplierDock extends StatelessWidget {
             if (activeTab == SupplierDockTab.profile) {
               return;
             }
-            Navigator.of(context).pushNamed(
+            Navigator.of(context).pushReplacementNamed(
               AppRoutes.profile,
               arguments: ProfileArgs(
                 role: UserRole.supplier,
