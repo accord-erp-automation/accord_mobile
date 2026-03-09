@@ -46,3 +46,39 @@ Yoki:
 cd /home/wikki/local.git/erpnext_stock_telegram/mobile_app
 make web
 ```
+
+## Android ni uzoqdan test qilish
+
+Laptopning o'zi core bo'ladi. Telefon boshqa davlatda bo'lsa ham ishlatish mumkin.
+
+Public URL ochish:
+
+```bash
+cd /home/wikki/local.git/erpnext_stock_telegram/mobile_app
+make remote-up
+```
+
+URL'ni ko'rish:
+
+```bash
+make remote-url
+```
+
+O'sha URL bilan debug APK build qilish:
+
+```bash
+make android-sdk-setup
+make apk-remote
+```
+
+Natija:
+
+```bash
+build/app/outputs/flutter-apk/app-debug.apk
+```
+
+Ish tugagach tunnel va core'ni to'xtatish:
+
+```bash
+make remote-stop
+```

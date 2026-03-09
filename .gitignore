@@ -34,6 +34,9 @@ migrate_working_dir/
 /coverage/
 .mobileapi.log
 .mobileapi.pid
+.core_tunnel.log
+.core_tunnel.pid
+.core_tunnel_url
 
 # Symbolication related
 app.*.symbols
@@ -45,3 +48,5 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/local.properties
+/android/.kotlin/

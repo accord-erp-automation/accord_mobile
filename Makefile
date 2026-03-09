@@ -1,12 +1,19 @@
 API_URL ?= http://127.0.0.1:8081
+JDK_HOME ?= /usr/lib/jvm/java-17-openjdk
 
-.PHONY: run web analyze test deps backend-up backend-stop
+.PHONY: run web analyze test deps backend-up backend-stop core-up core-stop remote-up remote-stop remote-url apk-remote run-remote android-sdk-setup
 
 deps:
 	@flutter pub get
 
+android-sdk-setup:
+	@./setup_android_sdk.sh
+
 backend-up:
 	@API_URL=$(API_URL) BACKEND_ROOT="$$(cd .. && pwd)" ./ensure_mobileapi.sh
+
+core-up:
+	@API_URL=$(API_URL) BACKEND_ROOT="$$(cd .. && pwd)" ./ensure_core.sh
 
 backend-stop:
 	@if [ -f .mobileapi.pid ]; then \
@@ -17,11 +24,38 @@ backend-stop:
 		echo "mobileapi pid file not found"; \
 	fi
 
+core-stop:
+	@./stop_remote_core.sh
+
+remote-up:
+	@BACKEND_ROOT="$$(cd .. && pwd)" ./start_remote_core.sh
+
+remote-url:
+	@if [ -f .core_tunnel_url ]; then \
+		cat .core_tunnel_url; \
+	else \
+		echo "remote URL topilmadi. Avval make remote-up ishlating."; \
+		exit 1; \
+	fi
+
+remote-stop:
+	@./stop_remote_core.sh
+
 run: backend-up deps
 	@flutter run -d linux --dart-define=MOBILE_API_BASE_URL=$(API_URL)
 
 web: backend-up deps
 	@flutter run -d chrome --dart-define=MOBILE_API_BASE_URL=$(API_URL)
+
+run-remote: deps remote-up
+	@REMOTE_URL="$$(cat .core_tunnel_url)" && \
+	flutter run -d linux --dart-define=MOBILE_API_BASE_URL="$$REMOTE_URL"
+
+apk-remote: deps remote-up android-sdk-setup
+	@REMOTE_URL="$$(cat .core_tunnel_url)" && \
+	JAVA_HOME="$(JDK_HOME)" PATH="$(JDK_HOME)/bin:$$PATH" flutter build apk --debug --dart-define=MOBILE_API_BASE_URL="$$REMOTE_URL" && \
+	echo "APK tayyor: build/app/outputs/flutter-apk/app-debug.apk" && \
+	echo "Core URL: $$REMOTE_URL"
 
 analyze:
 	@flutter analyze
