@@ -12,6 +12,7 @@ class SupplierHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width <= 375;
     return AppShell(
       title: 'Supplier',
       subtitle: 'Jo‘natish va statuslarni shu yerdan boshqarasiz.',
@@ -70,6 +71,7 @@ class SupplierHomeScreen extends StatelessWidget {
                   acceptedCount: acceptedCount,
                   partialCount: partialCount,
                   uniqueItems: uniqueItems,
+                  compact: compact,
                 ),
               ),
               const SizedBox(height: 18),
@@ -108,6 +110,69 @@ class SupplierHomeScreen extends StatelessWidget {
               if (history.isEmpty)
                 const SoftCard(
                   child: Text('Hali jo‘natishlar yo‘q.'),
+                )
+              else if (compact)
+                SoftCard(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  child: Column(
+                    children: history.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final record = entry.value;
+                      return SmoothAppear(
+                        delay: Duration(milliseconds: 180 + (index * 45)),
+                        offset: const Offset(0, 16),
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          record.itemName.isEmpty
+                                              ? record.itemCode
+                                              : record.itemName,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '${record.sentQty.toStringAsFixed(0)} ${record.uom}',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          record.createdLabel,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  StatusPill(status: record.status),
+                                ],
+                              ),
+                            ),
+                            if (index != history.length - 1)
+                              Divider(
+                                  height: 1,
+                                  color: AppTheme.dockDivider(context)),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 )
               else
                 SoftCard(
@@ -236,6 +301,7 @@ class _EnterpriseHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width <= 375;
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
@@ -260,7 +326,10 @@ class _EnterpriseHero extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Container(
                 padding:
@@ -278,11 +347,7 @@ class _EnterpriseHero extends StatelessWidget {
                       ),
                 ),
               ),
-              const Spacer(),
-              Text(
-                'Live',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+              Text('Live', style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
           const SizedBox(height: 18),
@@ -299,23 +364,26 @@ class _EnterpriseHero extends StatelessWidget {
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
-          Row(
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
             children: [
-              Expanded(
+              SizedBox(
+                width: compact ? 110 : 78,
                 child: _HeroStat(
                   label: 'Jarayonda',
                   value: pendingCount.toString(),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
+              SizedBox(
+                width: compact ? 110 : 78,
                 child: _HeroStat(
                   label: 'Yopilgan',
                   value: acceptedCount.toString(),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
+              SizedBox(
+                width: compact ? 110 : 78,
                 child: _HeroStat(
                   label: 'SKU',
                   value: uniqueItems.toString(),
@@ -365,12 +433,14 @@ class _MetricGrid extends StatelessWidget {
     required this.acceptedCount,
     required this.partialCount,
     required this.uniqueItems,
+    required this.compact,
   });
 
   final int pendingCount;
   final int acceptedCount;
   final int partialCount;
   final int uniqueItems;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -380,7 +450,7 @@ class _MetricGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
-      childAspectRatio: 1.55,
+      childAspectRatio: compact ? 1.1 : 1.55,
       children: [
         _EnterpriseMetricTile(
           label: 'Pending Queue',
