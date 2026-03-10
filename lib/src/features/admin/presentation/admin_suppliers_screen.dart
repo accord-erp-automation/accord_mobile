@@ -4,6 +4,7 @@ import '../../../core/widgets/app_shell.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../shared/models/app_models.dart';
 import 'widgets/admin_dock.dart';
+import 'widgets/admin_supplier_list_module.dart';
 import 'package:flutter/material.dart';
 
 class AdminSuppliersScreen extends StatefulWidget {
@@ -63,7 +64,7 @@ class _AdminSuppliersScreenState extends State<AdminSuppliersScreen> {
         onTap: () => Navigator.of(context).maybePop(),
       ),
       title: 'Suppliers',
-      subtitle: 'Qo‘shish va code ro‘yxati.',
+      subtitle: 'Qo‘shish va ixcham list moduli.',
       bottom: const AdminDock(activeTab: AdminDockTab.suppliers),
       child: FutureBuilder<List<AdminSupplier>>(
         future: _future,
@@ -81,7 +82,7 @@ class _AdminSuppliersScreenState extends State<AdminSuppliersScreen> {
           final items = snapshot.data ?? const <AdminSupplier>[];
           return ListView.separated(
             padding: EdgeInsets.zero,
-            itemCount: items.length + 1,
+            itemCount: 2,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               if (index == 0) {
@@ -113,68 +114,15 @@ class _AdminSuppliersScreenState extends State<AdminSuppliersScreen> {
                   ),
                 );
               }
-              final item = items[index - 1];
-              return InkWell(
-                borderRadius: BorderRadius.circular(24),
-                onTap: () async {
+              return AdminSupplierListModule(
+                items: items,
+                onTapSupplier: (item) async {
                   await Navigator.of(context).pushNamed(
                     AppRoutes.adminSupplierDetail,
                     arguments: item.ref,
                   );
                   await _reload();
                 },
-                child: SoftCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              item.name,
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                          ),
-                          if (item.blocked)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0x22C53B30),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                'Blocked',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(color: const Color(0xFFC53B30)),
-                              ),
-                            ),
-                          const SizedBox(width: 10),
-                          const Icon(Icons.arrow_forward_rounded),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(item.phone,
-                          style: Theme.of(context).textTheme.bodySmall),
-                      const SizedBox(height: 10),
-                      SelectableText(
-                        item.code,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        item.assignedItemCount == 0
-                            ? 'Mahsulot biriktirilmagan'
-                            : 'Biriktirilgan mahsulotlar: ${item.assignedItemCount}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
               );
             },
           );
