@@ -1,4 +1,5 @@
 import '../features/auth/presentation/login_screen.dart';
+import '../features/admin/presentation/admin_activity_screen.dart';
 import '../features/admin/presentation/admin_create_hub_screen.dart';
 import '../features/admin/presentation/admin_home_screen.dart';
 import '../features/admin/presentation/admin_inactive_suppliers_screen.dart';
@@ -41,6 +42,7 @@ class AppRoutes {
   static const String pinSetupEntry = '/pin-setup-entry';
   static const String pinSetupConfirm = '/pin-setup-confirm';
   static const String adminHome = '/admin-home';
+  static const String adminActivity = '/admin-activity';
   static const String adminCreateHub = '/admin-create-hub';
   static const String adminSettings = '/admin-settings';
   static const String adminSuppliers = '/admin-suppliers';
@@ -58,6 +60,7 @@ class AppRouter {
     AppRoutes.supplierRecent,
     AppRoutes.werkaHome,
     AppRoutes.adminHome,
+    AppRoutes.adminActivity,
     AppRoutes.adminCreateHub,
     AppRoutes.adminSettings,
     AppRoutes.adminSuppliers,
@@ -105,6 +108,8 @@ class AppRouter {
         return _buildRoute(settings, PinSetupConfirmScreen(args: args));
       case AppRoutes.adminHome:
         return _buildRoute(settings, const AdminHomeScreen());
+      case AppRoutes.adminActivity:
+        return _buildRoute(settings, const AdminActivityScreen());
       case AppRoutes.adminCreateHub:
         return _buildRoute(settings, const AdminCreateHubScreen());
       case AppRoutes.adminSettings:

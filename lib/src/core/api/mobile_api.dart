@@ -258,6 +258,22 @@ class MobileApi {
     );
   }
 
+  Future<List<DispatchRecord>> adminActivity() async {
+    final response = await _sendAuthorized(
+      () => http.get(
+        Uri.parse('$baseUrl/v1/mobile/admin/activity'),
+        headers: _headers(requireToken()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Admin activity failed');
+    }
+    final List<dynamic> json = jsonDecode(response.body) as List<dynamic>;
+    return json
+        .map((item) => DispatchRecord.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<List<AdminSupplier>> adminSuppliers() async {
     final response = await _sendAuthorized(
       () => http.get(

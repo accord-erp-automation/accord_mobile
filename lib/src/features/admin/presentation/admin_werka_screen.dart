@@ -63,7 +63,7 @@ class _AdminWerkaScreenState extends State<AdminWerkaScreen> {
     return AppShell(
       title: 'Werka',
       subtitle: 'Omborchi sozlamalari.',
-      bottom: const AdminDock(activeTab: AdminDockTab.werka),
+      bottom: const AdminDock(activeTab: AdminDockTab.settings),
       child: FutureBuilder<AdminSettings>(
         future: _future,
         builder: (context, snapshot) {

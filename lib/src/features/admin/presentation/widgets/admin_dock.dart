@@ -6,7 +6,7 @@ enum AdminDockTab {
   home,
   suppliers,
   settings,
-  werka,
+  activity,
   profile,
 }
 
@@ -56,12 +56,14 @@ class AdminDock extends StatelessWidget {
       ),
       trailing: [
         DockButton(
-          icon: Icons.badge_outlined,
-          active: activeTab == AdminDockTab.werka,
+          icon: Icons.pending_actions_outlined,
+          active: activeTab == AdminDockTab.activity,
           onTap: () {
-            if (activeTab == AdminDockTab.werka) return;
+            if (activeTab == AdminDockTab.activity) return;
             Navigator.of(context).pushNamedAndRemoveUntil(
-                AppRoutes.adminWerka, (route) => false);
+              AppRoutes.adminActivity,
+              (route) => false,
+            );
           },
         ),
         DockButton(
