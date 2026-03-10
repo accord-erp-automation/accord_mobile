@@ -44,6 +44,24 @@ class AdminSupplierListModule extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 14),
             child: Row(
               children: [
+                Container(
+                  height: 40,
+                  width: 40,
+                  decoration: BoxDecoration(
+                    color: AppTheme.actionSurface(context),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppTheme.cardBorder(context)),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    item.kind == AdminUserKind.werka
+                        ? Icons.badge_outlined
+                        : Icons.person_outline_rounded,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,8 +96,6 @@ class AdminSupplierListModule extends StatelessWidget {
                           ),
                     ),
                   ),
-                const SizedBox(width: 10),
-                const Icon(Icons.arrow_forward_ios_rounded, size: 16),
               ],
             ),
           ),
