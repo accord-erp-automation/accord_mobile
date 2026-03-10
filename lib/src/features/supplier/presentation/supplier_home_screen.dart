@@ -14,13 +14,28 @@ class SupplierHomeScreen extends StatefulWidget {
   State<SupplierHomeScreen> createState() => _SupplierHomeScreenState();
 }
 
-class _SupplierHomeScreenState extends State<SupplierHomeScreen> {
+class _SupplierHomeScreenState extends State<SupplierHomeScreen>
+    with WidgetsBindingObserver {
   late Future<List<DispatchRecord>> _historyFuture;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _historyFuture = MobileApi.instance.supplierHistory();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      _reload();
+    }
   }
 
   Future<void> _reload() async {

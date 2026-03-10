@@ -12,13 +12,28 @@ class SupplierRecentScreen extends StatefulWidget {
   State<SupplierRecentScreen> createState() => _SupplierRecentScreenState();
 }
 
-class _SupplierRecentScreenState extends State<SupplierRecentScreen> {
+class _SupplierRecentScreenState extends State<SupplierRecentScreen>
+    with WidgetsBindingObserver {
   late Future<List<DispatchRecord>> _itemsFuture;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _itemsFuture = MobileApi.instance.supplierHistory();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      _reload();
+    }
   }
 
   Future<void> _reload() async {

@@ -13,13 +13,28 @@ class WerkaHomeScreen extends StatefulWidget {
   State<WerkaHomeScreen> createState() => _WerkaHomeScreenState();
 }
 
-class _WerkaHomeScreenState extends State<WerkaHomeScreen> {
+class _WerkaHomeScreenState extends State<WerkaHomeScreen>
+    with WidgetsBindingObserver {
   late Future<List<DispatchRecord>> _pendingFuture;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _pendingFuture = MobileApi.instance.werkaPending();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      _reload();
+    }
   }
 
   Future<void> _reload() async {

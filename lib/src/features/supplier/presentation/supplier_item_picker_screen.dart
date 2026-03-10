@@ -14,20 +14,30 @@ class SupplierItemPickerScreen extends StatefulWidget {
       _SupplierItemPickerScreenState();
 }
 
-class _SupplierItemPickerScreenState extends State<SupplierItemPickerScreen> {
+class _SupplierItemPickerScreenState extends State<SupplierItemPickerScreen>
+    with WidgetsBindingObserver {
   final TextEditingController controller = TextEditingController();
   late Future<List<SupplierItem>> itemsFuture;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     itemsFuture = MobileApi.instance.supplierItems();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     controller.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      _reload();
+    }
   }
 
   Future<void> _reload() async {
