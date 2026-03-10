@@ -42,8 +42,8 @@ class SupplierDock extends StatelessWidget {
         ),
         DockButton(
           iconWidget: const DockSvgIcon(
-            fillAsset: 'assets/icons/mail-ai-fill.svg',
-            lineAsset: 'assets/icons/mail-ai-line.svg',
+            fillAsset: 'assets/icons/notification-3-fill.svg',
+            lineAsset: 'assets/icons/notification-3-line.svg',
             primary: false,
           ),
           active: activeTab == SupplierDockTab.notifications,
