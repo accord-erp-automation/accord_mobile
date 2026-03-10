@@ -669,12 +669,26 @@ class _ThemeIconButton extends StatelessWidget {
           border: Border.all(color: AppTheme.cardBorder(context)),
         ),
         alignment: Alignment.center,
-        child: AnimatedRotation(
+        child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 320),
-          curve: Curves.easeInOutCubic,
-          turns: isDark ? -0.08 : 0,
+          switchInCurve: Curves.easeInOutCubic,
+          switchOutCurve: Curves.easeInOutCubic,
+          transitionBuilder: (child, animation) {
+            final turns = Tween<double>(
+              begin: 0.15,
+              end: 0,
+            ).animate(animation);
+            return RotationTransition(
+              turns: turns,
+              child: FadeTransition(
+                opacity: animation,
+                child: child,
+              ),
+            );
+          },
           child: SvgPicture.asset(
             asset,
+            key: ValueKey<String>(asset),
             width: 22,
             height: 22,
             colorFilter: ColorFilter.mode(
