@@ -262,6 +262,7 @@ class MobileApi {
     required double acceptedQty,
     double returnedQty = 0,
     String returnReason = '',
+    String returnComment = '',
   }) async {
     final http.Response response = await _sendAuthorized(
       () => http.post(
@@ -273,6 +274,7 @@ class MobileApi {
           'accepted_qty': acceptedQty,
           'returned_qty': returnedQty,
           'return_reason': returnReason,
+          'return_comment': returnComment,
         }),
       ),
     );

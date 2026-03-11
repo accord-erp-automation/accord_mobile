@@ -20,7 +20,9 @@ class WerkaDetailScreen extends StatefulWidget {
 class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
   late final TextEditingController controller;
   late final TextEditingController returnedController;
+  late final TextEditingController returnCommentController;
   bool showReturnFields = false;
+  bool fullReturnMode = false;
   bool submitting = false;
   String? returnReason;
 
@@ -36,12 +38,14 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
     controller =
         TextEditingController(text: widget.record.sentQty.toStringAsFixed(0));
     returnedController = TextEditingController();
+    returnCommentController = TextEditingController();
   }
 
   @override
   void dispose() {
     controller.dispose();
     returnedController.dispose();
+    returnCommentController.dispose();
     super.dispose();
   }
 
@@ -53,12 +57,18 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
   }
 
   Future<void> _submit() async {
-    final acceptedQty = double.tryParse(controller.text.trim()) ?? 0;
+    final double acceptedQty = fullReturnMode
+        ? 0.0
+        : (double.tryParse(controller.text.trim()) ?? 0.0);
     if (acceptedQty <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Qabul qilingan miqdorni kiriting.')),
-      );
-      return;
+      if (fullReturnMode) {
+        // full return mode handles zero accepted qty
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Qabul qilingan miqdorni kiriting.')),
+        );
+        return;
+      }
     }
     if (acceptedQty > widget.record.sentQty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -72,6 +82,13 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
     }
 
     final difference = widget.record.sentQty - acceptedQty;
+    final returnComment = returnCommentController.text.trim();
+    if (fullReturnMode && returnComment.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Hammasini qaytarishda izoh majburiy.')),
+      );
+      return;
+    }
     if (difference > 0.0001 && !showReturnFields) {
       setState(() {
         showReturnFields = true;
@@ -105,8 +122,9 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
       final accepted = await MobileApi.instance.confirmReceipt(
         receiptID: widget.record.id,
         acceptedQty: acceptedQty,
-        returnedQty: returnedQty,
-        returnReason: returnReason ?? '',
+        returnedQty: fullReturnMode ? widget.record.sentQty : returnedQty,
+        returnReason: fullReturnMode ? '' : (returnReason ?? ''),
+        returnComment: returnComment,
       );
       if (!mounted) {
         return;
@@ -181,12 +199,50 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             style: textTheme.displaySmall,
+            readOnly: fullReturnMode,
             decoration: InputDecoration(
               hintText: '0',
               suffixText: widget.record.uom,
             ),
           ),
-          if (showReturnFields) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () {
+                setState(() {
+                  fullReturnMode = !fullReturnMode;
+                  if (fullReturnMode) {
+                    controller.text = '0';
+                    showReturnFields = false;
+                    returnedController.clear();
+                    returnReason = null;
+                  } else {
+                    controller.text =
+                        widget.record.sentQty.toStringAsFixed(0);
+                    returnCommentController.clear();
+                  }
+                });
+              },
+              child: Text(
+                fullReturnMode
+                    ? 'Hammasini qaytarish tanlangan'
+                    : 'Hammasini qaytarish',
+              ),
+            ),
+          ),
+          if (fullReturnMode) ...[
+            const SizedBox(height: 18),
+            TextField(
+              controller: returnCommentController,
+              minLines: 3,
+              maxLines: 5,
+              decoration: const InputDecoration(
+                labelText: 'Izoh',
+                hintText: 'Hammasini qaytarish sababi',
+              ),
+            ),
+          ] else if (showReturnFields) ...[
             const SizedBox(height: 18),
             TextField(
               controller: returnedController,
@@ -243,7 +299,7 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
             child: ElevatedButton(
               onPressed: submitting ? null : _submit,
               child: Text(
-                submitting ? 'Saqlanmoqda...' : 'Qabul qilishni yakunlash',
+                submitting ? 'Saqlanmoqda...' : 'Yakunlash',
               ),
             ),
           ),
