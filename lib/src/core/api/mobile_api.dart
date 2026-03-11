@@ -50,6 +50,38 @@ class MobileApi {
     return profile;
   }
 
+  Future<void> registerPushToken({
+    required String tokenValue,
+    required String platform,
+  }) async {
+    final response = await _sendAuthorized(
+      () => http.post(
+        Uri.parse('$baseUrl/v1/mobile/push/token'),
+        headers: _headers(requireToken())
+          ..['Content-Type'] = 'application/json',
+        body: jsonEncode({
+          'token': tokenValue,
+          'platform': platform,
+        }),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Push token register failed');
+    }
+  }
+
+  Future<void> unregisterPushToken(String tokenValue) async {
+    final token = AppSession.instance.token;
+    if (token == null || token.isEmpty) {
+      return;
+    }
+    await http.delete(
+      Uri.parse('$baseUrl/v1/mobile/push/token')
+          .replace(queryParameters: {'token': tokenValue}),
+      headers: _headers(token),
+    );
+  }
+
   Future<void> logout() async {
     final String? token = AppSession.instance.token;
     if (token != null) {

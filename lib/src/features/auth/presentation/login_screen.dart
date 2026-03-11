@@ -1,5 +1,6 @@
 import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
+import '../../../core/notifications/push_messaging_service.dart';
 import '../../../core/security/security_controller.dart';
 import '../../../core/widgets/app_shell.dart';
 import '../../../core/widgets/motion_widgets.dart';
@@ -138,6 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ..setString(lastCodeKey, code)
           ..setString(lastPhoneKey, phone);
       });
+      PushMessagingService.instance.syncCurrentToken();
       SecurityController.instance.unlockAfterLogin();
       final String route = profile.role == UserRole.supplier
           ? AppRoutes.supplierHome
