@@ -1,6 +1,5 @@
 import '../../../app/app_router.dart';
 import '../../../core/widgets/app_shell.dart';
-import '../../../core/widgets/common_widgets.dart';
 import '../../shared/models/app_models.dart';
 import 'supplier_confirm_screen.dart';
 import 'widgets/supplier_dock.dart';
@@ -29,37 +28,32 @@ class _SupplierQtyScreenState extends State<SupplierQtyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return AppShell(
       title: 'Miqdor',
       subtitle: '',
       bottom: const SupplierDock(activeTab: null, centerActive: true),
-      child: Column(
+      child: ListView(
+        padding: EdgeInsets.zero,
         children: [
-          SoftCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(widget.item.code,
-                    style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 6),
-                Text(widget.item.name),
-              ],
-            ),
+          Text(
+            widget.item.code,
+            style: textTheme.titleLarge,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            widget.item.name,
+            style: textTheme.bodyLarge,
           ),
           const SizedBox(height: 18),
           TextField(
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            style: Theme.of(context).textTheme.displaySmall,
+            style: textTheme.displaySmall,
             decoration: InputDecoration(
               hintText: '0',
               suffixText: widget.item.uom,
             ),
-          ),
-          const SizedBox(height: 16),
-          const SoftCard(
-            child: Text(
-                'MVP preview: keyingi bosqichda son keyboard va validation state yanada silliqlanadi.'),
           ),
           const SizedBox(height: 18),
           SizedBox(
