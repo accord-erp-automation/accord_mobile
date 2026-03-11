@@ -62,12 +62,6 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
     return AppShell(
       title: 'Werka',
       subtitle: '',
-      actions: [
-        AppShellIconAction(
-          icon: Icons.person_outline_rounded,
-          onTap: () => Navigator.of(context).pushNamed('/profile'),
-        ),
-      ],
       bottom: const WerkaDock(activeTab: WerkaDockTab.home),
       child: Column(
         children: [
@@ -150,15 +144,8 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      if (previewItems.isEmpty)
-                        SoftCard(
-                          child: Text(
-                            'Hozircha jarayondagi mahsulot yo‘q.',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        )
-                      else
+                      if (previewItems.isNotEmpty) ...[
+                        const SizedBox(height: 16),
                         Padding(
                           padding: const EdgeInsets.only(bottom: 12),
                           child: Text(
@@ -166,6 +153,7 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                         ),
+                      ],
                       ...previewItems.asMap().entries.map((entry) {
                         final index = entry.key;
                         final DispatchRecord record = entry.value;

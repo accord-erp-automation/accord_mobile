@@ -102,22 +102,6 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
-                SmoothAppear(
-                  child: SoftCard(
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '${items.length} ta pending bildirishnoma',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                        ),
-                        const Icon(Icons.notifications_none_rounded),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
                 ...items.asMap().entries.map((entry) {
                   final index = entry.key;
                   final record = entry.value;
