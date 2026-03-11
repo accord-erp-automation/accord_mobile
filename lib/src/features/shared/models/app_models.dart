@@ -39,6 +39,7 @@ class SupplierItem {
 class DispatchRecord {
   const DispatchRecord({
     required this.id,
+    required this.supplierRef,
     required this.supplierName,
     required this.itemCode,
     required this.itemName,
@@ -55,6 +56,7 @@ class DispatchRecord {
   });
 
   final String id;
+  final String supplierRef;
   final String supplierName;
   final String itemCode;
   final String itemName;
@@ -72,6 +74,7 @@ class DispatchRecord {
   factory DispatchRecord.fromJson(Map<String, dynamic> json) {
     return DispatchRecord(
       id: json['id'] as String? ?? '',
+      supplierRef: json['supplier_ref'] as String? ?? '',
       supplierName: json['supplier_name'] as String? ?? '',
       itemCode: json['item_code'] as String? ?? '',
       itemName: json['item_name'] as String? ?? '',

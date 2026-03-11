@@ -30,6 +30,7 @@ class FakeRepository {
     return const [
       DispatchRecord(
         id: 'MAT-PRE-0009',
+        supplierRef: 'SUP-001',
         supplierName: 'Abdulloh',
         itemCode: 'ITEM-014',
         itemName: 'Sunflower Oil',
@@ -46,6 +47,7 @@ class FakeRepository {
       ),
       DispatchRecord(
         id: 'MAT-PRE-0008',
+        supplierRef: 'SUP-001',
         supplierName: 'Abdulloh',
         itemCode: 'ITEM-023',
         itemName: 'Packing Box',
@@ -62,6 +64,7 @@ class FakeRepository {
       ),
       DispatchRecord(
         id: 'MAT-PRE-0007',
+        supplierRef: 'SUP-001',
         supplierName: 'Abdulloh',
         itemCode: 'ITEM-001',
         itemName: 'Premium Rice',
@@ -83,6 +86,7 @@ class FakeRepository {
     return const [
       DispatchRecord(
         id: 'MAT-PRE-0011',
+        supplierRef: 'SUP-001',
         supplierName: 'Abdulloh',
         itemCode: 'ITEM-001',
         itemName: 'Premium Rice',
@@ -99,6 +103,7 @@ class FakeRepository {
       ),
       DispatchRecord(
         id: 'MAT-PRE-0010',
+        supplierRef: 'SUP-002',
         supplierName: 'Azimjon',
         itemCode: 'ITEM-014',
         itemName: 'Sunflower Oil',

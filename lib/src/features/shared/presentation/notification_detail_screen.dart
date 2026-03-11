@@ -181,6 +181,25 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
 
           final detail = snapshot.data!;
           final record = detail.record;
+          final currentProfile = AppSession.instance.profile;
+          final belongsToCurrentSupplier = role != UserRole.supplier ||
+              currentProfile == null ||
+              record.supplierRef.trim().isEmpty ||
+              record.supplierRef.trim() == currentProfile.ref.trim();
+          if (!belongsToCurrentSupplier) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) {
+                return;
+              }
+              Navigator.of(context).maybePop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Bu receipt sizga tegishli emas.'),
+                ),
+              );
+            });
+            return const SizedBox.shrink();
+          }
           final canConfirm = role == UserRole.werka &&
               record.eventType.isEmpty &&
               (record.status == DispatchStatus.pending ||

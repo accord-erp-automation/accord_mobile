@@ -46,6 +46,7 @@ class PushMessagingService {
         role: AppSession.instance.profile?.role ?? UserRole.supplier,
         record: DispatchRecord(
           id: data['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
+          supplierRef: data['supplier_ref'] ?? '',
           supplierName: data['supplier_name'] ?? '',
           itemCode: data['item_code'] ?? '',
           itemName: data['item_name'] ?? '',
