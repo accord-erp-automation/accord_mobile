@@ -1,7 +1,6 @@
 import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
 import '../../../core/widgets/app_shell.dart';
-import '../../../core/widgets/common_widgets.dart';
 import '../../shared/models/app_models.dart';
 import 'widgets/supplier_dock.dart';
 import 'package:flutter/material.dart';
@@ -26,22 +25,62 @@ class SupplierConfirmScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return AppShell(
       title: 'Tasdiqlash',
       subtitle: '',
       bottom: const SupplierDock(activeTab: null, centerActive: true),
-      child: Column(
+      child: ListView(
+        padding: EdgeInsets.zero,
         children: [
-          SoftCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Text.rich(
+            TextSpan(
+              style: textTheme.bodyLarge,
               children: [
-                _Row(label: 'Mahsulot', value: args.item.code),
-                _Row(label: 'Nomi', value: args.item.name),
-                _Row(
-                    label: 'Miqdor',
-                    value: '${args.qty.toStringAsFixed(2)} ${args.item.uom}'),
-                _Row(label: 'Ombor', value: args.item.warehouse),
+                const TextSpan(text: 'Mahsulot: '),
+                TextSpan(
+                  text: args.item.code,
+                  style: textTheme.titleMedium,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text.rich(
+            TextSpan(
+              style: textTheme.bodyLarge,
+              children: [
+                const TextSpan(text: 'Nomi: '),
+                TextSpan(
+                  text: args.item.name,
+                  style: textTheme.titleMedium,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text.rich(
+            TextSpan(
+              style: textTheme.bodyLarge,
+              children: [
+                const TextSpan(text: 'Miqdor: '),
+                TextSpan(
+                  text: '${args.qty.toStringAsFixed(2)} ${args.item.uom}',
+                  style: textTheme.titleMedium,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text.rich(
+            TextSpan(
+              style: textTheme.bodyLarge,
+              children: [
+                const TextSpan(text: 'Ombor: '),
+                TextSpan(
+                  text: args.item.warehouse,
+                  style: textTheme.titleMedium,
+                ),
               ],
             ),
           ),
@@ -72,31 +111,6 @@ class SupplierConfirmScreen extends StatelessWidget {
               child: const Text('Orqaga qaytish'),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Row extends StatelessWidget {
-  const _Row({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: Theme.of(context).textTheme.bodySmall),
-          const SizedBox(height: 4),
-          Text(value, style: Theme.of(context).textTheme.titleMedium),
         ],
       ),
     );
