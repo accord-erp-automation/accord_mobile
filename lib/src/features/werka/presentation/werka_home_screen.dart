@@ -16,13 +16,13 @@ class WerkaHomeScreen extends StatefulWidget {
 
 class _WerkaHomeScreenState extends State<WerkaHomeScreen>
     with WidgetsBindingObserver {
-  late Future<List<DispatchRecord>> _pendingFuture;
+  late Future<_WerkaHomeData> _homeFuture;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _pendingFuture = MobileApi.instance.werkaPending();
+    _homeFuture = _loadHome();
   }
 
   @override
@@ -39,11 +39,22 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
   }
 
   Future<void> _reload() async {
-    final future = MobileApi.instance.werkaPending();
+    final future = _loadHome();
     setState(() {
-      _pendingFuture = future;
+      _homeFuture = future;
     });
     await future;
+  }
+
+  Future<_WerkaHomeData> _loadHome() async {
+    final results = await Future.wait<dynamic>([
+      MobileApi.instance.werkaPending(),
+      MobileApi.instance.werkaHistory(),
+    ]);
+    return _WerkaHomeData(
+      pending: results[0] as List<DispatchRecord>,
+      history: results[1] as List<DispatchRecord>,
+    );
   }
 
   @override
@@ -61,8 +72,8 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
       child: Column(
         children: [
           Expanded(
-            child: FutureBuilder<List<DispatchRecord>>(
-              future: _pendingFuture,
+            child: FutureBuilder<_WerkaHomeData>(
+              future: _homeFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState != ConnectionState.done) {
                   return const Center(child: CircularProgressIndicator());
@@ -103,35 +114,64 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
                   );
                 }
 
-                final items = snapshot.data ?? <DispatchRecord>[];
+                final data = snapshot.data ??
+                    const _WerkaHomeData(
+                      pending: <DispatchRecord>[],
+                      history: <DispatchRecord>[],
+                    );
+                final items = data.pending;
+                final confirmedCount = data.history
+                    .where((item) =>
+                        item.status == DispatchStatus.accepted ||
+                        item.status == DispatchStatus.partial)
+                    .length;
+                final previewItems =
+                    items.length > 3 ? items.take(3).toList() : items;
 
                 return RefreshIndicator.adaptive(
                   onRefresh: _reload,
                   child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     children: [
-                      SmoothAppear(
-                        child: SoftCard(
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  '${items.length} ta pending bildirishnoma',
-                                  style: Theme.of(context).textTheme.titleLarge,
-                                ),
-                              ),
-                              const Icon(Icons.inventory_2_outlined),
-                            ],
+                      Row(
+                        children: [
+                          Expanded(
+                            child: MetricBadge(
+                              label: 'Jarayondagi mahsulotlar',
+                              value: items.length.toString(),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: MetricBadge(
+                              label: 'Tasdiqlangan mahsulotlar',
+                              value: confirmedCount.toString(),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
-                      ...items.asMap().entries.map((entry) {
+                      if (previewItems.isEmpty)
+                        SoftCard(
+                          child: Text(
+                            'Hozircha jarayondagi mahsulot yo‘q.',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        )
+                      else
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Text(
+                            'Jarayondagi mahsulotlar',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ),
+                      ...previewItems.asMap().entries.map((entry) {
                         final index = entry.key;
                         final DispatchRecord record = entry.value;
                         return Padding(
                           padding: EdgeInsets.only(
-                            bottom: index == items.length - 1 ? 0 : 12,
+                            bottom: index == previewItems.length - 1 ? 0 : 12,
                           ),
                           child: SmoothAppear(
                             delay: Duration(milliseconds: 70 + (index * 80)),
@@ -189,4 +229,14 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
       ),
     );
   }
+}
+
+class _WerkaHomeData {
+  const _WerkaHomeData({
+    required this.pending,
+    required this.history,
+  });
+
+  final List<DispatchRecord> pending;
+  final List<DispatchRecord> history;
 }
