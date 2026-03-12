@@ -163,13 +163,22 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
             title: const Text('Tasdiqlash'),
             content: const Text('Haqiqatan ham tasdiqlaysizmi?'),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Yo‘q'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Ha'),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Yo‘q'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: const Text('Ha'),
+                    ),
+                  ),
+                ],
               ),
             ],
           );
