@@ -209,6 +209,22 @@ class _SupplierNotificationRow extends StatelessWidget {
   final bool isFirst;
   final bool isLast;
 
+  String _secondary(DispatchRecord record) {
+    if (record.highlight.trim().isNotEmpty) {
+      return record.highlight;
+    }
+    return record.itemName;
+  }
+
+  String _metricLine(DispatchRecord record) {
+    final sent =
+        '${record.sentQty.toStringAsFixed(0)} ${record.uom} jo‘natildi';
+    if (record.acceptedQty > 0) {
+      return '$sent • ${record.acceptedQty.toStringAsFixed(0)} ${record.uom} qabul';
+    }
+    return sent;
+  }
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
@@ -232,6 +248,7 @@ class _SupplierNotificationRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Text(
@@ -247,53 +264,36 @@ class _SupplierNotificationRow extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             Text(
-              '${record.itemCode} • ${record.itemName}',
+              _secondary(record),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: highlighted ? Colors.white70 : null,
                   ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 8),
-            Text(
-              'Jo‘natildi: ${record.sentQty.toStringAsFixed(0)} ${record.uom}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: highlighted ? Colors.white70 : null,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _metricLine(record),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: highlighted ? Colors.white70 : null,
+                        ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-            ),
-            if (record.acceptedQty > 0) ...[
-              const SizedBox(height: 4),
-              Text(
-                'Qabul qilindi: ${record.acceptedQty.toStringAsFixed(0)} ${record.uom}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: highlighted ? Colors.white70 : null,
-                    ),
-              ),
-            ],
-            if (record.note.trim().isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                record.note,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: highlighted ? Colors.white70 : null,
-                    ),
-              ),
-            ],
-            if (record.highlight.trim().isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                record.highlight,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: highlighted ? Colors.white70 : null,
-                    ),
-              ),
-            ],
-            const SizedBox(height: 8),
-            Text(
-              record.createdLabel,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: highlighted ? Colors.white70 : null,
-                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  record.createdLabel,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: highlighted ? Colors.white70 : null,
+                      ),
+                ),
+              ],
             ),
           ],
         ),
