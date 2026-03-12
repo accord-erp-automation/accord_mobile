@@ -18,28 +18,27 @@ class SupplierHomeScreen extends StatefulWidget {
 
 class _SupplierHomeScreenState extends State<SupplierHomeScreen>
     with WidgetsBindingObserver {
-  static const String _cacheKey = 'cache_supplier_home_history';
-  late Future<List<DispatchRecord>> _historyFuture;
-  List<DispatchRecord>? _cachedHistory;
+  static const String _cacheKey = 'cache_supplier_home_summary';
+  late Future<SupplierHomeSummary> _summaryFuture;
+  SupplierHomeSummary? _cachedSummary;
   int _refreshVersion = 0;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _historyFuture = MobileApi.instance.supplierHistory();
+    _summaryFuture = MobileApi.instance.supplierSummary();
     _loadCache();
     RefreshHub.instance.addListener(_handlePushRefresh);
   }
 
   Future<void> _loadCache() async {
-    final raw = await JsonCacheStore.instance.readList(_cacheKey);
+    final raw = await JsonCacheStore.instance.readMap(_cacheKey);
     if (raw == null || !mounted) {
       return;
     }
     setState(() {
-      _cachedHistory =
-          raw.map((item) => DispatchRecord.fromJson(item)).toList();
+      _cachedSummary = SupplierHomeSummary.fromJson(raw);
     });
   }
 
@@ -69,15 +68,12 @@ class _SupplierHomeScreenState extends State<SupplierHomeScreen>
   }
 
   Future<void> _reload() async {
-    final future = MobileApi.instance.supplierHistory();
+    final future = MobileApi.instance.supplierSummary();
     setState(() {
-      _historyFuture = future;
+      _summaryFuture = future;
     });
-    final items = await future;
-    await JsonCacheStore.instance.writeList(
-      _cacheKey,
-      items.map((item) => item.toJson()).toList(),
-    );
+    final summary = await future;
+    await JsonCacheStore.instance.writeMap(_cacheKey, summary.toJson());
   }
 
   @override
@@ -86,15 +82,15 @@ class _SupplierHomeScreenState extends State<SupplierHomeScreen>
       title: 'Supplier',
       subtitle: '',
       bottom: const SupplierDock(activeTab: SupplierDockTab.home),
-      child: FutureBuilder<List<DispatchRecord>>(
-        future: _historyFuture,
+      child: FutureBuilder<SupplierHomeSummary>(
+        future: _summaryFuture,
         builder: (context, snapshot) {
-          final history = snapshot.data ?? _cachedHistory ?? <DispatchRecord>[];
+          final summary = snapshot.data ?? _cachedSummary;
           if (snapshot.connectionState != ConnectionState.done &&
-              history.isEmpty) {
+              summary == null) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snapshot.hasError && history.isEmpty) {
+          if (snapshot.hasError && summary == null) {
             return RefreshIndicator.adaptive(
               onRefresh: _reload,
               child: ListView(
@@ -106,7 +102,8 @@ class _SupplierHomeScreenState extends State<SupplierHomeScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Home yuklanmadi', style: Theme.of(context).textTheme.titleMedium),
+                        Text('Home yuklanmadi',
+                            style: Theme.of(context).textTheme.titleMedium),
                         const SizedBox(height: 8),
                         Text(
                           '${snapshot.error}',
@@ -127,21 +124,7 @@ class _SupplierHomeScreenState extends State<SupplierHomeScreen>
               ),
             );
           }
-
-          final pendingCount = history
-              .where((item) =>
-                  item.status == DispatchStatus.pending ||
-                  item.status == DispatchStatus.draft)
-              .length;
-          final submittedCount = history
-              .where((item) => item.status == DispatchStatus.accepted)
-              .length;
-          final returnedCount = history
-              .where((item) =>
-                  item.status == DispatchStatus.partial ||
-                  item.status == DispatchStatus.rejected ||
-                  item.status == DispatchStatus.cancelled)
-              .length;
+          final current = summary!;
 
           return RefreshIndicator.adaptive(
             onRefresh: _reload,
@@ -151,17 +134,17 @@ class _SupplierHomeScreenState extends State<SupplierHomeScreen>
               children: [
                 _HomeStatCard(
                   label: 'Jarayonda',
-                  value: pendingCount.toString(),
+                  value: current.pendingCount.toString(),
                 ),
                 const SizedBox(height: 12),
                 _HomeStatCard(
                   label: 'Submit',
-                  value: submittedCount.toString(),
+                  value: current.submittedCount.toString(),
                 ),
                 const SizedBox(height: 12),
                 _HomeStatCard(
                   label: 'Qaytarilgan',
-                  value: returnedCount.toString(),
+                  value: current.returnedCount.toString(),
                 ),
                 const SizedBox(height: 12),
               ],

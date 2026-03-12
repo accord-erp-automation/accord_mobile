@@ -36,6 +36,58 @@ class SupplierItem {
   }
 }
 
+class SupplierHomeSummary {
+  const SupplierHomeSummary({
+    required this.pendingCount,
+    required this.submittedCount,
+    required this.returnedCount,
+  });
+
+  final int pendingCount;
+  final int submittedCount;
+  final int returnedCount;
+
+  factory SupplierHomeSummary.fromJson(Map<String, dynamic> json) {
+    return SupplierHomeSummary(
+      pendingCount: json['pending_count'] as int? ?? 0,
+      submittedCount: json['submitted_count'] as int? ?? 0,
+      returnedCount: json['returned_count'] as int? ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'pending_count': pendingCount,
+      'submitted_count': submittedCount,
+      'returned_count': returnedCount,
+    };
+  }
+}
+
+class WerkaHomeSummary {
+  const WerkaHomeSummary({
+    required this.pendingCount,
+    required this.confirmedCount,
+  });
+
+  final int pendingCount;
+  final int confirmedCount;
+
+  factory WerkaHomeSummary.fromJson(Map<String, dynamic> json) {
+    return WerkaHomeSummary(
+      pendingCount: json['pending_count'] as int? ?? 0,
+      confirmedCount: json['confirmed_count'] as int? ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'pending_count': pendingCount,
+      'confirmed_count': confirmedCount,
+    };
+  }
+}
+
 class DispatchRecord {
   const DispatchRecord({
     required this.id,
@@ -150,7 +202,8 @@ class NotificationDetail {
         json['record'] as Map<String, dynamic>? ?? <String, dynamic>{},
       ),
       comments: (json['comments'] as List<dynamic>? ?? [])
-          .map((item) => NotificationComment.fromJson(item as Map<String, dynamic>))
+          .map((item) =>
+              NotificationComment.fromJson(item as Map<String, dynamic>))
           .toList(),
     );
   }

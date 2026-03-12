@@ -179,6 +179,21 @@ class MobileApi {
         .toList();
   }
 
+  Future<SupplierHomeSummary> supplierSummary() async {
+    final http.Response response = await _sendAuthorized(
+      () => http.get(
+        Uri.parse('$baseUrl/v1/mobile/supplier/summary'),
+        headers: _headers(requireToken()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Supplier summary failed');
+    }
+    return SupplierHomeSummary.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
   Future<NotificationDetail> notificationDetail(String receiptID) async {
     final http.Response response = await _sendAuthorized(
       () => http.get(
@@ -271,6 +286,21 @@ class MobileApi {
     return json
         .map((item) => DispatchRecord.fromJson(item as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<WerkaHomeSummary> werkaSummary() async {
+    final http.Response response = await _sendAuthorized(
+      () => http.get(
+        Uri.parse('$baseUrl/v1/mobile/werka/summary'),
+        headers: _headers(requireToken()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Werka summary failed');
+    }
+    return WerkaHomeSummary.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
   }
 
   Future<List<DispatchRecord>> werkaHistory() async {
