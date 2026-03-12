@@ -128,7 +128,7 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
         ),
       ],
       bottom: const WerkaDock(activeTab: WerkaDockTab.home),
-      contentPadding: const EdgeInsets.fromLTRB(14, 0, 16, 0),
+      contentPadding: const EdgeInsets.fromLTRB(10, 0, 12, 0),
       child: Column(
         children: [
           Expanded(
@@ -379,7 +379,7 @@ class _WerkaSummaryRow extends StatelessWidget {
               child: Text(
                 label,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontSize: 17,
+                      fontSize: 18.5,
                     ),
               ),
             ),
