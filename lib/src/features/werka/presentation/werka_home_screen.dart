@@ -111,10 +111,27 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
       title: 'Werka',
       subtitle: '',
       actions: [
-        AppShellIconAction(
-          icon: Icons.notifications_none_rounded,
+        InkWell(
+          borderRadius: BorderRadius.circular(16),
           onTap: () => Navigator.of(context).pushNamed(
             AppRoutes.werkaNotifications,
+          ),
+          child: Container(
+            height: 48,
+            width: 48,
+            decoration: BoxDecoration(
+              color: AppTheme.actionSurface(context),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.cardBorder(context)),
+            ),
+            child: const Center(
+              child: DockSvgIcon(
+                fillAsset: 'assets/icons/notification-3-fill.svg',
+                lineAsset: 'assets/icons/notification-3-line.svg',
+                primary: false,
+                size: 23,
+              ),
+            ),
           ),
         ),
       ],
