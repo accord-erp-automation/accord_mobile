@@ -20,6 +20,8 @@ import '../features/supplier/presentation/supplier_confirm_screen.dart';
 import '../features/supplier/presentation/supplier_home_screen.dart';
 import '../features/supplier/presentation/supplier_item_picker_screen.dart';
 import '../features/supplier/presentation/supplier_notifications_screen.dart';
+import '../features/supplier/presentation/supplier_status_breakdown_screen.dart';
+import '../features/supplier/presentation/supplier_status_detail_screen.dart';
 import '../features/supplier/presentation/supplier_qty_screen.dart';
 import '../features/supplier/presentation/supplier_recent_screen.dart';
 import '../features/supplier/presentation/supplier_success_screen.dart';
@@ -40,6 +42,8 @@ import 'package:flutter/material.dart';
 class AppRoutes {
   static const String login = '/';
   static const String supplierHome = '/supplier-home';
+  static const String supplierStatusBreakdown = '/supplier-status-breakdown';
+  static const String supplierStatusDetail = '/supplier-status-detail';
   static const String supplierItemPicker = '/supplier-item-picker';
   static const String supplierQty = '/supplier-qty';
   static const String supplierConfirm = '/supplier-confirm';
@@ -97,6 +101,20 @@ class AppRouter {
         return _buildRoute(settings, const LoginScreen());
       case AppRoutes.supplierHome:
         return _buildRoute(settings, const SupplierHomeScreen());
+      case AppRoutes.supplierStatusBreakdown:
+        final SupplierStatusKind kind =
+            settings.arguments as SupplierStatusKind;
+        return _buildRoute(
+          settings,
+          SupplierStatusBreakdownScreen(kind: kind),
+        );
+      case AppRoutes.supplierStatusDetail:
+        final SupplierStatusDetailArgs args =
+            settings.arguments as SupplierStatusDetailArgs;
+        return _buildRoute(
+          settings,
+          SupplierStatusDetailScreen(args: args),
+        );
       case AppRoutes.supplierItemPicker:
         return _buildRoute(settings, const SupplierItemPickerScreen());
       case AppRoutes.supplierQty:

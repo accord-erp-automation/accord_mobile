@@ -194,6 +194,54 @@ class MobileApi {
     );
   }
 
+  Future<List<SupplierStatusBreakdownEntry>> supplierStatusBreakdown(
+    SupplierStatusKind kind,
+  ) async {
+    final http.Response response = await _sendAuthorized(
+      () => http.get(
+        Uri.parse('$baseUrl/v1/mobile/supplier/status-breakdown').replace(
+          queryParameters: {'kind': kind.name},
+        ),
+        headers: _headers(requireToken()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Supplier status breakdown failed');
+    }
+    final List<dynamic> json = jsonDecode(response.body) as List<dynamic>;
+    return json
+        .map(
+          (item) => SupplierStatusBreakdownEntry.fromJson(
+            item as Map<String, dynamic>,
+          ),
+        )
+        .toList();
+  }
+
+  Future<List<DispatchRecord>> supplierStatusDetails({
+    required SupplierStatusKind kind,
+    required String itemCode,
+  }) async {
+    final response = await _sendAuthorized(
+      () => http.get(
+        Uri.parse('$baseUrl/v1/mobile/supplier/status-details').replace(
+          queryParameters: {
+            'kind': kind.name,
+            'item_code': itemCode,
+          },
+        ),
+        headers: _headers(requireToken()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Supplier status details failed');
+    }
+    final List<dynamic> json = jsonDecode(response.body) as List<dynamic>;
+    return json
+        .map((item) => DispatchRecord.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<NotificationDetail> notificationDetail(String receiptID) async {
     final http.Response response = await _sendAuthorized(
       () => http.get(

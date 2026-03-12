@@ -84,6 +84,46 @@ class SupplierHomeSummary {
   }
 }
 
+enum SupplierStatusKind {
+  pending,
+  submitted,
+  returned,
+}
+
+class SupplierStatusBreakdownEntry {
+  const SupplierStatusBreakdownEntry({
+    required this.itemCode,
+    required this.itemName,
+    required this.receiptCount,
+    required this.totalSentQty,
+    required this.totalAcceptedQty,
+    required this.totalReturnedQty,
+    required this.uom,
+  });
+
+  final String itemCode;
+  final String itemName;
+  final int receiptCount;
+  final double totalSentQty;
+  final double totalAcceptedQty;
+  final double totalReturnedQty;
+  final String uom;
+
+  factory SupplierStatusBreakdownEntry.fromJson(Map<String, dynamic> json) {
+    return SupplierStatusBreakdownEntry(
+      itemCode: json['item_code'] as String? ?? '',
+      itemName: json['item_name'] as String? ?? '',
+      receiptCount: json['receipt_count'] as int? ?? 0,
+      totalSentQty: (json['total_sent_qty'] as num?)?.toDouble() ?? 0,
+      totalAcceptedQty:
+          (json['total_accepted_qty'] as num?)?.toDouble() ?? 0,
+      totalReturnedQty:
+          (json['total_returned_qty'] as num?)?.toDouble() ?? 0,
+      uom: json['uom'] as String? ?? '',
+    );
+  }
+}
+
 class WerkaHomeSummary {
   const WerkaHomeSummary({
     required this.pendingCount,

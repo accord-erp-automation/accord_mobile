@@ -1,3 +1,4 @@
+import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
 import '../../../core/cache/json_cache_store.dart';
 import '../../../core/notifications/refresh_hub.dart';
@@ -161,16 +162,28 @@ class _SupplierSummaryCard extends StatelessWidget {
             _SupplierSummaryRow(
               label: 'Jarayonda',
               value: summary.pendingCount.toString(),
+              onTap: () => Navigator.of(context).pushNamed(
+                AppRoutes.supplierStatusBreakdown,
+                arguments: SupplierStatusKind.pending,
+              ),
             ),
             const Divider(height: 1, thickness: 1),
             _SupplierSummaryRow(
               label: 'Submit',
               value: summary.submittedCount.toString(),
+              onTap: () => Navigator.of(context).pushNamed(
+                AppRoutes.supplierStatusBreakdown,
+                arguments: SupplierStatusKind.submitted,
+              ),
             ),
             const Divider(height: 1, thickness: 1),
             _SupplierSummaryRow(
               label: 'Qaytarilgan',
               value: summary.returnedCount.toString(),
+              onTap: () => Navigator.of(context).pushNamed(
+                AppRoutes.supplierStatusBreakdown,
+                arguments: SupplierStatusKind.returned,
+              ),
             ),
           ],
         ),
@@ -183,36 +196,41 @@ class _SupplierSummaryRow extends StatelessWidget {
   const _SupplierSummaryRow({
     required this.label,
     required this.value,
+    required this.onTap,
   });
 
   final String label;
   final String value;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                    fontSize: 34,
+                    color: AppTheme.isDark(context)
+                        ? Colors.white
+                        : const Color(0xFF1F1A17),
                   ),
             ),
-          ),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  fontSize: 34,
-                  color: AppTheme.isDark(context)
-                      ? Colors.white
-                      : const Color(0xFF1F1A17),
-                ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
