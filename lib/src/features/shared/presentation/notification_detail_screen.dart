@@ -7,6 +7,7 @@ import '../../supplier/presentation/widgets/supplier_dock.dart';
 import '../../werka/presentation/widgets/werka_dock.dart';
 import '../models/app_models.dart';
 import 'package:flutter/material.dart';
+import 'dart:ui';
 
 class NotificationDetailScreen extends StatefulWidget {
   const NotificationDetailScreen({
@@ -158,29 +159,37 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
     } else {
       final bool? first = await showDialog<bool>(
         context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.28),
         builder: (context) {
-          return AlertDialog(
-            title: const Text('Tasdiqlash'),
-            content: const Text('Haqiqatan ham tasdiqlaysizmi?'),
-            actions: [
-              Row(
-                children: [
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: const Text('Yo‘q'),
+          return BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: AlertDialog(
+              title: const Text('Tasdiqlash'),
+              content: const Text('Haqiqatan ham tasdiqlaysizmi?'),
+              actions: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF111111),
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('Yo‘q'),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      child: const Text('Ha'),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text('Ha'),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           );
         },
       );
