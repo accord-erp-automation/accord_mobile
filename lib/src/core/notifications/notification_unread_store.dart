@@ -111,7 +111,8 @@ class NotificationUnreadStore extends ChangeNotifier {
     if (set == null || set.isEmpty) {
       return <String>{};
     }
-    final requested = ids.map((item) => item.trim()).where((item) => item.isNotEmpty).toSet();
+    final requested =
+        ids.map((item) => item.trim()).where((item) => item.isNotEmpty).toSet();
     final highlighted = set.intersection(requested);
     if (highlighted.isEmpty) {
       return <String>{};

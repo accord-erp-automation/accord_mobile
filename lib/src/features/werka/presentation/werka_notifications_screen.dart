@@ -202,6 +202,8 @@ class _WerkaNotificationsSection extends StatelessWidget {
             _WerkaNotificationRow(
               record: items[index],
               highlighted: highlightedUnreadIds.contains(items[index].id),
+              isFirst: index == 0,
+              isLast: index == items.length - 1,
             ),
             if (index != items.length - 1)
               const Divider(height: 1, thickness: 1),
@@ -216,10 +218,14 @@ class _WerkaNotificationRow extends StatelessWidget {
   const _WerkaNotificationRow({
     required this.record,
     required this.highlighted,
+    required this.isFirst,
+    required this.isLast,
   });
 
   final DispatchRecord record;
   final bool highlighted;
+  final bool isFirst;
+  final bool isLast;
 
   String _secondary(DispatchRecord record) {
     if (record.eventType == 'supplier_ack') {
@@ -248,11 +254,11 @@ class _WerkaNotificationRow extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: highlighted ? const Color(0xFF212121) : Colors.transparent,
-          border: const Border(
-            bottom: BorderSide(
-              color: Colors.transparent,
-              width: 0,
-            ),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(isFirst ? 20 : 0),
+            topRight: Radius.circular(isFirst ? 20 : 0),
+            bottomLeft: Radius.circular(isLast ? 20 : 0),
+            bottomRight: Radius.circular(isLast ? 20 : 0),
           ),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),

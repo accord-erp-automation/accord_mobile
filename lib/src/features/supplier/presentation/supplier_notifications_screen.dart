@@ -161,136 +161,142 @@ class _SupplierNotificationsScreenState
 
           return RefreshIndicator.adaptive(
             onRefresh: _reload,
-            child: ListView.separated(
+            child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: orderedItems.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final record = orderedItems[index];
-                return InkWell(
-                  borderRadius: BorderRadius.circular(24),
-                  onTap: () => Navigator.of(context).pushNamed(
-                    AppRoutes.notificationDetail,
-                    arguments: record.id,
-                  ),
-                  child: SoftCard(
-                    backgroundColor: _highlightedUnreadIds.contains(record.id)
-                        ? const Color(0xFF212121)
-                        : null,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                notificationTitle(record),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
-                                    ?.copyWith(
-                                      color: _highlightedUnreadIds
-                                              .contains(record.id)
-                                          ? Colors.white
-                                          : null,
-                                    ),
-                              ),
-                            ),
-                            _NotificationStatusBadge(
-                              status: record.status,
-                              note: record.note,
-                            ),
-                          ],
+              padding: EdgeInsets.zero,
+              children: [
+                SoftCard(
+                  padding: EdgeInsets.zero,
+                  borderWidth: 1.45,
+                  borderRadius: 20,
+                  child: Column(
+                    children: [
+                      for (int index = 0;
+                          index < orderedItems.length;
+                          index++) ...[
+                        _SupplierNotificationRow(
+                          record: orderedItems[index],
+                          highlighted: _highlightedUnreadIds
+                              .contains(orderedItems[index].id),
+                          isFirst: index == 0,
+                          isLast: index == orderedItems.length - 1,
                         ),
-                        const SizedBox(height: 10),
-                        Text(
-                          '${record.itemCode} • ${record.itemName}',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(
-                                color: _highlightedUnreadIds.contains(record.id)
-                                    ? Colors.white70
-                                    : null,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Jo‘natildi: ${record.sentQty.toStringAsFixed(0)} ${record.uom}',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(
-                                color: _highlightedUnreadIds.contains(record.id)
-                                    ? Colors.white70
-                                    : null,
-                              ),
-                        ),
-                        if (record.acceptedQty > 0) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            'Qabul qilindi: ${record.acceptedQty.toStringAsFixed(0)} ${record.uom}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color:
-                                      _highlightedUnreadIds.contains(record.id)
-                                          ? Colors.white70
-                                          : null,
-                                ),
-                          ),
-                        ],
-                        if (record.note.trim().isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            record.note,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color:
-                                      _highlightedUnreadIds.contains(record.id)
-                                          ? Colors.white70
-                                          : null,
-                                ),
-                          ),
-                        ],
-                        if (record.highlight.trim().isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            record.highlight,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color:
-                                      _highlightedUnreadIds.contains(record.id)
-                                          ? Colors.white70
-                                          : null,
-                                ),
-                          ),
-                        ],
-                        const SizedBox(height: 8),
-                        Text(
-                          record.createdLabel,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(
-                                color: _highlightedUnreadIds.contains(record.id)
-                                    ? Colors.white70
-                                    : null,
-                              ),
-                        ),
+                        if (index != orderedItems.length - 1)
+                          const Divider(height: 1, thickness: 1),
                       ],
-                    ),
+                    ],
                   ),
-                );
-              },
+                ),
+              ],
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _SupplierNotificationRow extends StatelessWidget {
+  const _SupplierNotificationRow({
+    required this.record,
+    required this.highlighted,
+    required this.isFirst,
+    required this.isLast,
+  });
+
+  final DispatchRecord record;
+  final bool highlighted;
+  final bool isFirst;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: () => Navigator.of(context).pushNamed(
+        AppRoutes.notificationDetail,
+        arguments: record.id,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: highlighted ? const Color(0xFF212121) : Colors.transparent,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(isFirst ? 20 : 0),
+            topRight: Radius.circular(isFirst ? 20 : 0),
+            bottomLeft: Radius.circular(isLast ? 20 : 0),
+            bottomRight: Radius.circular(isLast ? 20 : 0),
+          ),
+        ),
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    notificationTitle(record),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: highlighted ? Colors.white : null,
+                        ),
+                  ),
+                ),
+                _NotificationStatusBadge(
+                  status: record.status,
+                  note: record.note,
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '${record.itemCode} • ${record.itemName}',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: highlighted ? Colors.white70 : null,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Jo‘natildi: ${record.sentQty.toStringAsFixed(0)} ${record.uom}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: highlighted ? Colors.white70 : null,
+                  ),
+            ),
+            if (record.acceptedQty > 0) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Qabul qilindi: ${record.acceptedQty.toStringAsFixed(0)} ${record.uom}',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: highlighted ? Colors.white70 : null,
+                    ),
+              ),
+            ],
+            if (record.note.trim().isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                record.note,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: highlighted ? Colors.white70 : null,
+                    ),
+              ),
+            ],
+            if (record.highlight.trim().isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                record.highlight,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: highlighted ? Colors.white70 : null,
+                    ),
+              ),
+            ],
+            const SizedBox(height: 8),
+            Text(
+              record.createdLabel,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: highlighted ? Colors.white70 : null,
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }
