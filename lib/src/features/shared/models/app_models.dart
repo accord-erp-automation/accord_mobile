@@ -36,6 +36,26 @@ class SupplierItem {
   }
 }
 
+class SupplierDirectoryEntry {
+  const SupplierDirectoryEntry({
+    required this.ref,
+    required this.name,
+    required this.phone,
+  });
+
+  final String ref;
+  final String name;
+  final String phone;
+
+  factory SupplierDirectoryEntry.fromJson(Map<String, dynamic> json) {
+    return SupplierDirectoryEntry(
+      ref: json['ref'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      phone: json['phone'] as String? ?? '',
+    );
+  }
+}
+
 class SupplierHomeSummary {
   const SupplierHomeSummary({
     required this.pendingCount,

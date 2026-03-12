@@ -74,20 +74,14 @@ class WerkaDock extends StatelessWidget {
               },
             ),
           ],
-          center: DockButton(
-            icon: Icons.inventory_2_outlined,
-            primary: true,
-            compact: compact,
-            onTap: () {
-              if (activeTab == WerkaDockTab.home) {
-                return;
-              }
-              Navigator.of(context).pushNamedAndRemoveUntil(
-                AppRoutes.werkaHome,
-                (route) => false,
-              );
-            },
-          ),
+      center: DockButton(
+        icon: Icons.add_rounded,
+        primary: true,
+        compact: compact,
+        onTap: () {
+          Navigator.of(context).pushNamed(AppRoutes.werkaCreateHub);
+        },
+      ),
           trailing: [
             DockButton(
               icon: Icons.history_rounded,

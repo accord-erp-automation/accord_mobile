@@ -288,6 +288,100 @@ class MobileApi {
         .toList();
   }
 
+  Future<List<SupplierDirectoryEntry>> werkaSuppliers() async {
+    final http.Response response = await _sendAuthorized(
+      () => http.get(
+        Uri.parse('$baseUrl/v1/mobile/werka/suppliers'),
+        headers: _headers(requireToken()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Werka suppliers failed');
+    }
+    final List<dynamic> json = jsonDecode(response.body) as List<dynamic>;
+    return json
+        .map(
+          (item) => SupplierDirectoryEntry.fromJson(
+            item as Map<String, dynamic>,
+          ),
+        )
+        .toList();
+  }
+
+  Future<List<SupplierItem>> werkaSupplierItems({
+    required String supplierRef,
+    String query = '',
+  }) async {
+    final response = await _sendAuthorized(
+      () => http.get(
+        Uri.parse('$baseUrl/v1/mobile/werka/supplier-items').replace(
+          queryParameters: {
+            'supplier_ref': supplierRef,
+            if (query.trim().isNotEmpty) 'q': query.trim(),
+          },
+        ),
+        headers: _headers(requireToken()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Werka supplier items failed');
+    }
+    final List<dynamic> json = jsonDecode(response.body) as List<dynamic>;
+    return json
+        .map((item) => SupplierItem.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<DispatchRecord> createWerkaUnannouncedDraft({
+    required String supplierRef,
+    required String itemCode,
+    required double qty,
+  }) async {
+    final response = await _sendAuthorized(
+      () => http.post(
+        Uri.parse('$baseUrl/v1/mobile/werka/unannounced/create'),
+        headers: _headers(requireToken())
+          ..['Content-Type'] = 'application/json',
+        body: jsonEncode({
+          'supplier_ref': supplierRef,
+          'item_code': itemCode,
+          'qty': qty,
+        }),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Werka unannounced create failed');
+    }
+    return DispatchRecord.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  Future<NotificationDetail> supplierRespondUnannounced({
+    required String receiptID,
+    required bool approve,
+    String reason = '',
+  }) async {
+    final response = await _sendAuthorized(
+      () => http.post(
+        Uri.parse('$baseUrl/v1/mobile/supplier/unannounced/respond'),
+        headers: _headers(requireToken())
+          ..['Content-Type'] = 'application/json',
+        body: jsonEncode({
+          'receipt_id': receiptID,
+          'approve': approve,
+          'reason': reason,
+        }),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Supplier unannounced response failed');
+    }
+    return NotificationDetail.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
   Future<WerkaHomeSummary> werkaSummary() async {
     final http.Response response = await _sendAuthorized(
       () => http.get(

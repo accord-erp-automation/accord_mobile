@@ -120,6 +120,112 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
     }
   }
 
+  Future<void> _respondWerkaUnannounced(bool approve) async {
+    final messenger = ScaffoldMessenger.of(context);
+    String reason = '';
+    if (!approve) {
+      final controller = TextEditingController();
+      final bool? confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Rad etish'),
+            content: TextField(
+              controller: controller,
+              minLines: 2,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                hintText: 'Sabab (ixtiyoriy)',
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Yo‘q'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Rad etish'),
+              ),
+            ],
+          );
+        },
+      );
+      if (confirmed != true) {
+        return;
+      }
+      reason = controller.text.trim();
+    } else {
+      final bool? first = await showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Tasdiqlash'),
+            content: const Text('Haqiqatan ham tasdiqlaysizmi?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Yo‘q'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Ha'),
+              ),
+            ],
+          );
+        },
+      );
+      if (first != true) {
+        return;
+      }
+      if (!mounted) return;
+      final bool? second = await showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Yakuniy tasdiq'),
+            content: const Text('Draft submit bo‘ladi. Davom etasizmi?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Yo‘q'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Ha'),
+              ),
+            ],
+          );
+        },
+      );
+      if (second != true) {
+        return;
+      }
+    }
+
+    setState(() => _sending = true);
+    try {
+      final updated = await MobileApi.instance.supplierRespondUnannounced(
+        receiptID: widget.receiptID,
+        approve: approve,
+        reason: reason,
+      );
+      if (!mounted) return;
+      setState(() {
+        _future = Future<NotificationDetail>.value(updated);
+      });
+    } catch (error) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Javob yuborilmadi: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _sending = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final role = AppSession.instance.profile?.role;
@@ -204,6 +310,8 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
               record.eventType.isEmpty &&
               (record.status == DispatchStatus.pending ||
                   record.status == DispatchStatus.draft);
+          final canRespondWerkaUnannounced = role == UserRole.supplier &&
+              record.eventType == 'werka_unannounced_pending';
           final isSupplierAckEvent = record.eventType == 'supplier_ack';
           final supplierAcknowledged = detail.comments.any(
             (item) =>
@@ -320,6 +428,32 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
                       ),
                       child: const Text('Qabul qilishga o‘tish'),
                     ),
+                  ),
+                ],
+                if (canRespondWerkaUnannounced) ...[
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _sending
+                              ? null
+                              : () => _respondWerkaUnannounced(false),
+                          child: const Text('Rad etaman'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _sending
+                              ? null
+                              : () => _respondWerkaUnannounced(true),
+                          child: Text(
+                            _sending ? 'Yuborilmoqda...' : 'Tasdiqlayman',
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
                 if (canAcknowledge) ...[

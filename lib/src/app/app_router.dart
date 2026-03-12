@@ -25,7 +25,12 @@ import '../features/supplier/presentation/supplier_recent_screen.dart';
 import '../features/supplier/presentation/supplier_success_screen.dart';
 import '../features/werka/presentation/werka_detail_screen.dart';
 import '../features/werka/presentation/werka_home_screen.dart';
+import '../features/werka/presentation/werka_create_hub_screen.dart';
 import '../features/werka/presentation/werka_notifications_screen.dart';
+import '../features/werka/presentation/werka_unannounced_confirm_screen.dart';
+import '../features/werka/presentation/werka_unannounced_qty_screen.dart';
+import '../features/werka/presentation/werka_unannounced_supplier_screen.dart';
+import '../features/werka/presentation/werka_unannounced_item_screen.dart';
 import '../features/werka/presentation/werka_status_detail_screen.dart';
 import '../features/werka/presentation/werka_status_breakdown_screen.dart';
 import '../features/werka/presentation/werka_success_screen.dart';
@@ -43,6 +48,11 @@ class AppRoutes {
   static const String supplierRecent = '/supplier-recent';
   static const String notificationDetail = '/notification-detail';
   static const String werkaHome = '/werka-home';
+  static const String werkaCreateHub = '/werka-create-hub';
+  static const String werkaUnannouncedSupplier = '/werka-unannounced-supplier';
+  static const String werkaUnannouncedItem = '/werka-unannounced-item';
+  static const String werkaUnannouncedQty = '/werka-unannounced-qty';
+  static const String werkaUnannouncedConfirm = '/werka-unannounced-confirm';
   static const String werkaNotifications = '/werka-notifications';
   static const String werkaStatusBreakdown = '/werka-status-breakdown';
   static const String werkaStatusDetail = '/werka-status-detail';
@@ -121,6 +131,28 @@ class AppRouter {
         );
       case AppRoutes.werkaHome:
         return _buildRoute(settings, const WerkaHomeScreen());
+      case AppRoutes.werkaCreateHub:
+        return _buildRoute(settings, const WerkaCreateHubScreen());
+      case AppRoutes.werkaUnannouncedSupplier:
+        return _buildRoute(settings, const WerkaUnannouncedSupplierScreen());
+      case AppRoutes.werkaUnannouncedItem:
+        final SupplierDirectoryEntry supplier =
+            settings.arguments as SupplierDirectoryEntry;
+        return _buildRoute(
+          settings,
+          WerkaUnannouncedItemScreen(supplier: supplier),
+        );
+      case AppRoutes.werkaUnannouncedQty:
+        final WerkaUnannouncedQtyArgs args =
+            settings.arguments as WerkaUnannouncedQtyArgs;
+        return _buildRoute(settings, WerkaUnannouncedQtyScreen(args: args));
+      case AppRoutes.werkaUnannouncedConfirm:
+        final WerkaUnannouncedConfirmArgs args =
+            settings.arguments as WerkaUnannouncedConfirmArgs;
+        return _buildRoute(
+          settings,
+          WerkaUnannouncedConfirmScreen(args: args),
+        );
       case AppRoutes.werkaNotifications:
         return _buildRoute(settings, const WerkaNotificationsScreen());
       case AppRoutes.werkaStatusBreakdown:
