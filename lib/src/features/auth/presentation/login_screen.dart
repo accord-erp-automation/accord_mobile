@@ -4,6 +4,7 @@ import '../../../core/notifications/push_messaging_service.dart';
 import '../../../core/security/security_controller.dart';
 import '../../../core/widgets/app_shell.dart';
 import '../../../core/widgets/motion_widgets.dart';
+import '../../../core/widgets/common_widgets.dart';
 import '../../shared/models/app_models.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -31,7 +32,16 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
+    phoneFocusNode.addListener(_refreshRememberedSuggestion);
+    phoneController.addListener(_refreshRememberedSuggestion);
     loadRememberedCode();
+  }
+
+  void _refreshRememberedSuggestion() {
+    if (!mounted) {
+      return;
+    }
+    setState(() {});
   }
 
   Future<void> loadRememberedCode() async {
@@ -44,67 +54,13 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       rememberedCode = savedCode;
       rememberedPhone = savedPhone;
-      if (phoneController.text.trim().isEmpty &&
-          savedPhone != null &&
-          savedPhone.isNotEmpty) {
-        phoneController.text = savedPhone;
-      }
-      if (codeController.text.trim().isEmpty &&
-          savedCode != null &&
-          savedCode.isNotEmpty) {
-        codeController.text = savedCode;
-      }
-    });
-  }
-
-  Future<void> persistRememberedCode(String value) async {
-    final prefs = await SharedPreferences.getInstance();
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) {
-      await prefs.remove(lastCodeKey);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        rememberedCode = null;
-      });
-      return;
-    }
-
-    await prefs.setString(lastCodeKey, trimmed);
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      rememberedCode = trimmed;
-    });
-  }
-
-  Future<void> persistRememberedPhone(String value) async {
-    final prefs = await SharedPreferences.getInstance();
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) {
-      await prefs.remove(lastPhoneKey);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        rememberedPhone = null;
-      });
-      return;
-    }
-
-    await prefs.setString(lastPhoneKey, trimmed);
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      rememberedPhone = trimmed;
     });
   }
 
   @override
   void dispose() {
+    phoneFocusNode.removeListener(_refreshRememberedSuggestion);
+    phoneController.removeListener(_refreshRememberedSuggestion);
     phoneController.dispose();
     codeController.dispose();
     phoneFocusNode.dispose();
@@ -158,6 +114,24 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  bool get _showRememberedSuggestion =>
+      phoneFocusNode.hasFocus &&
+      phoneController.text.trim().isEmpty &&
+      rememberedPhone != null &&
+      rememberedPhone!.isNotEmpty;
+
+  void _applyRememberedLogin() {
+    if (rememberedPhone == null || rememberedPhone!.isEmpty) {
+      return;
+    }
+    phoneController.text = rememberedPhone!;
+    if (rememberedCode != null && rememberedCode!.isNotEmpty) {
+      codeController.text = rememberedCode!;
+    }
+    codeFocusNode.unfocus();
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppShell(
@@ -177,6 +151,45 @@ class _LoginScreenState extends State<LoginScreen> {
                       AutofillGroup(
                         child: Column(
                           children: [
+                            if (_showRememberedSuggestion) ...[
+                              SmoothAppear(
+                                delay: const Duration(milliseconds: 20),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: PressableScale(
+                                    borderRadius: 18,
+                                    onTap: _applyRememberedLogin,
+                                    child: SoftCard(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 12,
+                                      ),
+                                      borderRadius: 18,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Shu nomermi?',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall,
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            rememberedPhone!,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                            ],
                             SmoothAppear(
                               delay: const Duration(milliseconds: 30),
                               child: TextField(
@@ -189,23 +202,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                 autofillHints: const [
                                   AutofillHints.telephoneNumber
                                 ],
-                                onChanged: persistRememberedPhone,
                                 onSubmitted: (_) =>
                                     codeFocusNode.requestFocus(),
-                                decoration: InputDecoration(
+                                decoration: const InputDecoration(
                                   labelText: 'Telefon raqam',
                                   hintText: 'Masalan: +998901234567',
-                                  suffixIcon: rememberedPhone != null &&
-                                          rememberedPhone!.isNotEmpty
-                                      ? _RememberedFieldAction(
-                                          label: 'Oxirgi',
-                                          onTap: () {
-                                            phoneController.text =
-                                                rememberedPhone!;
-                                            codeFocusNode.requestFocus();
-                                          },
-                                        )
-                                      : null,
                                 ),
                               ),
                             ),
@@ -219,26 +220,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                 autocorrect: false,
                                 enableSuggestions: true,
                                 autofillHints: const [AutofillHints.username],
-                                onChanged: persistRememberedCode,
                                 onSubmitted: (_) {
                                   if (!loading) {
                                     submitLogin(context);
                                   }
                                 },
-                                decoration: InputDecoration(
+                                decoration: const InputDecoration(
                                   labelText: 'Code',
                                   hintText: 'Masalan: 10XXXXXXXXXX',
-                                  suffixIcon: rememberedCode != null &&
-                                          rememberedCode!.isNotEmpty
-                                      ? _RememberedFieldAction(
-                                          label: 'Oxirgi',
-                                          onTap: () {
-                                            codeController.text =
-                                                rememberedCode!;
-                                            codeFocusNode.unfocus();
-                                          },
-                                        )
-                                      : null,
                                 ),
                               ),
                             ),
@@ -282,44 +271,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _RememberedFieldAction extends StatelessWidget {
-  const _RememberedFieldAction({
-    required this.label,
-    required this.onTap,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: Center(
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: onTap,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF2A2A2A)),
-                color: const Color(0x0F888888),
-              ),
-              child: Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }
