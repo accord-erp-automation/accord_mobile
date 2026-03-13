@@ -43,12 +43,24 @@ class PushMessagingService {
 
     FirebaseMessaging.onMessage.listen((message) async {
       final data = message.data;
+      final profile = AppSession.instance.profile;
+      final targetRole = (data['target_role'] ?? '').trim();
+      final targetRef = (data['target_ref'] ?? '').trim();
+      if (profile == null) {
+        return;
+      }
+      if (targetRole.isNotEmpty && targetRole != profile.role.name) {
+        return;
+      }
+      if (targetRef.isNotEmpty && targetRef != profile.ref) {
+        return;
+      }
       await NotificationUnreadStore.instance.markUnread(
-        profile: AppSession.instance.profile,
+        profile: profile,
         ids: [data['id'] ?? DateTime.now().millisecondsSinceEpoch.toString()],
       );
       await LocalNotificationService.instance.showDispatchNotification(
-        role: AppSession.instance.profile?.role ?? UserRole.supplier,
+        role: profile.role,
         record: DispatchRecord(
           id: data['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
           supplierRef: data['supplier_ref'] ?? '',
