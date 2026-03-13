@@ -154,12 +154,17 @@ class _PinUnlockOverlayState extends State<_PinUnlockOverlay> {
                     children: [
                       Text(
                         'App qulfi',
-                        style: Theme.of(context).textTheme.headlineMedium,
+                        style:
+                            Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                  color: Colors.white,
+                                ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         '4 xonali PIN kiriting',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: const Color(0xFFD0D0D0),
+                            ),
                       ),
                       const SizedBox(height: 14),
                       TextField(
@@ -185,7 +190,9 @@ class _PinUnlockOverlayState extends State<_PinUnlockOverlay> {
                         const SizedBox(height: 8),
                         Text(
                           _error!,
-                          style: Theme.of(context).textTheme.bodySmall,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: const Color(0xFFFF9A9A),
+                              ),
                         ),
                       ],
                       const SizedBox(height: 14),
