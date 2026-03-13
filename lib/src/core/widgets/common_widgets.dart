@@ -349,9 +349,9 @@ class _DockButtonState extends State<DockButton> {
             curve: AppMotion.smooth,
             height: widget.primary
                 ? switch (deviceClass) {
-                    _DockDeviceClass.small => widget.compact ? 50 : 54,
-                    _DockDeviceClass.medium => widget.compact ? 53 : 57,
-                    _DockDeviceClass.large => widget.compact ? 52 : 56,
+                    _DockDeviceClass.small => widget.compact ? 54 : 58,
+                    _DockDeviceClass.medium => widget.compact ? 57 : 61,
+                    _DockDeviceClass.large => widget.compact ? 56 : 60,
                   }
                 : switch (deviceClass) {
                     _DockDeviceClass.small => widget.compact ? 46 : 50,
@@ -360,9 +360,9 @@ class _DockButtonState extends State<DockButton> {
                   },
             width: widget.primary
                 ? switch (deviceClass) {
-                    _DockDeviceClass.small => widget.compact ? 50 : 54,
-                    _DockDeviceClass.medium => widget.compact ? 53 : 57,
-                    _DockDeviceClass.large => widget.compact ? 52 : 56,
+                    _DockDeviceClass.small => widget.compact ? 54 : 58,
+                    _DockDeviceClass.medium => widget.compact ? 57 : 61,
+                    _DockDeviceClass.large => widget.compact ? 56 : 60,
                   }
                 : switch (deviceClass) {
                     _DockDeviceClass.small => widget.compact ? 46 : 50,
@@ -404,9 +404,9 @@ class _DockButtonState extends State<DockButton> {
                         color: foreground,
                         size: widget.primary
                             ? switch (deviceClass) {
-                                _DockDeviceClass.small => 24,
-                                _DockDeviceClass.medium => 25,
-                                _DockDeviceClass.large => 25,
+                                _DockDeviceClass.small => 26,
+                                _DockDeviceClass.medium => 27,
+                                _DockDeviceClass.large => 27,
                               }
                             : switch (deviceClass) {
                                 _DockDeviceClass.small => 22,
