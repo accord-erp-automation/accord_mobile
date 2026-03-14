@@ -182,7 +182,9 @@ class _CustomerDeliveryDetailScreenState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const _CustomerDetailSectionHeader(
-                          label: 'Jo‘natma ma’lumoti'),
+                        label: 'Jo‘natma ma’lumoti',
+                        topRounded: true,
+                      ),
                       Padding(
                         padding: const EdgeInsets.all(18),
                         child: Column(
@@ -219,7 +221,10 @@ class _CustomerDeliveryDetailScreenState
                       ),
                       if (record.note.trim().isNotEmpty) ...[
                         const Divider(height: 1, thickness: 1),
-                        const _CustomerDetailSectionHeader(label: 'Izoh'),
+                        const _CustomerDetailSectionHeader(
+                          label: 'Izoh',
+                          topRounded: false,
+                        ),
                         Padding(
                           padding: const EdgeInsets.all(18),
                           child: Text(
@@ -230,7 +235,10 @@ class _CustomerDeliveryDetailScreenState
                       ],
                       if (detail.canApprove || detail.canReject) ...[
                         const Divider(height: 1, thickness: 1),
-                        const _CustomerDetailSectionHeader(label: 'Javob'),
+                        const _CustomerDetailSectionHeader(
+                          label: 'Javob',
+                          topRounded: false,
+                        ),
                         Padding(
                           padding: const EdgeInsets.all(18),
                           child: Row(
@@ -289,21 +297,25 @@ class _CustomerDeliveryDetailScreenState
 class _CustomerDetailSectionHeader extends StatelessWidget {
   const _CustomerDetailSectionHeader({
     required this.label,
+    required this.topRounded,
   });
 
   final String label;
+  final bool topRounded;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: const BoxDecoration(
-        color: Color(0xFF161616),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161616),
+        borderRadius: topRounded
+            ? const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              )
+            : BorderRadius.zero,
       ),
       child: Text(
         label,
