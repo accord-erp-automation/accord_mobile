@@ -126,50 +126,49 @@ class _CustomerSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SoftCard(
-      padding: EdgeInsets.zero,
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
       borderWidth: 1.35,
       borderRadius: 20,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _CustomerSectionHeader(label: 'Holatlar'),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(22, 0, 22, 10),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: Container(
-                color: const Color(0xFF000000),
-                child: Column(
-                  children: [
-                    _CustomerSummaryRow(
-                      label: 'Kutilmoqda',
-                      value: summary.pendingCount.toString(),
-                      onTap: () => Navigator.of(context).pushNamed(
-                        AppRoutes.customerStatusDetail,
-                        arguments: CustomerStatusKind.pending,
-                      ),
-                      isFirst: true,
+          const _CustomerSectionLabel(label: 'Holatlar'),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: Container(
+              color: const Color(0xFF000000),
+              child: Column(
+                children: [
+                  _CustomerSummaryRow(
+                    label: 'Kutilmoqda',
+                    value: summary.pendingCount.toString(),
+                    onTap: () => Navigator.of(context).pushNamed(
+                      AppRoutes.customerStatusDetail,
+                      arguments: CustomerStatusKind.pending,
                     ),
-                    const Divider(height: 1, thickness: 1),
-                    _CustomerSummaryRow(
-                      label: 'Tasdiqlangan',
-                      value: summary.confirmedCount.toString(),
-                      onTap: () => Navigator.of(context).pushNamed(
-                        AppRoutes.customerStatusDetail,
-                        arguments: CustomerStatusKind.confirmed,
-                      ),
+                    isFirst: true,
+                  ),
+                  const Divider(height: 1, thickness: 1),
+                  _CustomerSummaryRow(
+                    label: 'Tasdiqlangan',
+                    value: summary.confirmedCount.toString(),
+                    onTap: () => Navigator.of(context).pushNamed(
+                      AppRoutes.customerStatusDetail,
+                      arguments: CustomerStatusKind.confirmed,
                     ),
-                    const Divider(height: 1, thickness: 1),
-                    _CustomerSummaryRow(
-                      label: 'Rad etilgan',
-                      value: summary.rejectedCount.toString(),
-                      onTap: () => Navigator.of(context).pushNamed(
-                        AppRoutes.customerStatusDetail,
-                        arguments: CustomerStatusKind.rejected,
-                      ),
-                      isLast: true,
+                  ),
+                  const Divider(height: 1, thickness: 1),
+                  _CustomerSummaryRow(
+                    label: 'Rad etilgan',
+                    value: summary.rejectedCount.toString(),
+                    onTap: () => Navigator.of(context).pushNamed(
+                      AppRoutes.customerStatusDetail,
+                      arguments: CustomerStatusKind.rejected,
                     ),
-                  ],
-                ),
+                    isLast: true,
+                  ),
+                ],
               ),
             ),
           ),
@@ -245,43 +244,40 @@ class _CustomerPendingPreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SoftCard(
-      padding: EdgeInsets.zero,
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
       borderWidth: 1.35,
       borderRadius: 20,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _CustomerSectionHeader(label: 'Kutilayotgan jo‘natmalar'),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(22, 0, 22, 10),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: Container(
-                color: const Color(0xFF000000),
-                child: items.isEmpty
-                    ? Padding(
-                        padding: const EdgeInsets.all(18),
-                        child: Text(
-                          'Hozircha kutilayotgan jo‘natmalar yo‘q.',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      )
-                    : Column(
-                        children: [
-                          for (int index = 0;
-                              index < items.length;
-                              index++) ...[
-                            _CustomerPreviewRow(
-                              record: items[index],
-                              isFirst: index == 0,
-                              isLast: index == items.length - 1,
-                              onTap: () => onTapRecord(items[index].id),
-                            ),
-                            if (index != items.length - 1)
-                              const Divider(height: 1, thickness: 1),
-                          ],
-                        ],
+          const _CustomerSectionLabel(label: 'Kutilayotgan jo‘natmalar'),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: Container(
+              color: const Color(0xFF000000),
+              child: items.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(18),
+                      child: Text(
+                        'Hozircha kutilayotgan jo‘natmalar yo‘q.',
+                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
-              ),
+                    )
+                  : Column(
+                      children: [
+                        for (int index = 0; index < items.length; index++) ...[
+                          _CustomerPreviewRow(
+                            record: items[index],
+                            isFirst: index == 0,
+                            isLast: index == items.length - 1,
+                            onTap: () => onTapRecord(items[index].id),
+                          ),
+                          if (index != items.length - 1)
+                            const Divider(height: 1, thickness: 1),
+                        ],
+                      ],
+                    ),
             ),
           ),
         ],
@@ -290,8 +286,8 @@ class _CustomerPendingPreviewCard extends StatelessWidget {
   }
 }
 
-class _CustomerSectionHeader extends StatelessWidget {
-  const _CustomerSectionHeader({
+class _CustomerSectionLabel extends StatelessWidget {
+  const _CustomerSectionLabel({
     required this.label,
   });
 
@@ -299,18 +295,8 @@ class _CustomerSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: const BoxDecoration(
-        color: Color(0xFF161616),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-          bottomLeft: Radius.circular(16),
-          bottomRight: Radius.circular(16),
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Text(
         label,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
