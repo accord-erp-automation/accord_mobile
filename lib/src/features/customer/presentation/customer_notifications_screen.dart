@@ -220,29 +220,43 @@ class _CustomerNotificationsScreenState
               padding: EdgeInsets.zero,
               children: [
                 SoftCard(
-                  padding: EdgeInsets.zero,
+                  backgroundColor: const Color(0xFF161616),
+                  padding: const EdgeInsets.fromLTRB(0, 14, 0, 0),
                   borderWidth: 1.45,
                   borderRadius: 20,
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const _CustomerFeedSectionHeader(
+                      const _CustomerFeedSectionLabel(
                         label: 'Jo‘natmalar oqimi',
                       ),
-                      for (int index = 0;
-                          index < orderedItems.length;
-                          index++) ...[
-                        _CustomerFeedRow(
-                          record: orderedItems[index],
-                          isFirst: index == 0,
-                          isLast: index == orderedItems.length - 1,
-                          highlighted: _highlightedUnreadIds.contains(
-                            orderedItems[index].id,
+                      const SizedBox(height: 14),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(18),
+                        child: Container(
+                          color: const Color(0xFF000000),
+                          child: Column(
+                            children: [
+                              for (int index = 0;
+                                  index < orderedItems.length;
+                                  index++) ...[
+                                _CustomerFeedRow(
+                                  record: orderedItems[index],
+                                  isFirst: index == 0,
+                                  isLast: index == orderedItems.length - 1,
+                                  highlighted: _highlightedUnreadIds.contains(
+                                    orderedItems[index].id,
+                                  ),
+                                  onTap: () =>
+                                      _openDetail(orderedItems[index].id),
+                                ),
+                                if (index != orderedItems.length - 1)
+                                  const Divider(height: 1, thickness: 1),
+                              ],
+                            ],
                           ),
-                          onTap: () => _openDetail(orderedItems[index].id),
                         ),
-                        if (index != orderedItems.length - 1)
-                          const Divider(height: 1, thickness: 1),
-                      ],
+                      ),
                     ],
                   ),
                 ),
@@ -290,10 +304,10 @@ class _CustomerFeedRow extends StatelessWidget {
         decoration: BoxDecoration(
           color: highlighted ? const Color(0xFF212121) : Colors.transparent,
           borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(isFirst ? 20 : 0),
-            topRight: Radius.circular(isFirst ? 20 : 0),
-            bottomLeft: Radius.circular(isLast ? 20 : 0),
-            bottomRight: Radius.circular(isLast ? 20 : 0),
+            topLeft: Radius.circular(isFirst ? 16 : 0),
+            topRight: Radius.circular(isFirst ? 16 : 0),
+            bottomLeft: Radius.circular(isLast ? 18 : 0),
+            bottomRight: Radius.circular(isLast ? 18 : 0),
           ),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
@@ -366,8 +380,8 @@ class _CustomerFeedRow extends StatelessWidget {
   }
 }
 
-class _CustomerFeedSectionHeader extends StatelessWidget {
-  const _CustomerFeedSectionHeader({
+class _CustomerFeedSectionLabel extends StatelessWidget {
+  const _CustomerFeedSectionLabel({
     required this.label,
   });
 
@@ -375,16 +389,8 @@ class _CustomerFeedSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: const BoxDecoration(
-        color: Color(0xFF161616),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Text(
         label,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
