@@ -126,6 +126,7 @@ class _CustomerSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SoftCard(
+      backgroundColor: const Color(0xFF161616),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
       borderWidth: 1.35,
       borderRadius: 20,
@@ -244,6 +245,7 @@ class _CustomerPendingPreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SoftCard(
+      backgroundColor: const Color(0xFF161616),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
       borderWidth: 1.35,
       borderRadius: 20,
