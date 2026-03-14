@@ -133,7 +133,7 @@ class _CustomerSummaryCard extends StatelessWidget {
         children: [
           const _CustomerSectionHeader(label: 'Holatlar'),
           Padding(
-            padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(18),
               child: Container(
@@ -252,7 +252,7 @@ class _CustomerPendingPreviewCard extends StatelessWidget {
         children: [
           const _CustomerSectionHeader(label: 'Kutilayotgan jo‘natmalar'),
           Padding(
-            padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(18),
               child: Container(
