@@ -1,7 +1,6 @@
 import '../../../core/api/mobile_api.dart';
-import '../../../core/widgets/app_shell.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../shared/models/app_models.dart';
-import 'widgets/admin_dock.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -11,9 +10,11 @@ class AdminCustomerDetailScreen extends StatefulWidget {
   const AdminCustomerDetailScreen({
     super.key,
     required this.customerRef,
+    this.detailLoader,
   });
 
   final String customerRef;
+  final Future<AdminCustomerDetail> Function(String ref)? detailLoader;
 
   @override
   State<AdminCustomerDetailScreen> createState() =>
@@ -40,8 +41,9 @@ class _AdminCustomerDetailScreenState extends State<AdminCustomerDetailScreen> {
   }
 
   Future<AdminCustomerDetail> _loadDetail() async {
-    final detail = await MobileApi.instance
-        .adminCustomerDetail(widget.customerRef)
+    final loadDetail =
+        widget.detailLoader ?? MobileApi.instance.adminCustomerDetail;
+    final detail = await loadDetail(widget.customerRef)
         .timeout(
           const Duration(seconds: 15),
           onTimeout: () => throw Exception('Customer detail timeout'),
@@ -159,16 +161,36 @@ class _AdminCustomerDetailScreenState extends State<AdminCustomerDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppShell(
-      leading: AppShellIconAction(
-        icon: Icons.arrow_back_rounded,
-        onTap: () => Navigator.of(context).maybePop(),
-      ),
-      title: 'Customer',
-      subtitle: '',
-      contentPadding: const EdgeInsets.fromLTRB(12, 0, 14, 0),
-      bottom: const AdminDock(activeTab: AdminDockTab.suppliers),
-      child: FutureBuilder<AdminCustomerDetail>(
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Scaffold(
+      backgroundColor: AppTheme.shellStart(context),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+              child: Row(
+                children: [
+                  IconButton.filledTonal(
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    icon: const Icon(Icons.arrow_back_rounded),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      'Customer',
+                      style: theme.textTheme.headlineMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 14, 16),
+                child: FutureBuilder<AdminCustomerDetail>(
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
@@ -237,8 +259,6 @@ class _AdminCustomerDetailScreenState extends State<AdminCustomerDetailScreen> {
 
           final detail = snapshot.data!;
           final hasPhone = detail.phone.trim().isNotEmpty;
-          final theme = Theme.of(context);
-          final scheme = theme.colorScheme;
 
           return ListView(
             padding: EdgeInsets.zero,
@@ -369,6 +389,11 @@ class _AdminCustomerDetailScreenState extends State<AdminCustomerDetailScreen> {
             ],
           );
         },
+      ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
