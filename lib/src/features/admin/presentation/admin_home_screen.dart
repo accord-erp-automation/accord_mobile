@@ -3,7 +3,6 @@ import '../../../core/api/mobile_api.dart';
 import '../../../core/cache/json_cache_store.dart';
 import '../../../core/notifications/refresh_hub.dart';
 import '../../../core/widgets/app_shell.dart';
-import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/motion_widgets.dart';
 import '../../shared/models/app_models.dart';
 import 'widgets/admin_dock.dart';
@@ -71,6 +70,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     return AppShell(
       title: 'Admin',
       subtitle: '',
+      contentPadding: const EdgeInsets.fromLTRB(12, 0, 14, 0),
       bottom: const AdminDock(activeTab: AdminDockTab.home),
       child: FutureBuilder<AdminSupplierSummary>(
         future: _summaryFuture,
@@ -82,17 +82,21 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           }
           if (snapshot.hasError && summary == null) {
             return Center(
-              child: SoftCard(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('Admin summary yuklanmadi: ${snapshot.error}'),
-                    const SizedBox(height: 12),
-                    FilledButton(
-                      onPressed: _reload,
-                      child: const Text('Qayta urinish'),
-                    ),
-                  ],
+              child: Card.filled(
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('Admin summary yuklanmadi: ${snapshot.error}'),
+                      const SizedBox(height: 12),
+                      FilledButton(
+                        onPressed: _reload,
+                        child: const Text('Qayta urinish'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -104,37 +108,25 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                _AdminModulesSection(
-                  onTapSettings: () => Navigator.of(context)
-                      .pushNamed(AppRoutes.adminSettings),
-                  onTapSuppliers: () => Navigator.of(context)
-                      .pushNamed(AppRoutes.adminSuppliers),
-                  onTapWerka: () =>
-                      Navigator.of(context).pushNamed(AppRoutes.adminWerka),
+                SmoothAppear(
+                  delay: const Duration(milliseconds: 20),
+                  child: _AdminModulesSection(
+                    onTapSettings: () => Navigator.of(context)
+                        .pushNamed(AppRoutes.adminSettings),
+                    onTapSuppliers: () => Navigator.of(context)
+                        .pushNamed(AppRoutes.adminSuppliers),
+                    onTapWerka: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.adminWerka),
+                  ),
                 ),
                 if (summaryValue.blockedSuppliers > 0) ...[
                   const SizedBox(height: 12),
-                  PressableScale(
-                    borderRadius: 24,
-                    onTap: () => Navigator.of(context)
-                        .pushNamed(AppRoutes.adminInactiveSuppliers),
-                    child: SoftCard(
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.block_rounded,
-                            color: Colors.white,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Bloklangan supplierlar: ${summaryValue.blockedSuppliers} ta',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                          ),
-                          const Icon(Icons.arrow_forward_rounded),
-                        ],
-                      ),
+                  SmoothAppear(
+                    delay: const Duration(milliseconds: 60),
+                    child: _AdminBlockedSuppliersCard(
+                      count: summaryValue.blockedSuppliers,
+                      onTap: () => Navigator.of(context)
+                          .pushNamed(AppRoutes.adminInactiveSuppliers),
                     ),
                   ),
                 ],
@@ -160,9 +152,13 @@ class _AdminModulesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SoftCard(
-      padding: EdgeInsets.zero,
-      backgroundColor: const Color(0xFF161616),
+    final scheme = Theme.of(context).colorScheme;
+    return Card.filled(
+      margin: EdgeInsets.zero,
+      color: scheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+      ),
       child: Column(
         children: [
           _AdminModuleRow(
@@ -201,31 +197,43 @@ class _AdminModuleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PressableScale(
-      borderRadius: 24,
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(28),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const Icon(Icons.arrow_forward_rounded),
-          ],
+              const SizedBox(width: 12),
+              Icon(
+                Icons.arrow_forward_rounded,
+                color: scheme.onSurfaceVariant,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -240,7 +248,61 @@ class _AdminSectionDivider extends StatelessWidget {
     return Divider(
       height: 1,
       thickness: 1,
-      color: Theme.of(context).dividerColor,
+      indent: 18,
+      endIndent: 18,
+      color: Theme.of(context).dividerColor.withValues(alpha: 0.55),
+    );
+  }
+}
+
+class _AdminBlockedSuppliersCard extends StatelessWidget {
+  const _AdminBlockedSuppliersCard({
+    required this.count,
+    required this.onTap,
+  });
+
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Card.filled(
+      margin: EdgeInsets.zero,
+      color: scheme.secondaryContainer,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          child: Row(
+            children: [
+              Icon(
+                Icons.block_rounded,
+                color: scheme.onSecondaryContainer,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Bloklangan supplierlar: $count ta',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: scheme.onSecondaryContainer,
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_rounded,
+                color: scheme.onSecondaryContainer,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
