@@ -277,9 +277,15 @@ class _CustomerNotificationsScreenState
       animateOnEnter: false,
       contentPadding: const EdgeInsets.fromLTRB(12, 0, 14, 0),
       actions: [
-        AppShellIconAction(
-          icon: Icons.cleaning_services_outlined,
-          onTap: _clearAll,
+        IconButton.filledTonal(
+          onPressed: _clearAll,
+          icon: const Icon(Icons.clear_all_rounded),
+          style: IconButton.styleFrom(
+            minimumSize: const Size(48, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
         ),
       ],
       bottom: const CustomerDock(activeTab: CustomerDockTab.notifications),
