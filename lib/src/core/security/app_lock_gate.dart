@@ -1,9 +1,9 @@
 import 'dart:ui';
 
 import 'device_permissions_bootstrap.dart';
+import '../widgets/pin_pad.dart';
 import 'security_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class AppLockGate extends StatefulWidget {
   const AppLockGate({
@@ -74,14 +74,11 @@ class _PinUnlockOverlay extends StatefulWidget {
 
 class _PinUnlockOverlayState extends State<_PinUnlockOverlay> {
   final TextEditingController _pinController = TextEditingController();
-  final FocusNode _pinFocusNode = FocusNode();
   String? _error;
   bool _unlocking = false;
-  int _fieldEpoch = 0;
 
   @override
   void dispose() {
-    _pinFocusNode.dispose();
     _pinController.dispose();
     super.dispose();
   }
@@ -90,16 +87,9 @@ class _PinUnlockOverlayState extends State<_PinUnlockOverlay> {
     _pinController.value = const TextEditingValue(
       text: '',
       selection: TextSelection.collapsed(offset: 0),
-      composing: TextRange.empty,
     );
     setState(() {
-      _fieldEpoch += 1;
       _error = error;
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _pinFocusNode.requestFocus();
-      }
     });
   }
 
@@ -118,7 +108,6 @@ class _PinUnlockOverlayState extends State<_PinUnlockOverlay> {
         _pinController.value = const TextEditingValue(
           text: '',
           selection: TextSelection.collapsed(offset: 0),
-          composing: TextRange.empty,
         );
       }
     } finally {
@@ -161,11 +150,11 @@ class _PinUnlockOverlayState extends State<_PinUnlockOverlay> {
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF050505),
+              child: Card.filled(
+                margin: EdgeInsets.zero,
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: const Color(0xFF2A2A2A)),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(22),
@@ -175,64 +164,26 @@ class _PinUnlockOverlayState extends State<_PinUnlockOverlay> {
                     children: [
                       Text(
                         'App qulfi',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
-                            ?.copyWith(
-                              color: Colors.white,
-                            ),
+                        style: Theme.of(context).textTheme.headlineMedium,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         '4 xonali PIN kiriting',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: const Color(0xFFD0D0D0),
-                            ),
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
-                      const SizedBox(height: 14),
-                      TextField(
-                        key: ValueKey(_fieldEpoch),
+                      const SizedBox(height: 18),
+                      PinCodeEditor(
                         controller: _pinController,
-                        focusNode: _pinFocusNode,
-                        obscureText: true,
-                        keyboardType: TextInputType.number,
-                        enableSuggestions: false,
-                        autocorrect: false,
-                        autofillHints: const <String>[],
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(4),
-                        ],
-                        textInputAction: TextInputAction.done,
-                        autofocus: true,
-                        onSubmitted: (_) => _unlock(),
-                        decoration: const InputDecoration(
-                          labelText: 'PIN',
-                          counterText: '',
-                        ),
-                      ),
-                      if (_error != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          _error!,
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: const Color(0xFFFF9A9A),
-                                  ),
-                        ),
-                      ],
-                      const SizedBox(height: 14),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: _unlocking ? null : _unlock,
-                          child:
-                              Text(_unlocking ? 'Tekshirilmoqda...' : 'Ochish'),
-                        ),
+                        onAction: _unlock,
+                        actionLabel:
+                            _unlocking ? 'Tekshirilmoqda...' : 'Ochish',
+                        actionIcon: Icons.arrow_forward_rounded,
+                        errorText: _error,
+                        busy: _unlocking,
                       ),
                       if (SecurityController
                           .instance.biometricEnabledForCurrentUser) ...[
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 18),
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton(

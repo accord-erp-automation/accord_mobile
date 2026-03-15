@@ -1,6 +1,6 @@
+import '../../../../core/widgets/pin_pad.dart';
 import '../../../../core/widgets/app_shell.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class PinEntryScaffold extends StatelessWidget {
   const PinEntryScaffold({
@@ -36,11 +36,11 @@ class PinEntryScaffold extends StatelessWidget {
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: const Color(0xFF050505),
+          child: Card.filled(
+            margin: EdgeInsets.zero,
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: const Color(0xFF2A2A2A)),
             ),
             child: Padding(
               padding: const EdgeInsets.all(22),
@@ -48,39 +48,25 @@ class PinEntryScaffold extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextField(
-                    controller: controller,
-                    obscureText: true,
-                    keyboardType: TextInputType.number,
-                    enableSuggestions: false,
-                    autocorrect: false,
-                    autofillHints: null,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(4),
-                    ],
-                    textInputAction: TextInputAction.done,
-                    autofocus: autofocus,
-                    onSubmitted: (_) => onAction(),
-                    decoration: const InputDecoration(
-                      labelText: 'PIN',
-                      counterText: '',
-                    ),
+                  Text(
+                    actionLabel,
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  if (errorText != null && errorText!.trim().isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      errorText!,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: busy ? null : onAction,
-                      child: Text(busy ? 'Tekshirilmoqda...' : actionLabel),
-                    ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '4 xonali PIN kiriting',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 18),
+                  PinCodeEditor(
+                    controller: controller,
+                    onAction: onAction,
+                    actionLabel: busy ? 'Tekshirilmoqda...' : actionLabel,
+                    actionIcon: actionLabel == 'Saqlash'
+                        ? Icons.check_rounded
+                        : Icons.arrow_forward_rounded,
+                    errorText: errorText,
+                    busy: busy,
                   ),
                 ],
               ),
