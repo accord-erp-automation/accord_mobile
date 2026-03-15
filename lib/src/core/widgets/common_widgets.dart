@@ -233,7 +233,7 @@ class ActionDock extends StatelessWidget {
           Positioned(
             left: tightToEdges ? 8 : 20,
             right: tightToEdges ? 8 : 20,
-            bottom: compact ? 8 : 10,
+            bottom: compact ? 5 : 7,
             child: centered && !tightToEdges
                 ? Center(
                     child: Row(
