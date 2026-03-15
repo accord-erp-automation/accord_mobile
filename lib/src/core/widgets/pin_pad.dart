@@ -216,11 +216,20 @@ class _PinGlyph extends StatelessWidget {
   ShapeBorder _polygonShape() {
     switch (variant % 3) {
       case 0:
-        return const StarBorder.polygon(sides: 5);
+        return const StarBorder.polygon(
+          sides: 5,
+          pointRounding: 0.32,
+        );
       case 1:
-        return const StarBorder.polygon(sides: 6);
+        return const StarBorder.polygon(
+          sides: 6,
+          pointRounding: 0.28,
+        );
       default:
-        return const StarBorder.polygon(sides: 3);
+        return const StarBorder.polygon(
+          sides: 3,
+          pointRounding: 0.22,
+        );
     }
   }
 
@@ -241,18 +250,18 @@ class _PinGlyph extends StatelessWidget {
     return TweenAnimationBuilder<double>(
       key: ValueKey<String>('glyph-$variant-$animateTick'),
       tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 1600),
+      duration: const Duration(milliseconds: 1100),
       curve: Curves.easeInOutCubic,
       builder: (context, value, _) {
-        final polygonOpacity = (1 - (value * 0.92)).clamp(0.0, 1.0);
-        final circleOpacity = ((value - 0.5) / 0.5).clamp(0.0, 1.0);
+        final polygonOpacity = (1 - (value * 1.02)).clamp(0.0, 1.0);
+        final circleOpacity = ((value - 0.36) / 0.64).clamp(0.0, 1.0);
         return Stack(
           alignment: Alignment.center,
           children: [
             Opacity(
               opacity: polygonOpacity,
               child: Transform.scale(
-                scale: 1.8 - (0.88 * value),
+                scale: 1.55 - (0.6 * value),
                 child: _GlyphSurface(
                   shape: _polygonShape(),
                   color: scheme.onSurface,
@@ -262,7 +271,7 @@ class _PinGlyph extends StatelessWidget {
             Opacity(
               opacity: circleOpacity,
               child: Transform.scale(
-                scale: 0.66 + (0.34 * value),
+                scale: 0.74 + (0.26 * value),
                 child: _GlyphSurface(
                   shape: const CircleBorder(),
                   color: scheme.onSurface,
@@ -359,7 +368,7 @@ class _PinDigitButtonState extends State<_PinDigitButton> {
 
   void _releaseSoon() {
     _releaseTimer?.cancel();
-    _releaseTimer = Timer(const Duration(milliseconds: 380), () {
+    _releaseTimer = Timer(const Duration(milliseconds: 220), () {
       if (mounted) {
         setState(() => _pressed = false);
       }
@@ -388,7 +397,7 @@ class _PinDigitButtonState extends State<_PinDigitButton> {
             }
           : null,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 720),
+        duration: const Duration(milliseconds: 460),
         curve: Curves.easeInOutCubic,
         width: 78,
         height: 78,
@@ -449,7 +458,7 @@ class _PinActionButtonState extends State<_PinActionButton> {
 
   void _releaseSoon() {
     _releaseTimer?.cancel();
-    _releaseTimer = Timer(const Duration(milliseconds: 380), () {
+    _releaseTimer = Timer(const Duration(milliseconds: 220), () {
       if (mounted) {
         setState(() => _pressed = false);
       }
@@ -482,7 +491,7 @@ class _PinActionButtonState extends State<_PinActionButton> {
             }
           : null,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 720),
+        duration: const Duration(milliseconds: 460),
         curve: Curves.easeInOutCubic,
         width: 78,
         height: 78,
