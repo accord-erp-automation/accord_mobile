@@ -694,6 +694,7 @@ class AdminCustomerDetail {
     required this.code,
     required this.codeLocked,
     required this.codeRetryAfterSec,
+    required this.assignedItems,
   });
 
   final String ref;
@@ -702,6 +703,7 @@ class AdminCustomerDetail {
   final String code;
   final bool codeLocked;
   final int codeRetryAfterSec;
+  final List<SupplierItem> assignedItems;
 
   factory AdminCustomerDetail.fromJson(Map<String, dynamic> json) {
     return AdminCustomerDetail(
@@ -711,6 +713,9 @@ class AdminCustomerDetail {
       code: json['code'] as String? ?? '',
       codeLocked: json['code_locked'] as bool? ?? false,
       codeRetryAfterSec: json['code_retry_after_sec'] as int? ?? 0,
+      assignedItems: (json['assigned_items'] as List<dynamic>? ?? const [])
+          .map((item) => SupplierItem.fromJson(item as Map<String, dynamic>))
+          .toList(),
     );
   }
 }

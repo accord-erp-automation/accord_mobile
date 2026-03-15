@@ -4,6 +4,7 @@ import '../../shared/models/app_models.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class AdminCustomerDetailScreen extends StatefulWidget {
   const AdminCustomerDetailScreen({
@@ -24,6 +25,9 @@ class _AdminCustomerDetailScreenState extends State<AdminCustomerDetailScreen> {
   AdminCustomerDetail? _detail;
   Object? _loadError;
   bool _loading = true;
+  bool _savingPhone = false;
+  bool _regeneratingCode = false;
+  bool _removing = false;
   int _retryAfterSec = 0;
   Timer? _retryTimer;
 
@@ -95,6 +99,146 @@ class _AdminCustomerDetailScreenState extends State<AdminCustomerDetailScreen> {
     }
   }
 
+  Future<void> _addPhone(AdminCustomerDetail detail) async {
+    final controller = TextEditingController(text: detail.phone);
+    final phone = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Telefon raqam qo‘shish'),
+          content: TextField(
+            controller: controller,
+            keyboardType: TextInputType.phone,
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: '+998901234567',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Bekor qilish'),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(controller.text.trim()),
+              child: const Text('Saqlash'),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    if (phone == null || phone.trim().isEmpty) {
+      return;
+    }
+
+    setState(() => _savingPhone = true);
+    try {
+      final updated = await MobileApi.instance.adminUpdateCustomerPhone(
+        ref: detail.ref,
+        phone: phone,
+      );
+      if (!mounted) {
+        return;
+      }
+      _setRetryAfter(updated.codeRetryAfterSec);
+      setState(() => _detail = updated);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Telefon saqlanmadi: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _savingPhone = false);
+      }
+    }
+  }
+
+  Future<void> _regenerateCode() async {
+    setState(() => _regeneratingCode = true);
+    try {
+      final updated = await MobileApi.instance
+          .adminRegenerateCustomerCode(widget.customerRef);
+      if (!mounted) {
+        return;
+      }
+      _setRetryAfter(updated.codeRetryAfterSec);
+      setState(() => _detail = updated);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Code yangilanmadi: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _regeneratingCode = false);
+      }
+    }
+  }
+
+  Future<void> _copyCode(String code) async {
+    await Clipboard.setData(ClipboardData(text: code));
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Code nusxalandi')),
+    );
+  }
+
+  Future<void> _removeCustomer() async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Customerni chiqarish'),
+          content: const Text(
+            'Bu customer admin panel ro‘yxatidan chiqariladi va kira olmaydi.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Bekor qilish'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Chiqarish'),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true) {
+      return;
+    }
+
+    setState(() => _removing = true);
+    try {
+      await MobileApi.instance.adminRemoveCustomer(widget.customerRef);
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Customer chiqarilmadi: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _removing = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -106,6 +250,7 @@ class _AdminCustomerDetailScreenState extends State<AdminCustomerDetailScreen> {
           code: _loading ? 'Yuklanmoqda...' : 'Hali generatsiya qilinmagan',
           codeLocked: false,
           codeRetryAfterSec: _retryAfterSec,
+          assignedItems: const [],
         );
 
     return Scaffold(
@@ -139,6 +284,13 @@ class _AdminCustomerDetailScreenState extends State<AdminCustomerDetailScreen> {
                       : _detail == null
                           ? 'Bo‘sh'
                           : 'Tayyor',
+              savingPhone: _savingPhone || _loading,
+              regeneratingCode: _regeneratingCode,
+              removing: _removing,
+              onAddPhone: _addPhone,
+              onRegenerateCode: _regenerateCode,
+              onCopyCode: _copyCode,
+              onRemove: _removeCustomer,
             ),
             if (_loadError != null) ...[
               const SizedBox(height: 12),
@@ -173,10 +325,24 @@ class _AdminCustomerDetailCard extends StatelessWidget {
   const _AdminCustomerDetailCard({
     required this.detail,
     required this.statusLabel,
+    required this.savingPhone,
+    required this.regeneratingCode,
+    required this.removing,
+    required this.onAddPhone,
+    required this.onRegenerateCode,
+    required this.onCopyCode,
+    required this.onRemove,
   });
 
   final AdminCustomerDetail detail;
   final String statusLabel;
+  final bool savingPhone;
+  final bool regeneratingCode;
+  final bool removing;
+  final Future<void> Function(AdminCustomerDetail detail) onAddPhone;
+  final Future<void> Function() onRegenerateCode;
+  final Future<void> Function(String code) onCopyCode;
+  final Future<void> Function() onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -216,10 +382,48 @@ class _AdminCustomerDetailCard extends StatelessWidget {
             Text('Telefon', style: theme.textTheme.bodySmall),
             const SizedBox(height: 6),
             _DetailField(value: detail.phone),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.tonal(
+                onPressed: savingPhone ? null : () => onAddPhone(detail),
+                child: Text(savingPhone ? 'Saqlanmoqda...' : 'Telefonni yangilash'),
+              ),
+            ),
             const SizedBox(height: 14),
             Text('Code', style: theme.textTheme.bodySmall),
             const SizedBox(height: 6),
-            _DetailField(value: detail.code),
+            _DetailField(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      detail.code.trim().isEmpty
+                          ? 'Hali generatsiya qilinmagan'
+                          : detail.code,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                  if (detail.code.trim().isNotEmpty)
+                    IconButton(
+                      onPressed: () => onCopyCode(detail.code),
+                      icon: const Icon(Icons.content_copy_outlined),
+                    ),
+                  IconButton(
+                    onPressed: regeneratingCode || detail.codeLocked
+                        ? null
+                        : onRegenerateCode,
+                    icon: regeneratingCode
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.refresh_rounded),
+                  ),
+                ],
+              ),
+            ),
             if (detail.codeRetryAfterSec > 0) ...[
               const SizedBox(height: 12),
               Text(
@@ -229,6 +433,49 @@ class _AdminCustomerDetailCard extends StatelessWidget {
                 ),
               ),
             ],
+            const SizedBox(height: 18),
+            Text('Biriktirilgan mahsulotlar', style: theme.textTheme.titleLarge),
+            const SizedBox(height: 10),
+            Text(
+              detail.assignedItems.isEmpty
+                  ? 'Hozircha mahsulot biriktirilmagan.'
+                  : '${detail.assignedItems.length} ta mahsulot biriktirilgan.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+            if (detail.assignedItems.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              for (final item in detail.assignedItems.take(5)) ...[
+                _DetailField(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.name,
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        item.code,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ],
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: removing ? null : onRemove,
+                child: Text(removing ? 'Chiqarilmoqda...' : 'Tizimdan chiqarish'),
+              ),
+            ),
           ],
         ),
       ),
@@ -262,9 +509,13 @@ class _AdminCustomerNoticeCard extends StatelessWidget {
 }
 
 class _DetailField extends StatelessWidget {
-  const _DetailField({required this.value});
+  const _DetailField({
+    this.value,
+    this.child,
+  });
 
-  final String value;
+  final String? value;
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
@@ -275,10 +526,11 @@ class _DetailField extends StatelessWidget {
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(18),
       ),
-      child: Text(
-        value.trim().isEmpty ? 'Kiritilmagan' : value,
-        style: Theme.of(context).textTheme.titleMedium,
-      ),
+      child: child ??
+          Text(
+            (value ?? '').trim().isEmpty ? 'Kiritilmagan' : value!,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
     );
   }
 }
