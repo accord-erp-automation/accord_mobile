@@ -45,11 +45,13 @@ class _CustomerNotificationsScreenState
     });
     _loadCache();
     RefreshHub.instance.addListener(_handlePushRefresh);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onClearActionChanged?.call(_clearAll);
+    });
   }
 
   @override
   void dispose() {
-    widget.onClearActionChanged?.call(null);
     RefreshHub.instance.removeListener(_handlePushRefresh);
     super.dispose();
   }
@@ -213,8 +215,6 @@ class _CustomerNotificationsScreenState
 
   @override
   Widget build(BuildContext context) {
-    widget.onClearActionChanged?.call(_clearAll);
-
     final content = FutureBuilder<List<DispatchRecord>>(
       future: _future,
       builder: (context, snapshot) {
