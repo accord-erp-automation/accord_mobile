@@ -12,12 +12,32 @@ class WerkaSuccessScreen extends StatelessWidget {
 
   final DispatchRecord record;
 
+  String get _title {
+    if (record.eventType == 'customer_issue_pending') {
+      return 'Jo‘natildi';
+    }
+    if (record.eventType == 'werka_unannounced_pending') {
+      return 'Qayd qilindi';
+    }
+    return 'Qabul qilindi';
+  }
+
+  String get _subtitleLine {
+    if (record.eventType == 'customer_issue_pending') {
+      return '${record.sentQty.toStringAsFixed(2)} ${record.uom} customerga jo‘natildi';
+    }
+    if (record.eventType == 'werka_unannounced_pending') {
+      return '${record.sentQty.toStringAsFixed(2)} ${record.uom} qayd qilindi';
+    }
+    return '${record.acceptedQty.toStringAsFixed(2)} ${record.uom} qabul qilindi';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return AppShell(
-      title: 'Qabul qilindi',
+      title: _title,
       subtitle: '',
       contentPadding: const EdgeInsets.fromLTRB(12, 0, 14, 0),
       bottom: const WerkaDock(activeTab: null),
@@ -60,7 +80,7 @@ class WerkaSuccessScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    '${record.acceptedQty.toStringAsFixed(2)} ${record.uom} qabul qilindi',
+                    _subtitleLine,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: scheme.onSurfaceVariant,

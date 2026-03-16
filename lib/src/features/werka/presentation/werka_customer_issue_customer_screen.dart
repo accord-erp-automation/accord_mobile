@@ -354,13 +354,13 @@ class _WerkaCustomerIssueCustomerScreenState
         itemName: created.itemName,
         uom: created.uom,
         sentQty: created.qty,
-        acceptedQty: created.qty,
+        acceptedQty: 0,
         amount: 0,
         currency: '',
         note: '',
-        eventType: '',
+        eventType: 'customer_issue_pending',
         highlight: '',
-        status: DispatchStatus.accepted,
+        status: DispatchStatus.pending,
         createdLabel: created.createdLabel,
       );
       Navigator.of(context).pushNamedAndRemoveUntil(
