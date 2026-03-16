@@ -280,7 +280,7 @@ class _WerkaCustomerIssueCustomerScreenState
 
     setState(() => _submitting = true);
     try {
-      final record = await MobileApi.instance.createWerkaCustomerIssue(
+      final created = await MobileApi.instance.createWerkaCustomerIssue(
         customerRef: _selectedCustomer!.ref,
         itemCode: _selectedItem!.code,
         qty: qty,
@@ -288,10 +288,34 @@ class _WerkaCustomerIssueCustomerScreenState
       if (!mounted) {
         return;
       }
+      final record = DispatchRecord(
+        id: created.entryID,
+        supplierRef: created.customerRef,
+        supplierName: created.customerName,
+        itemCode: created.itemCode,
+        itemName: created.itemName,
+        uom: created.uom,
+        sentQty: created.qty,
+        acceptedQty: created.qty,
+        amount: 0,
+        currency: '',
+        note: '',
+        eventType: '',
+        highlight: '',
+        status: DispatchStatus.accepted,
+        createdLabel: created.createdLabel,
+      );
       Navigator.of(context).pushNamedAndRemoveUntil(
         AppRoutes.werkaSuccess,
         (route) => route.isFirst,
         arguments: record,
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Mol jo‘natish bo‘lmadi: $error')),
       );
     } finally {
       if (mounted) {
@@ -409,8 +433,7 @@ class _WerkaCustomerIssueCustomerScreenState
                           const SizedBox(height: 6),
                           TextField(
                             controller: _qtyController,
-                            keyboardType:
-                                const TextInputType.numberWithOptions(
+                            keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
                             decoration: InputDecoration(
