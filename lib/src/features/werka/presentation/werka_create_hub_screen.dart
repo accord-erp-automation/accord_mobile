@@ -1,6 +1,5 @@
 import '../../../app/app_router.dart';
 import '../../../core/widgets/app_shell.dart';
-import '../../../core/widgets/common_widgets.dart';
 import 'widgets/werka_dock.dart';
 import 'package:flutter/material.dart';
 
@@ -9,6 +8,8 @@ class WerkaCreateHubScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return AppShell(
       title: 'Qayd',
       subtitle: '',
@@ -20,36 +21,83 @@ class WerkaCreateHubScreen extends StatelessWidget {
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          SoftCard(
-            padding: EdgeInsets.zero,
-            borderWidth: 1.45,
-            borderRadius: 20,
+          Card.filled(
+            margin: EdgeInsets.zero,
+            color: scheme.surfaceContainerLow,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+              side: BorderSide(
+                color: scheme.outlineVariant.withValues(alpha: 0.7),
+              ),
+            ),
             child: Column(
               children: [
                 InkWell(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(28),
+                    topRight: Radius.circular(28),
+                  ),
                   onTap: () => Navigator.of(context).pushNamed(
                     AppRoutes.werkaUnannouncedSupplier,
                   ),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 20,
+                    ),
                     child: SizedBox(
                       width: double.infinity,
-                      child: Text('Aytilmagan mol'),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Aytilmagan mol',
+                            style: theme.textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Supplier, mol va miqdorni bir oqimda tanlang',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
                 const Divider(height: 1, thickness: 1),
                 InkWell(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(28),
+                    bottomRight: Radius.circular(28),
+                  ),
                   onTap: () => Navigator.of(context).pushNamed(
                     AppRoutes.werkaCustomerIssueCustomer,
                   ),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 20,
+                    ),
                     child: SizedBox(
                       width: double.infinity,
-                      child: Text('Mol jo‘natish'),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Mol jo‘natish',
+                            style: theme.textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Customerga jo‘natma yaratish oqimi',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
