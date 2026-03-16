@@ -1,4 +1,3 @@
-import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../shared/models/app_models.dart';
@@ -26,6 +25,8 @@ class _AdminSupplierDetailScreenState extends State<AdminSupplierDetailScreen> {
   bool _savingPhone = false;
   bool _regeneratingCode = false;
   bool _removing = false;
+  bool _addingItem = false;
+  String? _removingItemCode;
   int _retryAfterSec = 0;
   Timer? _retryTimer;
 
@@ -213,6 +214,98 @@ class _AdminSupplierDetailScreenState extends State<AdminSupplierDetailScreen> {
     );
   }
 
+  Future<bool> _assignItem(SupplierItem item) async {
+    setState(() => _addingItem = true);
+    try {
+      final updated = await MobileApi.instance.adminAssignSupplierItem(
+        ref: widget.supplierRef,
+        itemCode: item.code,
+      );
+      if (!mounted) {
+        return false;
+      }
+      _setRetryAfter(updated.codeRetryAfterSec);
+      setState(() {
+        _detailFuture = Future<AdminSupplierDetail>.value(updated);
+      });
+      return true;
+    } catch (error) {
+      if (!mounted) {
+        return false;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Mahsulot biriktirilmadi: $error')),
+      );
+      return false;
+    } finally {
+      if (mounted) {
+        setState(() => _addingItem = false);
+      }
+    }
+  }
+
+  Future<bool> _removeItem(SupplierItem item) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Mahsulotni uzish'),
+          content: Text('${item.name} mahsulotini supplierdan uzaymi?'),
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('Yo‘q'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text('Ha'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+    if (confirm != true) {
+      return false;
+    }
+
+    setState(() => _removingItemCode = item.code);
+    try {
+      final updated = await MobileApi.instance.adminRemoveSupplierItem(
+        ref: widget.supplierRef,
+        itemCode: item.code,
+      );
+      if (!mounted) {
+        return false;
+      }
+      _setRetryAfter(updated.codeRetryAfterSec);
+      setState(() {
+        _detailFuture = Future<AdminSupplierDetail>.value(updated);
+      });
+      return true;
+    } catch (error) {
+      if (!mounted) {
+        return false;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Mahsulot uzilmadi: $error')),
+      );
+      return false;
+    } finally {
+      if (mounted) {
+        setState(() => _removingItemCode = null);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -221,211 +314,222 @@ class _AdminSupplierDetailScreenState extends State<AdminSupplierDetailScreen> {
       backgroundColor: AppTheme.shellStart(context),
       body: SafeArea(
         child: FutureBuilder<AdminSupplierDetail>(
-        future: _detailFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator.adaptive());
-          }
-          if (snapshot.hasError) {
+          future: _detailFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator.adaptive());
+            }
+            if (snapshot.hasError) {
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+                children: [
+                  _SupplierDetailHeader(theme: theme),
+                  const SizedBox(height: 20),
+                  _SupplierDetailNoticeCard(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Supplier detail yuklanmadi: ${snapshot.error}'),
+                        const SizedBox(height: 12),
+                        FilledButton(
+                          onPressed: _reload,
+                          child: const Text('Qayta urinish'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            final detail = snapshot.data!;
+            final hasPhone = detail.phone.trim().isNotEmpty;
+            final scheme = theme.colorScheme;
+
             return ListView(
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
               children: [
                 _SupplierDetailHeader(theme: theme),
                 const SizedBox(height: 20),
-                _SupplierDetailNoticeCard(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('Supplier detail yuklanmadi: ${snapshot.error}'),
-                      const SizedBox(height: 12),
-                      FilledButton(
-                        onPressed: _reload,
-                        child: const Text('Qayta urinish'),
-                      ),
-                    ],
+                Card.filled(
+                  margin: EdgeInsets.zero,
+                  color: scheme.surfaceContainerLow,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
+                    side: BorderSide(
+                      color: scheme.outlineVariant.withValues(alpha: 0.7),
+                    ),
                   ),
-                ),
-              ],
-            );
-          }
-
-          final detail = snapshot.data!;
-          final hasPhone = detail.phone.trim().isNotEmpty;
-          final scheme = theme.colorScheme;
-
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-            children: [
-              _SupplierDetailHeader(theme: theme),
-              const SizedBox(height: 20),
-              Card.filled(
-                margin: EdgeInsets.zero,
-                color: scheme.surfaceContainerLow,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28),
-                  side: BorderSide(
-                    color: scheme.outlineVariant.withValues(alpha: 0.7),
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              detail.name,
-                              style: theme.textTheme.headlineMedium,
-                            ),
-                          ),
-                          _SupplierStatusChip(
-                            label: detail.blocked ? 'Blocked' : 'Tayyor',
-                            error: detail.blocked,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 18),
-                      Text('Ref', style: theme.textTheme.bodySmall),
-                      const SizedBox(height: 6),
-                      _SupplierDetailField(value: detail.ref),
-                      const SizedBox(height: 14),
-                      Text('Telefon', style: theme.textTheme.bodySmall),
-                      const SizedBox(height: 6),
-                      _SupplierDetailField(
-                        value: hasPhone ? detail.phone : 'Kiritilmagan',
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.tonal(
-                          onPressed: _savingPhone ? null : () => _addPhone(detail),
-                          child: Text(
-                            _savingPhone
-                                ? 'Saqlanmoqda...'
-                                : 'Telefonni yangilash',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Text('Code', style: theme.textTheme.bodySmall),
-                      const SizedBox(height: 6),
-                      _SupplierDetailField(
-                        child: Row(
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
                             Expanded(
-                              child: SelectableText(
-                                detail.code,
-                                style: theme.textTheme.titleMedium,
+                              child: Text(
+                                detail.name,
+                                style: theme.textTheme.headlineMedium,
                               ),
                             ),
-                            IconButton(
-                              onPressed: () => _copyCode(detail.code),
-                              icon: const Icon(Icons.content_copy_outlined),
-                            ),
-                            IconButton(
-                              onPressed:
-                                  _regeneratingCode || _retryAfterSec > 0
-                                      ? null
-                                      : _regenerateCode,
-                              icon: _regeneratingCode
-                                  ? const SizedBox(
-                                      height: 18,
-                                      width: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Icon(Icons.refresh_rounded),
+                            _SupplierStatusChip(
+                              label: detail.blocked ? 'Blocked' : 'Tayyor',
+                              error: detail.blocked,
                             ),
                           ],
                         ),
-                      ),
-                      if (_retryAfterSec > 0) ...[
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 18),
+                        Text('Ref', style: theme.textTheme.bodySmall),
+                        const SizedBox(height: 6),
+                        _SupplierDetailField(value: detail.ref),
+                        const SizedBox(height: 14),
+                        Text('Telefon', style: theme.textTheme.bodySmall),
+                        const SizedBox(height: 6),
+                        _SupplierDetailField(
+                          value: hasPhone ? detail.phone : 'Kiritilmagan',
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.tonal(
+                            onPressed:
+                                _savingPhone ? null : () => _addPhone(detail),
+                            child: Text(
+                              _savingPhone
+                                  ? 'Saqlanmoqda...'
+                                  : 'Telefonni yangilash',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text('Code', style: theme.textTheme.bodySmall),
+                        const SizedBox(height: 6),
+                        _SupplierDetailField(
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: SelectableText(
+                                  detail.code,
+                                  style: theme.textTheme.titleMedium,
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () => _copyCode(detail.code),
+                                icon: const Icon(Icons.content_copy_outlined),
+                              ),
+                              IconButton(
+                                onPressed:
+                                    _regeneratingCode || _retryAfterSec > 0
+                                        ? null
+                                        : _regenerateCode,
+                                icon: _regeneratingCode
+                                    ? const SizedBox(
+                                        height: 18,
+                                        width: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Icon(Icons.refresh_rounded),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (_retryAfterSec > 0) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            'Keyingi code uchun $_retryAfterSec soniya kuting.',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 18),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton(
+                            onPressed: _savingStatus
+                                ? null
+                                : () => _toggleBlocked(detail),
+                            child: Text(
+                              _savingStatus
+                                  ? 'Saqlanmoqda...'
+                                  : detail.blocked
+                                      ? 'Unblock qilish'
+                                      : 'Block qilish',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
                         Text(
-                          'Keyingi code uchun $_retryAfterSec soniya kuting.',
+                          'Biriktirilgan mahsulotlar',
+                          style: theme.textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          detail.assignedItems.isEmpty
+                              ? 'Hozircha mahsulot biriktirilmagan.'
+                              : '${detail.assignedItems.length} ta mahsulot biriktirilgan.',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: scheme.onSurfaceVariant,
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: detail.assignedItems.isEmpty
+                                    ? null
+                                    : () => _showAssignedSupplierItemsSheet(
+                                          context,
+                                          detail,
+                                          onRemoveItem: _removeItem,
+                                          removingItemCode:
+                                              _removingItemCode,
+                                        ),
+                                child: const Text('Ko‘rish'),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: _addingItem
+                                    ? null
+                                    : () => _showAvailableSupplierItemsSheet(
+                                          context,
+                                          detail,
+                                          onAddItem: _assignItem,
+                                        ),
+                                child: Text(
+                                  _addingItem ? 'Qo‘shilmoqda...' : 'Qo‘shish',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton(
+                            onPressed: _removing ? null : _removeSupplier,
+                            child: Text(
+                              _removing
+                                  ? 'Chiqarilmoqda...'
+                                  : 'Tizimdan chiqarish',
+                            ),
+                          ),
+                        ),
                       ],
-                      const SizedBox(height: 18),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton(
-                          onPressed: _savingStatus
-                              ? null
-                              : () => _toggleBlocked(detail),
-                          child: Text(
-                            _savingStatus
-                                ? 'Saqlanmoqda...'
-                                : detail.blocked
-                                    ? 'Unblock qilish'
-                                    : 'Block qilish',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      Text(
-                        'Biriktirilgan mahsulotlar',
-                        style: theme.textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        detail.assignedItems.isEmpty
-                            ? 'Hozircha mahsulot biriktirilmagan.'
-                            : '${detail.assignedItems.length} ta mahsulot biriktirilgan.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => Navigator.of(context).pushNamed(
-                                AppRoutes.adminSupplierItemsView,
-                                arguments: widget.supplierRef,
-                              ),
-                              child: const Text('Ko‘rish'),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => Navigator.of(context).pushNamed(
-                                AppRoutes.adminSupplierItemsAdd,
-                                arguments: widget.supplierRef,
-                              ),
-                              child: const Text('Qo‘shish'),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton(
-                          onPressed: _removing ? null : _removeSupplier,
-                          child: Text(
-                            _removing
-                                ? 'Chiqarilmoqda...'
-                                : 'Tizimdan chiqarish',
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-            ],
-          );
-        },
-      ),
+                const SizedBox(height: 24),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -540,4 +644,295 @@ class _SupplierDetailNoticeCard extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _showAssignedSupplierItemsSheet(
+  BuildContext context,
+  AdminSupplierDetail detail, {
+  required Future<bool> Function(SupplierItem item) onRemoveItem,
+  required String? removingItemCode,
+}) async {
+  final visibleItems = detail.assignedItems.toList();
+  final collapsingCodes = <String>{};
+  String? activeRemovingCode = removingItemCode;
+
+  await showModalBottomSheet<void>(
+    context: context,
+    useSafeArea: true,
+    isScrollControlled: true,
+    builder: (context) {
+      final theme = Theme.of(context);
+      final scheme = theme.colorScheme;
+      return StatefulBuilder(
+        builder: (context, setModalState) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Biriktirilgan mahsulotlar',
+                        style: theme.textTheme.titleLarge,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  detail.name,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: visibleItems.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final item = visibleItems[index];
+                      final collapsing = collapsingCodes.contains(item.code);
+                      return AnimatedSize(
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeInOutCubic,
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 180),
+                          curve: Curves.easeInOutCubic,
+                          opacity: collapsing ? 0 : 1,
+                          child: collapsing
+                              ? const SizedBox.shrink()
+                              : _SupplierDetailField(
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              item.name,
+                                              style: theme.textTheme.titleMedium,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              item.code,
+                                              style: theme.textTheme.bodySmall
+                                                  ?.copyWith(
+                                                color: scheme.onSurfaceVariant,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        onPressed: activeRemovingCode == item.code
+                                            ? null
+                                            : () async {
+                                                setModalState(() {
+                                                  activeRemovingCode = item.code;
+                                                });
+                                                final removed =
+                                                    await onRemoveItem(item);
+                                                if (!context.mounted) {
+                                                  return;
+                                                }
+                                                if (removed) {
+                                                  setModalState(() {
+                                                    collapsingCodes.add(item.code);
+                                                  });
+                                                  await Future<void>.delayed(
+                                                    const Duration(milliseconds: 180),
+                                                  );
+                                                  if (!context.mounted) {
+                                                    return;
+                                                  }
+                                                  setModalState(() {
+                                                    visibleItems.removeWhere(
+                                                      (current) =>
+                                                          current.code == item.code,
+                                                    );
+                                                    collapsingCodes.remove(item.code);
+                                                    activeRemovingCode = null;
+                                                  });
+                                                } else {
+                                                  setModalState(() {
+                                                    activeRemovingCode = null;
+                                                  });
+                                                }
+                                              },
+                                        icon: activeRemovingCode == item.code
+                                            ? const SizedBox(
+                                                height: 18,
+                                                width: 18,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                ),
+                                              )
+                                            : const Icon(Icons.remove_rounded),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+Future<void> _showAvailableSupplierItemsSheet(
+  BuildContext context,
+  AdminSupplierDetail detail, {
+  required Future<bool> Function(SupplierItem item) onAddItem,
+}) async {
+  final allItems = await MobileApi.instance.adminItems();
+  if (!context.mounted) {
+    return;
+  }
+  final assignedCodes = detail.assignedItems.map((item) => item.code).toSet();
+  final visibleItems =
+      allItems.where((item) => !assignedCodes.contains(item.code)).toList();
+  if (visibleItems.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Biriktirilmagan mahsulot topilmadi')),
+    );
+    return;
+  }
+
+  final collapsingCodes = <String>{};
+  String? activeAddingCode;
+
+  await showModalBottomSheet<void>(
+    context: context,
+    useSafeArea: true,
+    isScrollControlled: true,
+    builder: (context) {
+      final theme = Theme.of(context);
+      final scheme = theme.colorScheme;
+      return StatefulBuilder(
+        builder: (context, setModalState) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Mahsulot qo‘shish',
+                        style: theme.textTheme.titleLarge,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  detail.name,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: visibleItems.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final item = visibleItems[index];
+                      final collapsing = collapsingCodes.contains(item.code);
+                      return AnimatedSize(
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeInOutCubic,
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 180),
+                          curve: Curves.easeInOutCubic,
+                          opacity: collapsing ? 0 : 1,
+                          child: collapsing
+                              ? const SizedBox.shrink()
+                              : ListTile(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
+                                  tileColor: scheme.surfaceContainerHighest,
+                                  title: Text(item.name),
+                                  subtitle: Text(item.code),
+                                  trailing: activeAddingCode == item.code
+                                      ? const SizedBox(
+                                          height: 18,
+                                          width: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(Icons.add_rounded),
+                                  onTap: activeAddingCode == item.code
+                                      ? null
+                                      : () async {
+                                          setModalState(() {
+                                            activeAddingCode = item.code;
+                                          });
+                                          final added = await onAddItem(item);
+                                          if (!context.mounted) {
+                                            return;
+                                          }
+                                          if (added) {
+                                            setModalState(() {
+                                              collapsingCodes.add(item.code);
+                                            });
+                                            await Future<void>.delayed(
+                                              const Duration(milliseconds: 180),
+                                            );
+                                            if (!context.mounted) {
+                                              return;
+                                            }
+                                            setModalState(() {
+                                              visibleItems.removeWhere(
+                                                (current) =>
+                                                    current.code == item.code,
+                                              );
+                                              collapsingCodes.remove(item.code);
+                                              activeAddingCode = null;
+                                            });
+                                          } else {
+                                            setModalState(() {
+                                              activeAddingCode = null;
+                                            });
+                                          }
+                                        },
+                                ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
 }
