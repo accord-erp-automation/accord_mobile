@@ -3,6 +3,7 @@ import '../../../core/api/mobile_api.dart';
 import '../../../core/cache/json_cache_store.dart';
 import '../../../core/notifications/refresh_hub.dart';
 import '../../../core/notifications/notification_unread_store.dart';
+import '../../../core/notifications/werka_runtime_store.dart';
 import '../../../core/session/app_session.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/motion_widgets.dart';
@@ -151,7 +152,9 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
       child: Column(
         children: [
           Expanded(
-            child: FutureBuilder<_WerkaHomeData>(
+          child: AnimatedBuilder(
+            animation: WerkaRuntimeStore.instance,
+            builder: (context, _) => FutureBuilder<_WerkaHomeData>(
               future: _homeFuture,
               builder: (context, snapshot) {
                 final summary = snapshot.data?.summary ?? _cachedSummary;
@@ -204,15 +207,19 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
                     ),
                   );
                 }
-                final currentSummary = summary ??
-                    const WerkaHomeSummary(
-                      pendingCount: 0,
-                      confirmedCount: 0,
-                      returnedCount: 0,
-                    );
-                final previewItems = pendingItems.length > 3
-                    ? pendingItems.take(3).toList()
-                    : pendingItems;
+                final currentSummary = WerkaRuntimeStore.instance.applySummary(
+                  summary ??
+                      const WerkaHomeSummary(
+                        pendingCount: 0,
+                        confirmedCount: 0,
+                        returnedCount: 0,
+                      ),
+                );
+                final effectivePending = WerkaRuntimeStore.instance
+                    .applyPendingItems(pendingItems);
+                final previewItems = effectivePending.length > 3
+                    ? effectivePending.take(3).toList()
+                    : effectivePending;
 
                 return RefreshIndicator.adaptive(
                   onRefresh: _reload,
@@ -236,6 +243,7 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
               },
             ),
           ),
+        ),
         ],
       ),
     );

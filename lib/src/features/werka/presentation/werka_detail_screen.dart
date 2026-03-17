@@ -1,5 +1,6 @@
 import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
+import '../../../core/notifications/werka_runtime_store.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../shared/models/app_models.dart';
 import 'widgets/werka_dock.dart';
@@ -171,6 +172,10 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
         returnedQty: fullReturnMode ? widget.record.sentQty : returnedQty,
         returnReason: returnReason ?? '',
         returnComment: returnComment,
+      );
+      WerkaRuntimeStore.instance.recordTransition(
+        before: widget.record,
+        after: accepted,
       );
       if (!mounted) {
         return;

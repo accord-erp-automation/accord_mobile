@@ -1,6 +1,7 @@
 import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
 import '../../../core/notifications/notification_unread_store.dart';
+import '../../../core/notifications/supplier_runtime_store.dart';
 import '../../../core/session/app_session.dart';
 import '../../../core/widgets/app_shell.dart';
 import '../../supplier/presentation/widgets/supplier_dock.dart';
@@ -272,10 +273,15 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
 
     setState(() => _sending = true);
     try {
+      final current = await _future;
       final updated = await MobileApi.instance.supplierRespondUnannounced(
         receiptID: widget.receiptID,
         approve: approve,
         reason: reason,
+      );
+      SupplierRuntimeStore.instance.recordUnannouncedDecision(
+        fromStatus: current.record.status,
+        toStatus: updated.record.status,
       );
       if (!mounted) return;
       setState(() {

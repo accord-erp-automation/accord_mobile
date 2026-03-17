@@ -1,5 +1,6 @@
 import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
+import '../../../core/notifications/supplier_runtime_store.dart';
 import '../../../core/widgets/app_shell.dart';
 import '../../shared/models/app_models.dart';
 import 'widgets/supplier_dock.dart';
@@ -96,6 +97,7 @@ class SupplierConfirmScreen extends StatelessWidget {
                   itemCode: args.item.code,
                   qty: args.qty,
                 );
+                SupplierRuntimeStore.instance.recordCreatedPending();
                 if (!context.mounted) {
                   return;
                 }

@@ -2,6 +2,7 @@ import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
 import '../../../core/cache/json_cache_store.dart';
 import '../../../core/notifications/refresh_hub.dart';
+import '../../../core/notifications/supplier_runtime_store.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_shell.dart';
 import '../../../core/widgets/common_widgets.dart';
@@ -83,61 +84,64 @@ class _SupplierHomeScreenState extends State<SupplierHomeScreen>
       title: 'Supplier',
       subtitle: '',
       bottom: const SupplierDock(activeTab: SupplierDockTab.home),
-      child: FutureBuilder<SupplierHomeSummary>(
-        future: _summaryFuture,
-        builder: (context, snapshot) {
-          final summary = snapshot.data ?? _cachedSummary;
-          if (snapshot.connectionState != ConnectionState.done &&
-              summary == null) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError && summary == null) {
+      child: AnimatedBuilder(
+        animation: SupplierRuntimeStore.instance,
+        builder: (context, _) => FutureBuilder<SupplierHomeSummary>(
+          future: _summaryFuture,
+          builder: (context, snapshot) {
+            final summary = snapshot.data ?? _cachedSummary;
+            if (snapshot.connectionState != ConnectionState.done &&
+                summary == null) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError && summary == null) {
+              return RefreshIndicator.adaptive(
+                onRefresh: _reload,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  children: [
+                    const SizedBox(height: 120),
+                    SoftCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Home yuklanmadi',
+                              style: Theme.of(context).textTheme.titleMedium),
+                          const SizedBox(height: 8),
+                          Text(
+                            '${snapshot.error}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: _reload,
+                              child: const Text('Qayta urinish'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            final current = SupplierRuntimeStore.instance.applySummary(summary!);
+
             return RefreshIndicator.adaptive(
               onRefresh: _reload,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.zero,
                 children: [
-                  const SizedBox(height: 120),
-                  SoftCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Home yuklanmadi',
-                            style: Theme.of(context).textTheme.titleMedium),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${snapshot.error}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        const SizedBox(height: 14),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton(
-                            onPressed: _reload,
-                            child: const Text('Qayta urinish'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _SupplierSummaryCard(summary: current),
                 ],
               ),
             );
-          }
-          final current = summary!;
-
-          return RefreshIndicator.adaptive(
-            onRefresh: _reload,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.zero,
-              children: [
-                _SupplierSummaryCard(summary: current),
-              ],
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
   }

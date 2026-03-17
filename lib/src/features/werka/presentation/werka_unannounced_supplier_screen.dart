@@ -1,5 +1,6 @@
 import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
+import '../../../core/notifications/werka_runtime_store.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../shared/models/app_models.dart';
 import 'widgets/werka_dock.dart';
@@ -343,6 +344,7 @@ class _WerkaUnannouncedSupplierScreenState
         itemCode: _selectedItem!.code,
         qty: qty,
       );
+      WerkaRuntimeStore.instance.recordCreatedPending(record);
       if (!mounted) {
         return;
       }

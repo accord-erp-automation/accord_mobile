@@ -65,6 +65,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     await JsonCacheStore.instance.writeMap(_cacheKey, summary.toJson());
   }
 
+  Future<void> _openAndReload(String routeName) async {
+    await Navigator.of(context).pushNamed(routeName);
+    if (!mounted) {
+      return;
+    }
+    await _reload();
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppShell(
@@ -111,12 +119,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 SmoothAppear(
                   delay: const Duration(milliseconds: 20),
                   child: _AdminModulesSection(
-                    onTapSettings: () => Navigator.of(context)
-                        .pushNamed(AppRoutes.adminSettings),
-                    onTapSuppliers: () => Navigator.of(context)
-                        .pushNamed(AppRoutes.adminSuppliers),
-                    onTapWerka: () =>
-                        Navigator.of(context).pushNamed(AppRoutes.adminWerka),
+                    onTapSettings: () => _openAndReload(AppRoutes.adminSettings),
+                    onTapSuppliers: () =>
+                        _openAndReload(AppRoutes.adminSuppliers),
+                    onTapWerka: () => _openAndReload(AppRoutes.adminWerka),
                   ),
                 ),
                 if (summaryValue.blockedSuppliers > 0) ...[
@@ -125,8 +131,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                     delay: const Duration(milliseconds: 60),
                     child: _AdminBlockedSuppliersCard(
                       count: summaryValue.blockedSuppliers,
-                      onTap: () => Navigator.of(context)
-                          .pushNamed(AppRoutes.adminInactiveSuppliers),
+                      onTap: () =>
+                          _openAndReload(AppRoutes.adminInactiveSuppliers),
                     ),
                   ),
                 ],
