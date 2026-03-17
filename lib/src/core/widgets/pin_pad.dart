@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../theme/app_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -213,24 +214,43 @@ class _PinGlyph extends StatelessWidget {
   final int animateTick;
   final int variant;
 
-  ShapeBorder _polygonShape() {
+  ShapeBorder _startShape() {
+    return const StarBorder(
+      points: 5,
+      innerRadiusRatio: 0.46,
+      pointRounding: 0.58,
+      valleyRounding: 0.42,
+      squash: 0.06,
+    );
+  }
+
+  ShapeBorder _midShape() {
     switch (variant % 3) {
       case 0:
         return const StarBorder.polygon(
           sides: 5,
-          pointRounding: 0.32,
+          pointRounding: 0.56,
         );
       case 1:
         return const StarBorder.polygon(
-          sides: 6,
-          pointRounding: 0.28,
+          sides: 3,
+          pointRounding: 0.72,
         );
       default:
         return const StarBorder.polygon(
-          sides: 3,
-          pointRounding: 0.22,
+          sides: 6,
+          pointRounding: 0.52,
         );
     }
+  }
+
+  ShapeBorder _shapeAt(double t) {
+    if (t < 0.52) {
+      final local = Curves.easeOutCubic.transform(t / 0.52);
+      return ShapeBorder.lerp(_startShape(), _midShape(), local)!;
+    }
+    final local = AppMotion.emphasizedDecelerate.transform((t - 0.52) / 0.48);
+    return ShapeBorder.lerp(_midShape(), const CircleBorder(), local)!;
   }
 
   @override
@@ -250,35 +270,17 @@ class _PinGlyph extends StatelessWidget {
     return TweenAnimationBuilder<double>(
       key: ValueKey<String>('glyph-$variant-$animateTick'),
       tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 820),
-      curve: Curves.easeInOutCubic,
+      duration: const Duration(milliseconds: 760),
+      curve: AppMotion.emphasized,
       builder: (context, value, _) {
-        final polygonOpacity = (1 - (value * 1.08)).clamp(0.0, 1.0);
-        final circleOpacity = ((value - 0.28) / 0.72).clamp(0.0, 1.0);
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            Opacity(
-              opacity: polygonOpacity,
-              child: Transform.scale(
-                scale: 1.55 - (0.6 * value),
-                child: _GlyphSurface(
-                  shape: _polygonShape(),
-                  color: scheme.primary,
-                ),
-              ),
-            ),
-            Opacity(
-              opacity: circleOpacity,
-              child: Transform.scale(
-                scale: 0.74 + (0.26 * value),
-                child: _GlyphSurface(
-                  shape: const CircleBorder(),
-                  color: scheme.primary,
-                ),
-              ),
-            ),
-          ],
+        final size = 22.5 - (2.5 * Curves.easeOut.transform(value));
+        return Transform.scale(
+          scale: 1.08 - (0.08 * Curves.easeOut.transform(value)),
+          child: _GlyphSurface(
+            shape: _shapeAt(value),
+            color: scheme.primary,
+            size: size,
+          ),
         );
       },
     );
@@ -289,16 +291,18 @@ class _GlyphSurface extends StatelessWidget {
   const _GlyphSurface({
     required this.shape,
     required this.color,
+    this.size = 20,
   });
 
   final ShapeBorder shape;
   final Color color;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 20,
-      height: 20,
+      width: size,
+      height: size,
       child: DecoratedBox(
         decoration: ShapeDecoration(
           color: color,
