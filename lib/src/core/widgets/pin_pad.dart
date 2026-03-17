@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import '../theme/app_motion.dart';
 import 'package:flutter/material.dart';
@@ -248,27 +249,40 @@ class _PinGlyph extends StatelessWidget {
   ShapeBorder _startShape() {
     switch (_shapeSeed) {
       case 0:
-        return const StarBorder(
-          points: 5,
-          innerRadiusRatio: 0.42,
-          pointRounding: 0.20,
-          valleyRounding: 0.10,
-          squash: 0.0,
+        return const _OrganicBlobBorder(
+          lobes: 2,
+          amplitude: 0.16,
+          secondaryAmplitude: 0.05,
+          rotation: 0.7,
+          scaleX: 0.94,
+          scaleY: 0.86,
         );
       case 1:
-        return const StarBorder.polygon(
-          sides: 3,
-          pointRounding: 0.12,
+        return const _OrganicBlobBorder(
+          lobes: 3,
+          amplitude: 0.18,
+          secondaryAmplitude: 0.04,
+          rotation: -0.2,
+          scaleX: 0.9,
+          scaleY: 0.88,
         );
       case 2:
-        return const StarBorder.polygon(
-          sides: 5,
-          pointRounding: 0.08,
+        return const _OrganicBlobBorder(
+          lobes: 4,
+          amplitude: 0.15,
+          secondaryAmplitude: 0.05,
+          rotation: 0.45,
+          scaleX: 0.92,
+          scaleY: 0.92,
         );
       default:
-        return const StarBorder.polygon(
-          sides: 6,
-          pointRounding: 0.06,
+        return const _OrganicBlobBorder(
+          lobes: 6,
+          amplitude: 0.11,
+          secondaryAmplitude: 0.03,
+          rotation: 0.0,
+          scaleX: 0.94,
+          scaleY: 0.94,
         );
     }
   }
@@ -276,26 +290,53 @@ class _PinGlyph extends StatelessWidget {
   ShapeBorder _midShape() {
     switch (_shapeSeed) {
       case 0:
-        return const StarBorder.polygon(
-          sides: 5,
-          pointRounding: 0.46,
+        return const _OrganicBlobBorder(
+          lobes: 2,
+          amplitude: 0.10,
+          secondaryAmplitude: 0.03,
+          rotation: 0.7,
+          scaleX: 0.97,
+          scaleY: 0.93,
         );
       case 1:
-        return const StarBorder.polygon(
-          sides: 4,
-          pointRounding: 0.32,
+        return const _OrganicBlobBorder(
+          lobes: 3,
+          amplitude: 0.10,
+          secondaryAmplitude: 0.03,
+          rotation: -0.2,
+          scaleX: 0.95,
+          scaleY: 0.93,
         );
       case 2:
-        return const StarBorder.polygon(
-          sides: 6,
-          pointRounding: 0.28,
+        return const _OrganicBlobBorder(
+          lobes: 4,
+          amplitude: 0.09,
+          secondaryAmplitude: 0.03,
+          rotation: 0.45,
+          scaleX: 0.97,
+          scaleY: 0.97,
         );
       default:
-        return const StarBorder.polygon(
-          sides: 8,
-          pointRounding: 0.26,
+        return const _OrganicBlobBorder(
+          lobes: 6,
+          amplitude: 0.07,
+          secondaryAmplitude: 0.02,
+          rotation: 0.0,
+          scaleX: 0.98,
+          scaleY: 0.98,
         );
     }
+  }
+
+  ShapeBorder _settledShape() {
+    return const _OrganicBlobBorder(
+      lobes: 6,
+      amplitude: 0,
+      secondaryAmplitude: 0,
+      rotation: 0,
+      scaleX: 1,
+      scaleY: 1,
+    );
   }
 
   ShapeBorder _shapeAt(double t) {
@@ -307,7 +348,7 @@ class _PinGlyph extends StatelessWidget {
       return ShapeBorder.lerp(_startShape(), _midShape(), local)!;
     }
     final local = AppMotion.standardDecelerate.transform((t - 0.62) / 0.38);
-    return ShapeBorder.lerp(_midShape(), const CircleBorder(), local)!;
+    return ShapeBorder.lerp(_midShape(), _settledShape(), local)!;
   }
 
   double _sizeAt(double t) {
@@ -332,7 +373,14 @@ class _PinGlyph extends StatelessWidget {
         height: 36,
         child: Center(
           child: _GlyphSurface(
-            shape: CircleBorder(),
+            shape: _OrganicBlobBorder(
+              lobes: 6,
+              amplitude: 0,
+              secondaryAmplitude: 0,
+              rotation: 0,
+              scaleX: 1,
+              scaleY: 1,
+            ),
             color: null,
             size: 20,
           ),
@@ -359,7 +407,7 @@ class _PinGlyph extends StatelessWidget {
                   angle: 0.18 * eased,
                   child: _GlyphSurface(
                     shape: ShapeBorder.lerp(
-                      const CircleBorder(),
+                      _settledShape(),
                       _midShape(),
                       eased,
                     )!,
@@ -429,6 +477,127 @@ class _GlyphSurface extends StatelessWidget {
     );
   }
 }
+
+class _OrganicBlobBorder extends OutlinedBorder {
+  const _OrganicBlobBorder({
+    required this.lobes,
+    required this.amplitude,
+    required this.secondaryAmplitude,
+    required this.rotation,
+    required this.scaleX,
+    required this.scaleY,
+    super.side,
+  });
+
+  final double lobes;
+  final double amplitude;
+  final double secondaryAmplitude;
+  final double rotation;
+  final double scaleX;
+  final double scaleY;
+
+  @override
+  EdgeInsetsGeometry get dimensions => EdgeInsets.zero;
+
+  @override
+  ShapeBorder scale(double t) {
+    return _OrganicBlobBorder(
+      lobes: lobes,
+      amplitude: amplitude,
+      secondaryAmplitude: secondaryAmplitude,
+      rotation: rotation,
+      scaleX: scaleX,
+      scaleY: scaleY,
+      side: side.scale(t),
+    );
+  }
+
+  @override
+  ShapeBorder? lerpFrom(ShapeBorder? a, double t) {
+    if (a is _OrganicBlobBorder) {
+      return _OrganicBlobBorder(
+        lobes: _lerpDouble(a.lobes, lobes, t),
+        amplitude: _lerpDouble(a.amplitude, amplitude, t),
+        secondaryAmplitude:
+            _lerpDouble(a.secondaryAmplitude, secondaryAmplitude, t),
+        rotation: _lerpDouble(a.rotation, rotation, t),
+        scaleX: _lerpDouble(a.scaleX, scaleX, t),
+        scaleY: _lerpDouble(a.scaleY, scaleY, t),
+        side: BorderSide.lerp(a.side, side, t),
+      );
+    }
+    return super.lerpFrom(a, t);
+  }
+
+  @override
+  ShapeBorder? lerpTo(ShapeBorder? b, double t) {
+    if (b is _OrganicBlobBorder) {
+      return _OrganicBlobBorder(
+        lobes: _lerpDouble(lobes, b.lobes, t),
+        amplitude: _lerpDouble(amplitude, b.amplitude, t),
+        secondaryAmplitude:
+            _lerpDouble(secondaryAmplitude, b.secondaryAmplitude, t),
+        rotation: _lerpDouble(rotation, b.rotation, t),
+        scaleX: _lerpDouble(scaleX, b.scaleX, t),
+        scaleY: _lerpDouble(scaleY, b.scaleY, t),
+        side: BorderSide.lerp(side, b.side, t),
+      );
+    }
+    return super.lerpTo(b, t);
+  }
+
+  @override
+  Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
+    final center = rect.center;
+    final rx = rect.width / 2 * scaleX;
+    final ry = rect.height / 2 * scaleY;
+    const steps = 72;
+    final path = Path();
+
+    for (int i = 0; i <= steps; i++) {
+      final theta = (i / steps) * math.pi * 2;
+      final primary = math.cos((lobes * theta) + rotation);
+      final secondary = math.sin(((lobes + 1.35) * theta) - (rotation * 0.65));
+      final radiusFactor =
+          1 + (amplitude * primary) + (secondaryAmplitude * secondary);
+      final x = center.dx + (math.cos(theta) * rx * radiusFactor);
+      final y = center.dy + (math.sin(theta) * ry * radiusFactor);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+
+    path.close();
+    return path;
+  }
+
+  @override
+  Path getInnerPath(Rect rect, {TextDirection? textDirection}) {
+    return getOuterPath(rect, textDirection: textDirection);
+  }
+
+  @override
+  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {}
+
+  @override
+  _OrganicBlobBorder copyWith({
+    BorderSide? side,
+  }) {
+    return _OrganicBlobBorder(
+      lobes: lobes,
+      amplitude: amplitude,
+      secondaryAmplitude: secondaryAmplitude,
+      rotation: rotation,
+      scaleX: scaleX,
+      scaleY: scaleY,
+      side: side ?? this.side,
+    );
+  }
+}
+
+double _lerpDouble(double a, double b, double t) => a + ((b - a) * t);
 
 class _PinKeypadRow extends StatelessWidget {
   const _PinKeypadRow({
