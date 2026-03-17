@@ -32,6 +32,19 @@ class WerkaSuccessScreen extends StatelessWidget {
     return '${record.acceptedQty.toStringAsFixed(2)} ${record.uom} qabul qilindi';
   }
 
+  bool get _returnsToCreateHub {
+    return record.eventType == 'customer_issue_pending' ||
+        record.eventType == 'werka_unannounced_pending';
+  }
+
+  String get _ctaLabel {
+    return _returnsToCreateHub ? 'Qaydga qaytish' : 'Pending listga qaytish';
+  }
+
+  String get _targetRoute {
+    return _returnsToCreateHub ? AppRoutes.werkaCreateHub : AppRoutes.werkaHome;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -95,10 +108,10 @@ class WerkaSuccessScreen extends StatelessWidget {
             width: double.infinity,
             child: FilledButton(
               onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
-                AppRoutes.werkaHome,
+                _targetRoute,
                 (route) => route.isFirst,
               ),
-              child: const Text('Pending listga qaytish'),
+              child: Text(_ctaLabel),
             ),
           ),
         ],
