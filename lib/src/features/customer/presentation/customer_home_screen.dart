@@ -23,6 +23,7 @@ class CustomerHomeScreen extends StatefulWidget {
 
 class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   late Future<_CustomerHomePayload> _future;
+  _CustomerHomePayload? _cachedPayload;
   int _refreshVersion = 0;
 
   @override
@@ -40,19 +41,29 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
 
   Future<_CustomerHomePayload> _load() async {
     final results = await Future.wait<dynamic>([
-      MobileApi.instance.customerSummary(),
+      MobileApi.instance.customerStatusDetails(CustomerStatusKind.pending),
+      MobileApi.instance.customerStatusDetails(CustomerStatusKind.confirmed),
+      MobileApi.instance.customerStatusDetails(CustomerStatusKind.rejected),
       MobileApi.instance.customerHistory(),
     ]);
     return _CustomerHomePayload(
-      summary: results[0] as CustomerHomeSummary,
-      historyItems: results[1] as List<DispatchRecord>,
+      pendingItems: results[0] as List<DispatchRecord>,
+      confirmedItems: results[1] as List<DispatchRecord>,
+      rejectedItems: results[2] as List<DispatchRecord>,
+      historyItems: results[3] as List<DispatchRecord>,
     );
   }
 
   Future<void> _reload() async {
     final future = _load();
     setState(() => _future = future);
-    await future;
+    final payload = await future;
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _cachedPayload = payload;
+    });
   }
 
   void _handlePushRefresh() {
@@ -92,10 +103,15 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
       builder: (context, _) => FutureBuilder<_CustomerHomePayload>(
         future: _future,
         builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
+          final payload = snapshot.data ?? _cachedPayload;
+          if (snapshot.hasData && _cachedPayload == null) {
+            _cachedPayload = snapshot.data;
+          }
+          if (snapshot.connectionState != ConnectionState.done &&
+              payload == null) {
             return const Center(child: CircularProgressIndicator.adaptive());
           }
-          if (snapshot.hasError) {
+          if (snapshot.hasError && payload == null) {
             return Center(
               child: _QuietPanel(
                 child: Text('${snapshot.error}'),
@@ -103,13 +119,28 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             );
           }
 
-          final payload = snapshot.data!;
-          final summary = CustomerDeliveryRuntimeStore.instance
-              .applySummary(payload.summary);
+          final current = payload!;
+          final pendingItems = CustomerDeliveryRuntimeStore.instance
+              .applyStatusList(CustomerStatusKind.pending, current.pendingItems);
+          final confirmedItems = CustomerDeliveryRuntimeStore.instance
+              .applyStatusList(
+                CustomerStatusKind.confirmed,
+                current.confirmedItems,
+              );
+          final rejectedItems = CustomerDeliveryRuntimeStore.instance
+              .applyStatusList(
+                CustomerStatusKind.rejected,
+                current.rejectedItems,
+              );
           final previewItems = CustomerDeliveryRuntimeStore.instance
-              .applyHistory(payload.historyItems)
+              .applyHistory(current.historyItems)
               .take(3)
               .toList();
+          final summary = CustomerHomeSummary(
+            pendingCount: pendingItems.length,
+            confirmedCount: confirmedItems.length,
+            rejectedCount: rejectedItems.length,
+          );
 
           return RefreshIndicator.adaptive(
             onRefresh: _reload,
@@ -156,11 +187,15 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
 
 class _CustomerHomePayload {
   const _CustomerHomePayload({
-    required this.summary,
+    required this.pendingItems,
+    required this.confirmedItems,
+    required this.rejectedItems,
     required this.historyItems,
   });
 
-  final CustomerHomeSummary summary;
+  final List<DispatchRecord> pendingItems;
+  final List<DispatchRecord> confirmedItems;
+  final List<DispatchRecord> rejectedItems;
   final List<DispatchRecord> historyItems;
 }
 
