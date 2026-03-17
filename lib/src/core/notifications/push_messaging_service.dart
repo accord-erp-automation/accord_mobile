@@ -106,4 +106,16 @@ class PushMessagingService {
       platform: 'android',
     );
   }
+
+  Future<void> unregisterCurrentToken() async {
+    if (defaultTargetPlatform != TargetPlatform.android ||
+        !AppSession.instance.isLoggedIn) {
+      return;
+    }
+    final token = await FirebaseMessaging.instance.getToken();
+    if (token == null || token.trim().isEmpty) {
+      return;
+    }
+    await MobileApi.instance.unregisterPushToken(token);
+  }
 }

@@ -177,7 +177,6 @@ class WerkaStore extends ChangeNotifier {
   String _detailKey(WerkaStatusKind kind, String supplierRef) =>
       '${kind.name}:${supplierRef.trim()}';
 
-  @visibleForTesting
   void clear() {
     _loadingHome = false;
     _loadingHistory = false;
@@ -185,6 +184,12 @@ class WerkaStore extends ChangeNotifier {
     _loadedHistory = false;
     _homeError = null;
     _historyError = null;
+    _loadingBreakdown.clear();
+    _breakdownErrors.clear();
+    _breakdownItems.clear();
+    _loadingDetail.clear();
+    _detailErrors.clear();
+    _detailItems.clear();
     _summary = const WerkaHomeSummary(
       pendingCount: 0,
       confirmedCount: 0,

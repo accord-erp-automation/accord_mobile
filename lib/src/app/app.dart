@@ -3,7 +3,6 @@ import '../core/app_preview.dart';
 import '../core/network/network_requirement_runtime.dart';
 import '../core/notifications/notification_runtime.dart';
 import '../core/security/app_lock_gate.dart';
-import '../core/session/app_session.dart';
 import '../core/theme/theme_controller.dart';
 import 'app_router.dart';
 import 'package:device_preview/device_preview.dart';
@@ -40,7 +39,7 @@ class ErpnextStockMobileApp extends StatelessWidget {
             overscroll: false,
           ),
           onGenerateRoute: AppRouter.onGenerateRoute,
-          initialRoute: AppSession.instance.initialRoute,
+          initialRoute: AppRoutes.login,
         );
       },
     );

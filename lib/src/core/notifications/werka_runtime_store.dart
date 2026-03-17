@@ -93,7 +93,6 @@ class WerkaRuntimeStore extends ChangeNotifier {
     return result;
   }
 
-  @visibleForTesting
   void clear() {
     _mutations.clear();
     notifyListeners();

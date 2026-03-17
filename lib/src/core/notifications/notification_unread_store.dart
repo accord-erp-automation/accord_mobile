@@ -154,6 +154,14 @@ class NotificationUnreadStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> clearAll() async {
+    _unreadByUser.clear();
+    _loaded = true;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_prefsKey);
+    notifyListeners();
+  }
+
   String? _userKey(SessionProfile? profile) {
     final current = profile ?? AppSession.instance.profile;
     if (current == null) {

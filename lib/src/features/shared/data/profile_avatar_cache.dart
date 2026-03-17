@@ -69,4 +69,20 @@ class ProfileAvatarCache {
     }
     return clean.substring(dot);
   }
+
+  static Future<void> clearForProfile(SessionProfile profile) async {
+    if (profile.ref.trim().isEmpty) {
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final path = prefs.getString(_pathKey(profile.ref));
+    if (path != null && path.trim().isNotEmpty) {
+      final file = File(path);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    }
+    await prefs.remove(_pathKey(profile.ref));
+    await prefs.remove(_urlKey(profile.ref));
+  }
 }

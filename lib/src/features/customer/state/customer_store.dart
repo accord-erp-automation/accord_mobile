@@ -136,7 +136,6 @@ class CustomerStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  @visibleForTesting
   void clear() {
     _loading = false;
     _loaded = false;

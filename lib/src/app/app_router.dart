@@ -1,4 +1,5 @@
 import '../features/auth/presentation/login_screen.dart';
+import '../features/auth/presentation/app_entry_screen.dart';
 import '../features/customer/presentation/customer_delivery_detail_screen.dart';
 import '../features/customer/presentation/customer_home_screen.dart';
 import '../features/customer/presentation/customer_notifications_screen.dart';
@@ -111,7 +112,7 @@ class AppRouter {
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case AppRoutes.login:
-        return _buildRoute(settings, const LoginScreen());
+        return _buildRoute(settings, const AppEntryScreen());
       case AppRoutes.supplierHome:
         return _buildRoute(settings, const SupplierHomeScreen());
       case AppRoutes.supplierStatusBreakdown:

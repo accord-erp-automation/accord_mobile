@@ -33,6 +33,9 @@ extension MobileApiAuthProfile on MobileApi {
     final SessionProfile profile =
         SessionProfile.fromJson(json['profile'] as Map<String, dynamic>);
     await AppSession.instance.setSession(token: token, profile: profile);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(MobileApi._lastPhoneKey, phone);
+    await prefs.setString(MobileApi._lastCodeKey, code);
     return profile;
   }
 
@@ -71,6 +74,7 @@ extension MobileApiAuthProfile on MobileApi {
   Future<void> logout() async {
     final String? token = AppSession.instance.token;
     if (token != null) {
+      await PushMessagingService.instance.unregisterCurrentToken();
       await _sendAuthorized(
         () => http.post(
           Uri.parse('$baseUrl/v1/mobile/auth/logout'),

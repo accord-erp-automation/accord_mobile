@@ -46,6 +46,9 @@ class SecurityController extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> clearForLogout() async {
     _prefs ??= await SharedPreferences.getInstance();
     _locked = false;
+    _wasBackgrounded = false;
+    _suspendResumeLock = false;
+    _authInProgress = false;
     notifyListeners();
   }
 

@@ -71,6 +71,14 @@ class NotificationHiddenStore extends ChangeNotifier {
     return '${current.role.name}:${current.ref}';
   }
 
+  Future<void> clearAll() async {
+    _hiddenByUser.clear();
+    _loaded = true;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_prefsKey);
+    notifyListeners();
+  }
+
   Future<void> _persist() async {
     final prefs = await SharedPreferences.getInstance();
     final payload = <String, List<String>>{};

@@ -82,7 +82,6 @@ class SupplierRuntimeStore extends ChangeNotifier {
     );
   }
 
-  @visibleForTesting
   void clear() {
     _mutations.clear();
     notifyListeners();

@@ -5,6 +5,7 @@ void main() {
   testWidgets('login screen renders phone and code fields',
       (WidgetTester tester) async {
     await tester.pumpWidget(const ErpnextStockMobileApp());
+    await tester.pumpAndSettle();
 
     expect(find.text('Telefon raqam'), findsOneWidget);
     expect(find.text('Code'), findsOneWidget);

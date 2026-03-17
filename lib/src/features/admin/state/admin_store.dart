@@ -80,4 +80,20 @@ class AdminStore extends ChangeNotifier {
       refreshActivity(),
     ]);
   }
+
+  void clear() {
+    _loadingSummary = false;
+    _loadingActivity = false;
+    _loadedSummary = false;
+    _loadedActivity = false;
+    _summaryError = null;
+    _activityError = null;
+    _summary = const AdminSupplierSummary(
+      totalSuppliers: 0,
+      activeSuppliers: 0,
+      blockedSuppliers: 0,
+    );
+    _activityItems = const <DispatchRecord>[];
+    notifyListeners();
+  }
 }

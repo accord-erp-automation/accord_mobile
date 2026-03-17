@@ -171,4 +171,26 @@ class SupplierStore extends ChangeNotifier {
 
   String _detailKey(SupplierStatusKind kind, String itemCode) =>
       '${kind.name}:${itemCode.trim()}';
+
+  void clear() {
+    _loadingSummary = false;
+    _loadingHistory = false;
+    _loadedSummary = false;
+    _loadedHistory = false;
+    _summaryError = null;
+    _historyError = null;
+    _loadingBreakdown.clear();
+    _breakdownErrors.clear();
+    _breakdownItems.clear();
+    _loadingDetail.clear();
+    _detailErrors.clear();
+    _detailItems.clear();
+    _summary = const SupplierHomeSummary(
+      pendingCount: 0,
+      submittedCount: 0,
+      returnedCount: 0,
+    );
+    _historyItems = const <DispatchRecord>[];
+    notifyListeners();
+  }
 }

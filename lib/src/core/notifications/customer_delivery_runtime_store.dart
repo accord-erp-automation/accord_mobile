@@ -52,7 +52,6 @@ class CustomerDeliveryRuntimeStore extends ChangeNotifier {
     _reconcileWith(serverById);
   }
 
-  @visibleForTesting
   void clear() {
     _mutations.clear();
     _latestStatusLists.clear();

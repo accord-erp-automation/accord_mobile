@@ -1,4 +1,5 @@
 import '../../features/shared/models/app_models.dart';
+import 'app_runtime_reset.dart';
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,7 +15,7 @@ class AppSession {
   SessionProfile? profile;
 
   bool get isLoggedIn => token != null && profile != null;
-  String get initialRoute {
+  String get homeRoute {
     if (!isLoggedIn) {
       return '/';
     }
@@ -50,6 +51,16 @@ class AppSession {
     required String token,
     required SessionProfile profile,
   }) async {
+    final previousProfile = this.profile;
+    final previousKey = previousProfile == null
+        ? ''
+        : '${previousProfile.role.name}:${previousProfile.ref}';
+    final nextKey = '${profile.role.name}:${profile.ref}';
+    if (previousKey.isNotEmpty && previousKey != nextKey) {
+      await AppRuntimeReset.instance.resetSessionScopedState(
+        previousProfile: previousProfile,
+      );
+    }
     this.token = token;
     this.profile = profile;
     final prefs = await SharedPreferences.getInstance();
@@ -58,11 +69,15 @@ class AppSession {
   }
 
   Future<void> clear() async {
+    final previousProfile = profile;
     token = null;
     profile = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_profileKey);
+    await AppRuntimeReset.instance.resetSessionScopedState(
+      previousProfile: previousProfile,
+    );
   }
 
   Future<void> updateProfile(SessionProfile nextProfile) async {
