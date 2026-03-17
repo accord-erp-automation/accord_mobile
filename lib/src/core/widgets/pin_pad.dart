@@ -200,7 +200,7 @@ class _PinIndicatorRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 34,
+      height: 40,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: List<Widget>.generate(4, (index) {
@@ -345,9 +345,13 @@ class _PinGlyph extends StatelessWidget {
   }
 
   double _sizeAt(double t) {
+    if (t < 0.12) {
+      final local = Curves.easeOutBack.transform(t / 0.12);
+      return 18.0 + (22.0 * local);
+    }
     if (t < 0.34) {
-      final local = Curves.easeOut.transform(t / 0.34);
-      return 38.0 - (4.0 * local);
+      final local = Curves.easeOut.transform((t - 0.12) / 0.22);
+      return 40.0 - (4.0 * local);
     }
     final local = AppMotion.standardDecelerate.transform((t - 0.34) / 0.66);
     return 34.0 - (14.0 * local);
@@ -357,13 +361,13 @@ class _PinGlyph extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     if (!filled && motion != _PinGlyphMotion.delete) {
-      return const SizedBox(width: 36, height: 36);
+      return const SizedBox(width: 40, height: 40);
     }
 
     if (motion == _PinGlyphMotion.none) {
       return const SizedBox(
-        width: 36,
-        height: 36,
+        width: 40,
+        height: 40,
         child: Center(
           child: _GlyphSurface(
             shape: CircleBorder(),
@@ -384,8 +388,8 @@ class _PinGlyph extends StatelessWidget {
           final eased = AppMotion.standardAccelerate.transform(value);
           final size = 20.0 - (12.0 * eased);
           return SizedBox(
-            width: 36,
-            height: 36,
+            width: 40,
+            height: 40,
             child: Center(
               child: Opacity(
                 opacity: 1 - eased,
@@ -417,8 +421,8 @@ class _PinGlyph extends StatelessWidget {
         final eased = AppMotion.standardDecelerate.transform(value);
         final size = _sizeAt(value);
         return SizedBox(
-          width: 36,
-          height: 36,
+          width: 40,
+          height: 40,
           child: Center(
             child: Transform.rotate(
               angle: 0,
