@@ -834,15 +834,20 @@ class _PinActionButtonState extends State<_PinActionButton> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final idleColor = widget.emphasized
-        ? scheme.primary.withValues(alpha: 0.82)
+        ? scheme.primaryContainer
         : scheme.surfaceContainerHigh.withValues(alpha: 0.78);
     final pressedColor = widget.emphasized
-        ? scheme.primary.withValues(alpha: 0.96)
+        ? Color.alphaBlend(
+            scheme.primary.withValues(alpha: 0.18),
+            scheme.primaryContainer,
+          )
         : scheme.secondaryContainer.withValues(alpha: 0.82);
-    final foreground = widget.emphasized ? scheme.onPrimary : scheme.onSurface;
+    final foreground =
+        widget.emphasized ? scheme.onPrimaryContainer : scheme.onSurface;
     final overlayColor = widget.emphasized
-        ? scheme.onPrimary.withValues(alpha: 0.10)
+        ? scheme.onPrimaryContainer.withValues(alpha: 0.08)
         : scheme.secondaryContainer.withValues(alpha: 0.22);
     return GestureDetector(
       onTapDown: widget.enabled ? (_) => _press() : null,
@@ -872,6 +877,22 @@ class _PinActionButtonState extends State<_PinActionButton> {
               ? (_pressed ? pressedColor : idleColor)
               : idleColor.withValues(alpha: 0.28),
           borderRadius: BorderRadius.circular(_pressed ? 28 : 999),
+          border: Border.all(
+            color: widget.emphasized
+                ? scheme.outlineVariant.withValues(alpha: 0.28)
+                : Colors.transparent,
+          ),
+          boxShadow: widget.emphasized
+              ? [
+                  BoxShadow(
+                    color: scheme.primary.withValues(
+                      alpha: isDark ? 0.16 : 0.10,
+                    ),
+                    blurRadius: isDark ? 22 : 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : const [],
         ),
         child: Stack(
           alignment: Alignment.center,
@@ -896,7 +917,7 @@ class _PinActionButtonState extends State<_PinActionButton> {
               color: widget.enabled
                   ? foreground
                   : foreground.withValues(alpha: 0.35),
-              size: 28,
+              size: 30,
             ),
           ],
         ),
