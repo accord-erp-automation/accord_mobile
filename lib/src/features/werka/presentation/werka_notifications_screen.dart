@@ -270,7 +270,8 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
           }
 
           if (items.isEmpty) {
-            return Center(
+            return Align(
+              alignment: const Alignment(0, -0.22),
               child: Text(
                 'Hali bildirishnomalar yo‘q.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(

@@ -13,7 +13,6 @@ class WerkaCreateHubScreen extends StatelessWidget {
     return AppShell(
       title: 'Qayd',
       subtitle: '',
-      leading: const _CreateHubBackButton(),
       bottom: const WerkaDock(activeTab: null),
       contentPadding: const EdgeInsets.fromLTRB(10, 0, 12, 0),
       child: ListView(
@@ -106,22 +105,6 @@ class WerkaCreateHubScreen extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CreateHubBackButton extends StatelessWidget {
-  const _CreateHubBackButton();
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 52,
-      width: 52,
-      child: IconButton.filledTonal(
-        onPressed: () => Navigator.of(context).maybePop(),
-        icon: const Icon(Icons.arrow_back_rounded, size: 28),
       ),
     );
   }
