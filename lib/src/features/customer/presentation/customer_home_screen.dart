@@ -1,5 +1,6 @@
 import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
+import '../../../core/notifications/customer_delivery_runtime_store.dart';
 import '../../../core/notifications/refresh_hub.dart';
 import '../../../core/theme/app_motion.dart';
 import '../../../core/widgets/app_shell.dart';
@@ -44,18 +45,11 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
       MobileApi.instance.customerStatusDetails(CustomerStatusKind.rejected),
       MobileApi.instance.customerHistory(),
     ]);
-    final pendingItems = results[0] as List<DispatchRecord>;
-    final confirmedItems = results[1] as List<DispatchRecord>;
-    final rejectedItems = results[2] as List<DispatchRecord>;
-    final history = results[3] as List<DispatchRecord>;
-    final summary = CustomerHomeSummary(
-      pendingCount: pendingItems.length,
-      confirmedCount: confirmedItems.length,
-      rejectedCount: rejectedItems.length,
-    );
     return _CustomerHomePayload(
-      summary: summary,
-      previewItems: history.take(3).toList(),
+      pendingItems: results[0] as List<DispatchRecord>,
+      confirmedItems: results[1] as List<DispatchRecord>,
+      rejectedItems: results[2] as List<DispatchRecord>,
+      historyItems: results[3] as List<DispatchRecord>,
     );
   }
 
@@ -97,46 +91,71 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final content = FutureBuilder<_CustomerHomePayload>(
-      future: _future,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator.adaptive());
-        }
-        if (snapshot.hasError) {
-          return Center(
-            child: _QuietPanel(
-              child: Text('${snapshot.error}'),
+    final content = AnimatedBuilder(
+      animation: CustomerDeliveryRuntimeStore.instance,
+      builder: (context, _) => FutureBuilder<_CustomerHomePayload>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator.adaptive());
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: _QuietPanel(
+                child: Text('${snapshot.error}'),
+              ),
+            );
+          }
+
+          final payload = snapshot.data!;
+          final pendingItems = CustomerDeliveryRuntimeStore.instance
+              .applyStatusList(CustomerStatusKind.pending, payload.pendingItems);
+          final confirmedItems = CustomerDeliveryRuntimeStore.instance
+              .applyStatusList(
+                CustomerStatusKind.confirmed,
+                payload.confirmedItems,
+              );
+          final rejectedItems = CustomerDeliveryRuntimeStore.instance
+              .applyStatusList(
+                CustomerStatusKind.rejected,
+                payload.rejectedItems,
+              );
+          final previewItems = CustomerDeliveryRuntimeStore.instance
+              .applyHistory(payload.historyItems)
+              .take(3)
+              .toList();
+          final summary = CustomerHomeSummary(
+            pendingCount: pendingItems.length,
+            confirmedCount: confirmedItems.length,
+            rejectedCount: rejectedItems.length,
+          );
+
+          return RefreshIndicator.adaptive(
+            onRefresh: _reload,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
+              children: [
+                SmoothAppear(
+                  delay: const Duration(milliseconds: 20),
+                  child: _CustomerStatusPanel(
+                    summary: summary,
+                    onOpenStatus: _openStatus,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                SmoothAppear(
+                  delay: const Duration(milliseconds: 60),
+                  child: _CustomerShipmentsPanel(
+                    items: previewItems,
+                    onTapRecord: _openDetail,
+                  ),
+                ),
+              ],
             ),
           );
-        }
-
-        final payload = snapshot.data!;
-        return RefreshIndicator.adaptive(
-          onRefresh: _reload,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
-            children: [
-              SmoothAppear(
-                delay: const Duration(milliseconds: 20),
-                child: _CustomerStatusPanel(
-                  summary: payload.summary,
-                  onOpenStatus: _openStatus,
-                ),
-              ),
-              const SizedBox(height: 18),
-              SmoothAppear(
-                delay: const Duration(milliseconds: 60),
-                child: _CustomerShipmentsPanel(
-                  items: payload.previewItems,
-                  onTapRecord: _openDetail,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+        },
+      ),
     );
 
     if (!widget.showShell) {
@@ -156,12 +175,16 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
 
 class _CustomerHomePayload {
   const _CustomerHomePayload({
-    required this.summary,
-    required this.previewItems,
+    required this.pendingItems,
+    required this.confirmedItems,
+    required this.rejectedItems,
+    required this.historyItems,
   });
 
-  final CustomerHomeSummary summary;
-  final List<DispatchRecord> previewItems;
+  final List<DispatchRecord> pendingItems;
+  final List<DispatchRecord> confirmedItems;
+  final List<DispatchRecord> rejectedItems;
+  final List<DispatchRecord> historyItems;
 }
 
 class _QuietPanel extends StatelessWidget {

@@ -1,4 +1,5 @@
 import '../../../core/api/mobile_api.dart';
+import '../../../core/notifications/customer_delivery_runtime_store.dart';
 import '../../../core/notifications/refresh_hub.dart';
 import '../../../core/widgets/app_shell.dart';
 import 'widgets/customer_dock.dart';
@@ -116,6 +117,7 @@ class _CustomerDeliveryDetailScreenState
       }
     }
 
+    final current = await _future;
     setState(() => _submitting = true);
     try {
       final updated = await MobileApi.instance.customerRespondDelivery(
@@ -127,6 +129,10 @@ class _CustomerDeliveryDetailScreenState
       setState(() {
         _future = Future<CustomerDeliveryDetail>.value(updated);
       });
+      CustomerDeliveryRuntimeStore.instance.recordTransition(
+        before: current.record,
+        after: updated.record,
+      );
       RefreshHub.instance.emit('customer');
       Navigator.of(context).pop(true);
     } catch (error) {

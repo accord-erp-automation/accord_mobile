@@ -1,5 +1,6 @@
 import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
+import '../../../core/notifications/customer_delivery_runtime_store.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../shared/models/app_models.dart';
 import 'widgets/customer_dock.dart';
@@ -101,69 +102,80 @@ class _CustomerStatusDetailScreenState
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(14, 0, 16, 0),
-                child: FutureBuilder<List<DispatchRecord>>(
-                  future: _future,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState != ConnectionState.done) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (snapshot.hasError) {
-                      return Center(
-                        child: Card.filled(
-                          margin: EdgeInsets.zero,
-                          color: scheme.surfaceContainerLow,
-                          child: Padding(
-                            padding: const EdgeInsets.all(18),
-                            child: Text('${snapshot.error}'),
-                          ),
-                        ),
-                      );
-                    }
-                    final items = snapshot.data ?? const <DispatchRecord>[];
-                    if (items.isEmpty) {
-                      return Center(
-                        child: Card.filled(
-                          margin: EdgeInsets.zero,
-                          color: scheme.surfaceContainerLow,
-                          child: Padding(
-                            padding: const EdgeInsets.all(18),
-                            child: Text(
-                              'Hozircha yozuv yo‘q.',
-                              style: theme.textTheme.titleMedium,
+                child: AnimatedBuilder(
+                  animation: CustomerDeliveryRuntimeStore.instance,
+                  builder: (context, _) {
+                    return FutureBuilder<List<DispatchRecord>>(
+                      future: _future,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState != ConnectionState.done) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Card.filled(
+                              margin: EdgeInsets.zero,
+                              color: scheme.surfaceContainerLow,
+                              child: Padding(
+                                padding: const EdgeInsets.all(18),
+                                child: Text('${snapshot.error}'),
+                              ),
                             ),
-                          ),
-                        ),
-                      );
-                    }
-                    return RefreshIndicator.adaptive(
-                      onRefresh: _reload,
-                      child: ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.only(bottom: 110),
-                        children: [
-                          Card.filled(
-                            margin: EdgeInsets.zero,
-                            color: scheme.surfaceContainerLow,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(28),
+                          );
+                        }
+                        final items = CustomerDeliveryRuntimeStore.instance
+                            .applyStatusList(
+                              widget.kind,
+                              snapshot.data ?? const <DispatchRecord>[],
+                            );
+                        if (items.isEmpty) {
+                          return Center(
+                            child: Card.filled(
+                              margin: EdgeInsets.zero,
+                              color: scheme.surfaceContainerLow,
+                              child: Padding(
+                                padding: const EdgeInsets.all(18),
+                                child: Text(
+                                  'Hozircha yozuv yo‘q.',
+                                  style: theme.textTheme.titleMedium,
+                                ),
+                              ),
                             ),
-                            child: Column(
-                              children: [
-                                for (int index = 0;
-                                    index < items.length;
-                                    index++) ...[
-                                  _CustomerStatusRecordRow(
-                                    record: items[index],
-                                    onTap: () => _openDetail(items[index].id),
-                                  ),
-                                  if (index != items.length - 1)
-                                    const Divider(height: 1, thickness: 1),
-                                ],
-                              ],
-                            ),
+                          );
+                        }
+                        return RefreshIndicator.adaptive(
+                          onRefresh: _reload,
+                          child: ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.only(bottom: 110),
+                            children: [
+                              Card.filled(
+                                margin: EdgeInsets.zero,
+                                color: scheme.surfaceContainerLow,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(28),
+                                ),
+                                child: Column(
+                                  children: [
+                                    for (int index = 0;
+                                        index < items.length;
+                                        index++) ...[
+                                      _CustomerStatusRecordRow(
+                                        record: items[index],
+                                        onTap: () => _openDetail(items[index].id),
+                                      ),
+                                      if (index != items.length - 1)
+                                        const Divider(height: 1, thickness: 1),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     );
                   },
                 ),
