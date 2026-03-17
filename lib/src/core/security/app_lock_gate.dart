@@ -31,7 +31,8 @@ class _AppLockGateState extends State<AppLockGate> {
     return AnimatedBuilder(
       animation: SecurityController.instance,
       builder: (context, _) {
-        if (!SecurityController.instance.locked) {
+        final locked = SecurityController.instance.locked;
+        if (!locked) {
           _biometricAttempted = false;
           return widget.child;
         }
@@ -47,11 +48,22 @@ class _AppLockGateState extends State<AppLockGate> {
         return Stack(
           children: [
             Positioned.fill(
+              child: IgnorePointer(
+                ignoring: true,
+                child: TickerMode(
+                  enabled: !locked,
+                  child: widget.child,
+                ),
+              ),
+            ),
+            Positioned.fill(
               child: Container(
                 color: Theme.of(context).colorScheme.surface,
               ),
             ),
-            const _PinUnlockOverlay(),
+            const Positioned.fill(
+              child: _PinUnlockOverlay(),
+            ),
           ],
         );
       },
