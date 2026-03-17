@@ -183,7 +183,7 @@ class _PinIndicatorRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 30,
+      height: 34,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: List<Widget>.generate(4, (index) {
@@ -288,13 +288,13 @@ class _PinGlyph extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     if (!filled) {
-      return const SizedBox(width: 28, height: 28);
+      return const SizedBox(width: 32, height: 32);
     }
 
     if (!animate) {
       return const SizedBox(
-        width: 28,
-        height: 28,
+        width: 32,
+        height: 32,
         child: Center(
           child: _GlyphSurface(
             shape: CircleBorder(),
@@ -312,10 +312,10 @@ class _PinGlyph extends StatelessWidget {
       curve: AppMotion.standardDecelerate,
       builder: (context, value, _) {
         final eased = AppMotion.standardDecelerate.transform(value);
-        final size = 30.0 - (10.0 * eased);
+        final size = 34.0 - (14.0 * eased);
         return SizedBox(
-          width: 28,
-          height: 28,
+          width: 32,
+          height: 32,
           child: Center(
             child: Transform.rotate(
               angle: 0.34 * eased,

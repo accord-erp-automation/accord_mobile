@@ -151,7 +151,8 @@ class _PinUnlockOverlayState extends State<_PinUnlockOverlay> {
     return Material(
       type: MaterialType.transparency,
       child: SafeArea(
-        child: Center(
+        child: Align(
+          alignment: const Alignment(0, 0.12),
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
