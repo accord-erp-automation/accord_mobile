@@ -209,7 +209,7 @@ class _SupplierItemPickerScreenState extends State<SupplierItemPickerScreen>
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  return RefreshIndicator.adaptive(
+                  return AppRefreshIndicator(
                     onRefresh: _reload,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -265,7 +265,7 @@ class _SupplierItemPickerScreenState extends State<SupplierItemPickerScreen>
                     ),
                   );
                 }
-                return RefreshIndicator.adaptive(
+                return AppRefreshIndicator(
                   onRefresh: _reload,
                   child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),

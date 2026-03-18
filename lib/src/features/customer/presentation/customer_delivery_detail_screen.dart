@@ -199,7 +199,7 @@ class _CustomerDeliveryDetailScreenState
           final record = detail.record;
           final theme = Theme.of(context);
           final scheme = theme.colorScheme;
-          return RefreshIndicator.adaptive(
+          return AppRefreshIndicator(
             onRefresh: _reload,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),

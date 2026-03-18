@@ -230,7 +230,7 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError && items.isEmpty) {
-            return RefreshIndicator.adaptive(
+            return AppRefreshIndicator(
               onRefresh: _reload,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -283,7 +283,7 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
             );
           }
 
-          return RefreshIndicator.adaptive(
+          return AppRefreshIndicator(
             onRefresh: _reload,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),

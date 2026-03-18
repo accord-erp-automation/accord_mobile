@@ -405,7 +405,7 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
               !isSupplierAckEvent &&
               !(role == UserRole.supplier && supplierAcknowledged);
 
-          return RefreshIndicator.adaptive(
+          return AppRefreshIndicator(
             onRefresh: _reload,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),

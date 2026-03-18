@@ -132,7 +132,7 @@ class _SupplierSubmittedCategoryDetailScreenState
           if (items.isEmpty) {
             return Center(child: Text(context.l10n.noRecordsYet));
           }
-          return RefreshIndicator.adaptive(
+          return AppRefreshIndicator(
             onRefresh: _reload,
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 4),

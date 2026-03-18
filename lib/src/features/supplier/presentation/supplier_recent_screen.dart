@@ -71,7 +71,7 @@ class _SupplierRecentScreenState extends State<SupplierRecentScreen>
             return const Center(child: CircularProgressIndicator());
           }
           if (store.historyError != null && !store.loadedHistory) {
-            return RefreshIndicator.adaptive(
+            return AppRefreshIndicator(
               onRefresh: _reload,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -121,7 +121,7 @@ class _SupplierRecentScreenState extends State<SupplierRecentScreen>
             );
           }
 
-          return RefreshIndicator.adaptive(
+          return AppRefreshIndicator(
             onRefresh: _reload,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),

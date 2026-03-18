@@ -86,7 +86,7 @@ class _SupplierStatusDetailScreenState
           if (items.isEmpty) {
             return Center(child: Text(context.l10n.noSupplierReceiptsYet));
           }
-          return RefreshIndicator(
+          return AppRefreshIndicator(
             onRefresh: _reload,
             child: ListView(
               padding: EdgeInsets.zero,

@@ -109,7 +109,7 @@ class _AdminSuppliersScreenState extends State<AdminSuppliersScreen> {
                 ),
                 items: <AdminUserListEntry>[],
               );
-          return RefreshIndicator(
+          return AppRefreshIndicator(
             onRefresh: _reload,
             child: ListView(
               padding: const EdgeInsets.fromLTRB(0, 0, 0, 116),

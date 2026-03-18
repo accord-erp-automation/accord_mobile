@@ -1,6 +1,7 @@
 import '../../../app/app_router.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_shell.dart';
 import '../../shared/models/app_models.dart';
 import '../state/werka_store.dart';
 import 'widgets/werka_dock.dart';
@@ -155,7 +156,7 @@ class _WerkaStatusBreakdownScreenState
                       );
                     }
 
-                    return RefreshIndicator.adaptive(
+                    return AppRefreshIndicator(
                       onRefresh: _reload,
                       child: ListView(
                         padding: const EdgeInsets.only(bottom: 110),

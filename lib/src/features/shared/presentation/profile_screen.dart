@@ -357,7 +357,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ? const CustomerDock(activeTab: CustomerDockTab.profile)
                       : const AdminDock(activeTab: AdminDockTab.profile),
           contentPadding: const EdgeInsets.fromLTRB(12, 0, 14, 0),
-          child: RefreshIndicator.adaptive(
+          child: AppRefreshIndicator(
             onRefresh: _refreshProfile,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),

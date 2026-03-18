@@ -133,7 +133,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           final settings = snapshot.data!;
           _fill(settings);
 
-          return RefreshIndicator.adaptive(
+          return AppRefreshIndicator(
             onRefresh: () async {
               final future = MobileApi.instance.adminSettings();
               setState(() => _future = future);

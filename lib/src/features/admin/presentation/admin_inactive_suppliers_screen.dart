@@ -106,7 +106,7 @@ class _AdminInactiveSuppliersScreenState
             );
           }
 
-          return RefreshIndicator(
+          return AppRefreshIndicator(
             onRefresh: _reload,
             child: ListView.separated(
               padding: EdgeInsets.zero,

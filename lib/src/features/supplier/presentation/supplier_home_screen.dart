@@ -112,7 +112,7 @@ class _SupplierHomeScreenState extends State<SupplierHomeScreen>
           }
           if (store.summaryError != null && !store.loadedSummary) {
             final scheme = Theme.of(context).colorScheme;
-            return RefreshIndicator.adaptive(
+            return AppRefreshIndicator(
               onRefresh: _reload,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -163,7 +163,7 @@ class _SupplierHomeScreenState extends State<SupplierHomeScreen>
               .take(3)
               .toList();
 
-          return RefreshIndicator.adaptive(
+          return AppRefreshIndicator(
             onRefresh: _reload,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),

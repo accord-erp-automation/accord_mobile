@@ -150,7 +150,7 @@ class _AdminActivityScreenState extends State<AdminActivityScreen> {
             );
           }
 
-          return RefreshIndicator(
+          return AppRefreshIndicator(
             onRefresh: _reload,
             child: ListView(
               padding: EdgeInsets.zero,

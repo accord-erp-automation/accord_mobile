@@ -91,7 +91,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           }
 
           final summaryValue = store.summary;
-          return RefreshIndicator(
+          return AppRefreshIndicator(
             onRefresh: _reload,
             child: ListView(
               padding: EdgeInsets.zero,

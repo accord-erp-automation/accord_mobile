@@ -113,7 +113,7 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
                 }
                 if (store.homeError != null && !store.loadedHome) {
                   final l10n = context.l10n;
-                  return RefreshIndicator.adaptive(
+                  return AppRefreshIndicator(
                     onRefresh: _reload,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -158,7 +158,7 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
                     ? effectivePending.take(3).toList()
                     : effectivePending;
 
-                return RefreshIndicator.adaptive(
+                return AppRefreshIndicator(
                   onRefresh: _reload,
                   child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),

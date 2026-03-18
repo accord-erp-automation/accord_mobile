@@ -251,7 +251,7 @@ class _CustomerNotificationsScreenState
           );
         }
 
-        return RefreshIndicator.adaptive(
+        return AppRefreshIndicator(
           onRefresh: _reload,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),

@@ -134,7 +134,7 @@ class _SupplierStatusBreakdownScreenState
                 accepted.where((item) => !_isApprovedUnannounced(item)).length;
             final approvedUnannounced =
                 accepted.where(_isApprovedUnannounced).length;
-            return RefreshIndicator(
+            return AppRefreshIndicator(
               onRefresh: _reload,
               child: ListView(
                 padding: EdgeInsets.zero,
@@ -225,7 +225,7 @@ class _SupplierStatusBreakdownScreenState
           if (items.isEmpty) {
             return Center(child: Text(context.l10n.noStatusRecords));
           }
-          return RefreshIndicator(
+          return AppRefreshIndicator(
             onRefresh: _reload,
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 4),

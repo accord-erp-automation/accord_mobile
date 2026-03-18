@@ -91,7 +91,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
         final summary = store.summary;
         final previewItems = store.historyItems.take(3).toList();
 
-        return RefreshIndicator.adaptive(
+        return AppRefreshIndicator(
           onRefresh: _reload,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
