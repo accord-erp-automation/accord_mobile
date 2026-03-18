@@ -113,11 +113,26 @@ class _SupplierStatusDetailScreenState
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    '${record.sentQty.toStringAsFixed(0)} ${record.uom}',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineMedium,
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          '${record.sentQty.toStringAsFixed(0)} ${record.uom}',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .headlineMedium,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        record.createdLabel,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
+                                      ),
+                                    ],
                                   ),
                                   if (record.acceptedQty > 0) ...[
                                     const SizedBox(height: 6),
@@ -138,12 +153,6 @@ class _SupplierStatusDetailScreenState
                                           Theme.of(context).textTheme.bodySmall,
                                     ),
                                   ],
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    record.createdLabel,
-                                    style:
-                                        Theme.of(context).textTheme.bodySmall,
-                                  ),
                                 ],
                               ),
                             ),
