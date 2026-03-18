@@ -2,6 +2,7 @@ import '../../../app/app_router.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_shell.dart';
+import '../../../core/widgets/motion_widgets.dart';
 import '../../shared/models/app_models.dart';
 import '../state/customer_store.dart';
 import 'widgets/customer_dock.dart';
@@ -144,14 +145,30 @@ class _CustomerStatusDetailScreenState
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.only(bottom: 110),
                           children: [
-                            for (int index = 0; index < items.length; index++) ...[
-                              _CustomerStatusRecordCard(
-                                record: items[index],
-                                onTap: () => _openDetail(items[index].id),
+                            Card.filled(
+                              margin: EdgeInsets.zero,
+                              color: scheme.surfaceContainerLow,
+                              clipBehavior: Clip.antiAlias,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(28),
                               ),
-                              if (index != items.length - 1)
-                                const SizedBox(height: 12),
-                            ],
+                              child: Column(
+                                children: [
+                                  for (int index = 0;
+                                      index < items.length;
+                                      index++) ...[
+                                    _CustomerStatusRecordRow(
+                                      record: items[index],
+                                      isFirst: index == 0,
+                                      isLast: index == items.length - 1,
+                                      onTap: () => _openDetail(items[index].id),
+                                    ),
+                                    if (index != items.length - 1)
+                                      const Divider(height: 1, thickness: 1),
+                                  ],
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       );
@@ -174,65 +191,60 @@ class _CustomerStatusDetailScreenState
   }
 }
 
-class _CustomerStatusRecordCard extends StatelessWidget {
-  const _CustomerStatusRecordCard({
+class _CustomerStatusRecordRow extends StatelessWidget {
+  const _CustomerStatusRecordRow({
     required this.record,
+    required this.isFirst,
+    required this.isLast,
     required this.onTap,
   });
 
   final DispatchRecord record;
+  final bool isFirst;
+  final bool isLast;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scheme = Theme.of(context).colorScheme;
-    final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(28),
-    );
-    return Card.filled(
-      margin: EdgeInsets.zero,
-      color: scheme.surfaceContainerLow,
-      clipBehavior: Clip.antiAlias,
-      shape: shape,
-      child: InkWell(
-        customBorder: shape,
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      record.itemName,
-                      style: theme.textTheme.titleLarge,
-                    ),
+    final borderRadius = isFirst || isLast ? 28.0 : 0.0;
+    return PressableScale(
+      borderRadius: borderRadius,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    record.itemName,
+                    style: theme.textTheme.titleLarge,
                   ),
-                  const SizedBox(width: 12),
-                  Text(
-                    record.createdLabel,
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                '${record.sentQty.toStringAsFixed(0)} ${record.uom}',
-                style: theme.textTheme.headlineMedium,
-              ),
-              if (record.note.trim().isNotEmpty) ...[
-                const SizedBox(height: 8),
+                ),
+                const SizedBox(width: 12),
                 Text(
-                  record.note,
+                  record.createdLabel,
                   style: theme.textTheme.bodySmall,
                 ),
               ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '${record.sentQty.toStringAsFixed(0)} ${record.uom}',
+              style: theme.textTheme.headlineMedium,
+            ),
+            if (record.note.trim().isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                record.note,
+                style: theme.textTheme.bodySmall,
+              ),
             ],
-          ),
+          ],
         ),
       ),
     );
