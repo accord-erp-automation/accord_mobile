@@ -2,7 +2,6 @@ import '../../../app/app_router.dart';
 import '../../../core/notifications/refresh_hub.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_shell.dart';
-import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/motion_widgets.dart';
 import '../../shared/models/app_models.dart';
 import '../state/supplier_store.dart';
@@ -66,57 +65,63 @@ class _SupplierHomeScreenState extends State<SupplierHomeScreen>
       child: AnimatedBuilder(
         animation: SupplierStore.instance,
         builder: (context, _) {
-            final store = SupplierStore.instance;
-            if (store.loadingSummary && !store.loadedSummary) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (store.summaryError != null && !store.loadedSummary) {
-              return RefreshIndicator.adaptive(
-                onRefresh: _reload,
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.zero,
-                  children: [
-                    const SizedBox(height: 120),
-                    SoftCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Home yuklanmadi',
-                              style: Theme.of(context).textTheme.titleMedium),
-                          const SizedBox(height: 8),
-                          Text(
-                            '${store.summaryError}',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          const SizedBox(height: 14),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: _reload,
-                              child: const Text('Qayta urinish'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }
-            final current = store.summary;
-
+          final store = SupplierStore.instance;
+          if (store.loadingSummary && !store.loadedSummary) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (store.summaryError != null && !store.loadedSummary) {
+            final scheme = Theme.of(context).colorScheme;
             return RefreshIndicator.adaptive(
               onRefresh: _reload,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.zero,
                 children: [
-                  _SupplierSummaryCard(summary: current),
+                  const SizedBox(height: 120),
+                  Card.filled(
+                    margin: EdgeInsets.zero,
+                    color: scheme.surfaceContainerLow,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Home yuklanmadi',
+                            style: Theme.of(context).textTheme.titleMedium),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${store.summaryError}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 14),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton(
+                            onPressed: _reload,
+                            child: const Text('Qayta urinish'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             );
-          },
+          }
+          final current = store.summary;
+
+          return RefreshIndicator.adaptive(
+            onRefresh: _reload,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
+              children: [
+                _SupplierSummaryCard(summary: current),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -132,10 +137,15 @@ class _SupplierSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SmoothAppear(
-      child: SoftCard(
-        padding: EdgeInsets.zero,
-        borderWidth: 1.35,
-        borderRadius: 20,
+      child: Card.filled(
+        margin: EdgeInsets.zero,
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+          side: BorderSide(
+            color: AppTheme.cardBorder(context).withValues(alpha: 0.75),
+          ),
+        ),
         child: Column(
           children: [
             _SupplierSummaryRow(
@@ -184,30 +194,38 @@ class _SupplierSummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return PressableScale(
-      borderRadius: 24,
+      borderRadius: 28,
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
         child: Row(
           children: [
             Expanded(
               child: Text(
                 label,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                    ),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    fontSize: 34,
-                    color: AppTheme.isDark(context)
-                        ? Colors.white
-                        : const Color(0xFF1F1A17),
-                  ),
+            Container(
+              constraints: const BoxConstraints(minWidth: 58),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                value,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ],
         ),

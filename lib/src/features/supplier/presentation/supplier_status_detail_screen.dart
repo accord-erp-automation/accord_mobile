@@ -1,7 +1,5 @@
 import '../../../app/app_router.dart';
 import '../../../core/widgets/app_shell.dart';
-import '../../../core/widgets/common_widgets.dart';
-import '../../../core/widgets/motion_widgets.dart';
 import '../../shared/models/app_models.dart';
 import '../state/supplier_store.dart';
 import 'widgets/supplier_dock.dart';
@@ -32,15 +30,18 @@ class SupplierStatusDetailScreen extends StatefulWidget {
       _SupplierStatusDetailScreenState();
 }
 
-class _SupplierStatusDetailScreenState extends State<SupplierStatusDetailScreen> {
+class _SupplierStatusDetailScreenState
+    extends State<SupplierStatusDetailScreen> {
   @override
   void initState() {
     super.initState();
-    SupplierStore.instance.bootstrapDetail(widget.args.kind, widget.args.itemCode);
+    SupplierStore.instance
+        .bootstrapDetail(widget.args.kind, widget.args.itemCode);
   }
 
   Future<void> _reload() async {
-    await SupplierStore.instance.refreshDetail(widget.args.kind, widget.args.itemCode);
+    await SupplierStore.instance
+        .refreshDetail(widget.args.kind, widget.args.itemCode);
   }
 
   @override
@@ -58,53 +59,109 @@ class _SupplierStatusDetailScreenState extends State<SupplierStatusDetailScreen>
         builder: (context, _) {
           final store = SupplierStore.instance;
           if (store.loadingDetail(widget.args.kind, widget.args.itemCode) &&
-              store.detailItems(widget.args.kind, widget.args.itemCode).isEmpty) {
+              store
+                  .detailItems(widget.args.kind, widget.args.itemCode)
+                  .isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
-          final error = store.detailError(widget.args.kind, widget.args.itemCode);
+          final error =
+              store.detailError(widget.args.kind, widget.args.itemCode);
           if (error != null &&
-              store.detailItems(widget.args.kind, widget.args.itemCode).isEmpty) {
-            return Center(child: SoftCard(child: Text('$error')));
+              store
+                  .detailItems(widget.args.kind, widget.args.itemCode)
+                  .isEmpty) {
+            return Center(
+              child: Card.filled(
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Text('$error'),
+                ),
+              ),
+            );
           }
-          final items = store.detailItems(widget.args.kind, widget.args.itemCode);
+          final items =
+              store.detailItems(widget.args.kind, widget.args.itemCode);
           if (items.isEmpty) {
-            return const Center(child: SoftCard(child: Text('Hozircha receipt yo‘q.')));
+            return const Center(child: Text('Hozircha receipt yo‘q.'));
           }
           return RefreshIndicator(
             onRefresh: _reload,
-            child: ListView.separated(
+            child: ListView(
               padding: EdgeInsets.zero,
-              itemCount: items.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final record = items[index];
-                return PressableScale(
-                  onTap: () => Navigator.of(context).pushNamed(
-                    AppRoutes.notificationDetail,
-                    arguments: record.id,
+              children: [
+                Card.filled(
+                  margin: EdgeInsets.zero,
+                  color: Theme.of(context).colorScheme.surfaceContainerLow,
+                  clipBehavior: Clip.antiAlias,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
                   ),
-                  child: SoftCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('${record.sentQty.toStringAsFixed(0)} ${record.uom}', style: Theme.of(context).textTheme.headlineMedium),
-                        if (record.acceptedQty > 0) ...[
-                          const SizedBox(height: 6),
-                          Text('Qabul: ${record.acceptedQty.toStringAsFixed(0)} ${record.uom}', style: Theme.of(context).textTheme.bodySmall),
-                        ],
-                        if (record.note.trim().isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Text(record.note, style: Theme.of(context).textTheme.bodySmall),
-                        ],
-                        const SizedBox(height: 8),
-                        Text(record.createdLabel, style: Theme.of(context).textTheme.bodySmall),
+                  child: Column(
+                    children: [
+                      for (int index = 0; index < items.length; index++) ...[
+                        Builder(builder: (context) {
+                          final record = items[index];
+                          return InkWell(
+                            onTap: () => Navigator.of(context).pushNamed(
+                              AppRoutes.notificationDetail,
+                              arguments: record.id,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(18),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${record.sentQty.toStringAsFixed(0)} ${record.uom}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineMedium,
+                                  ),
+                                  if (record.acceptedQty > 0) ...[
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Qabul: ${record.acceptedQty.toStringAsFixed(0)} ${record.uom}',
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                  ],
+                                  if (record.note.trim().isNotEmpty) ...[
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      record.note,
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                  ],
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    record.createdLabel,
+                                    style:
+                                        Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                        if (index != items.length - 1)
+                          Divider(
+                            height: 1,
+                            thickness: 1,
+                            indent: 18,
+                            endIndent: 18,
+                            color: Theme.of(context)
+                                .dividerColor
+                                .withValues(alpha: 0.55),
+                          ),
                       ],
-                    ),
+                    ],
                   ),
-                );
-              },
+                ),
+              ],
             ),
-            );
+          );
         },
       ),
     );

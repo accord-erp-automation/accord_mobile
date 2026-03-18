@@ -1,7 +1,5 @@
 import '../../../app/app_router.dart';
 import '../../../core/widgets/app_shell.dart';
-import '../../../core/widgets/common_widgets.dart';
-import '../../../core/widgets/motion_widgets.dart';
 import '../../shared/models/app_models.dart';
 import '../state/supplier_store.dart';
 import 'supplier_status_detail_screen.dart';
@@ -75,45 +73,91 @@ class _SupplierStatusBreakdownScreenState
           }
           final error = store.breakdownError(widget.kind);
           if (error != null && store.breakdownItems(widget.kind).isEmpty) {
-            return Center(child: SoftCard(child: Text('$error')));
+            return Center(
+              child: Card.filled(
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Text('$error'),
+                ),
+              ),
+            );
           }
           final items = store.breakdownItems(widget.kind);
           if (items.isEmpty) {
-            return const Center(child: SoftCard(child: Text('Hozircha yozuv yo‘q.')));
+            return const Center(child: Text('Hozircha yozuv yo‘q.'));
           }
           return RefreshIndicator(
             onRefresh: _reload,
-            child: ListView.separated(
+            child: ListView(
               padding: EdgeInsets.zero,
-              itemCount: items.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return PressableScale(
-                  onTap: () => Navigator.of(context).pushNamed(
-                    AppRoutes.supplierStatusDetail,
-                    arguments: SupplierStatusDetailArgs(
-                      kind: widget.kind,
-                      itemCode: item.itemCode,
-                      itemName: item.itemName,
-                    ),
+              children: [
+                Card.filled(
+                  margin: EdgeInsets.zero,
+                  color: Theme.of(context).colorScheme.surfaceContainerLow,
+                  clipBehavior: Clip.antiAlias,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
                   ),
-                  child: SoftCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(item.itemName, style: Theme.of(context).textTheme.titleLarge),
-                        const SizedBox(height: 10),
-                        Text(_metricLabel(item), style: Theme.of(context).textTheme.headlineMedium),
-                        const SizedBox(height: 8),
-                        Text('${item.receiptCount} ta receipt', style: Theme.of(context).textTheme.bodySmall),
+                  child: Column(
+                    children: [
+                      for (int index = 0; index < items.length; index++) ...[
+                        Builder(builder: (context) {
+                          final item = items[index];
+                          return InkWell(
+                            onTap: () => Navigator.of(context).pushNamed(
+                              AppRoutes.supplierStatusDetail,
+                              arguments: SupplierStatusDetailArgs(
+                                kind: widget.kind,
+                                itemCode: item.itemCode,
+                                itemName: item.itemName,
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(18),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.itemName,
+                                    style:
+                                        Theme.of(context).textTheme.titleLarge,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    _metricLabel(item),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineMedium,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    '${item.receiptCount} ta receipt',
+                                    style:
+                                        Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                        if (index != items.length - 1)
+                          Divider(
+                            height: 1,
+                            thickness: 1,
+                            indent: 18,
+                            endIndent: 18,
+                            color: Theme.of(context)
+                                .dividerColor
+                                .withValues(alpha: 0.55),
+                          ),
                       ],
-                    ),
+                    ],
                   ),
-                );
-              },
+                ),
+              ],
             ),
-            );
+          );
         },
       ),
     );

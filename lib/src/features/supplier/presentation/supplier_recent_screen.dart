@@ -1,8 +1,6 @@
 import '../../../app/app_router.dart';
 import '../../../core/notifications/refresh_hub.dart';
 import '../../../core/widgets/app_shell.dart';
-import '../../../core/widgets/common_widgets.dart';
-import '../../../core/widgets/motion_widgets.dart';
 import '../../shared/models/app_models.dart';
 import '../state/supplier_store.dart';
 import 'supplier_qty_screen.dart';
@@ -61,7 +59,7 @@ class _SupplierRecentScreenState extends State<SupplierRecentScreen>
   Widget build(BuildContext context) {
     return AppShell(
       title: 'Recent',
-      subtitle: '',
+      subtitle: 'Avvalgi jo‘natmalarni qayta ishlating',
       bottom: const SupplierDock(activeTab: SupplierDockTab.recent),
       child: AnimatedBuilder(
         animation: SupplierStore.instance,
@@ -79,7 +77,12 @@ class _SupplierRecentScreenState extends State<SupplierRecentScreen>
                 padding: EdgeInsets.zero,
                 children: [
                   const SizedBox(height: 120),
-                  SoftCard(
+                  Card.filled(
+                    margin: EdgeInsets.zero,
+                    color: Theme.of(context).colorScheme.surfaceContainerLow,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -110,7 +113,8 @@ class _SupplierRecentScreenState extends State<SupplierRecentScreen>
 
           if (items.isEmpty) {
             return const Center(
-              child: SoftCard(
+              child: Card.filled(
+                margin: EdgeInsets.zero,
                 child: Text('Hali jo‘natishlar yo‘q.'),
               ),
             );
@@ -118,83 +122,101 @@ class _SupplierRecentScreenState extends State<SupplierRecentScreen>
 
           return RefreshIndicator.adaptive(
             onRefresh: _reload,
-            child: ListView.separated(
+            child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.zero,
-              itemCount: items.length,
-              separatorBuilder: (_, __) => const Divider(
-                height: 1,
-                color: Color(0xFF1D1D1D),
-              ),
-              itemBuilder: (context, index) {
-                final record = items[index];
-                final item = SupplierItem(
-                  code: record.itemCode,
-                  name: record.itemName,
-                  uom: record.uom,
-                  warehouse: '',
-                );
-                return PressableScale(
-                  borderRadius: 18,
-                  onTap: () => Navigator.of(context).pushNamed(
-                    AppRoutes.supplierQty,
-                    arguments: SupplierQtyArgs(
-                      item: item,
-                      initialQty: record.sentQty,
-                    ),
+              children: [
+                Card.filled(
+                  margin: EdgeInsets.zero,
+                  color: Theme.of(context).colorScheme.surfaceContainerLow,
+                  clipBehavior: Clip.antiAlias,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          height: 44,
-                          width: 44,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF111111),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.inventory_2_outlined,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                record.itemCode,
-                                style: Theme.of(context).textTheme.titleMedium,
+                  child: Column(
+                    children: [
+                      for (int index = 0; index < items.length; index++) ...[
+                        Builder(builder: (context) {
+                          final record = items[index];
+                          final item = SupplierItem(
+                            code: record.itemCode,
+                            name: record.itemName,
+                            uom: record.uom,
+                            warehouse: '',
+                          );
+                          return InkWell(
+                            onTap: () => Navigator.of(context).pushNamed(
+                              AppRoutes.supplierQty,
+                              arguments: SupplierQtyArgs(
+                                item: item,
+                                initialQty: record.sentQty,
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '${record.sentQty.toStringAsFixed(0)} ${record.uom}',
-                                style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 16,
                               ),
-                              if (record.amount > 0) ...[
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${record.amount.toStringAsFixed(0)} ${record.currency.isEmpty ? "" : record.currency}'.trim(),
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ],
-                            ],
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          record.itemCode,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleLarge,
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          '${record.sentQty.toStringAsFixed(0)} ${record.uom}',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium,
+                                        ),
+                                        if (record.amount > 0) ...[
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '${record.amount.toStringAsFixed(0)} ${record.currency.isEmpty ? "" : record.currency}'
+                                                .trim(),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    record.createdLabel,
+                                    style:
+                                        Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                        if (index != items.length - 1)
+                          Divider(
+                            height: 1,
+                            thickness: 1,
+                            indent: 18,
+                            endIndent: 18,
+                            color: Theme.of(context)
+                                .dividerColor
+                                .withValues(alpha: 0.55),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          record.createdLabel,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
                       ],
-                    ),
+                    ],
                   ),
-                );
-              },
+                ),
+              ],
             ),
           );
         },
