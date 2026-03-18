@@ -1,4 +1,5 @@
 import '../../../core/api/mobile_api.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/notifications/refresh_hub.dart';
 import '../../../core/widgets/app_shell.dart';
 import 'widgets/customer_dock.dart';
@@ -39,6 +40,7 @@ class _CustomerDeliveryDetailScreenState
   }
 
   Future<void> _respond(bool approve) async {
+    final l10n = context.l10n;
     String reason = '';
     if (!approve) {
       final controller = TextEditingController();
@@ -49,13 +51,13 @@ class _CustomerDeliveryDetailScreenState
           return BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: AlertDialog(
-              title: const Text('Rad etish'),
+              title: Text(l10n.rejectTitle),
               content: TextField(
                 controller: controller,
                 minLines: 2,
                 maxLines: 4,
-                decoration: const InputDecoration(
-                  hintText: 'Sabab (ixtiyoriy)',
+                decoration: InputDecoration(
+                  hintText: l10n.optionalReasonHint,
                 ),
               ),
               actions: [
@@ -63,14 +65,14 @@ class _CustomerDeliveryDetailScreenState
                   width: 110,
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(false),
-                    child: const Text('Yo‘q'),
+                    child: Text(l10n.no),
                   ),
                 ),
                 SizedBox(
                   width: 110,
                   child: FilledButton(
                     onPressed: () => Navigator.of(context).pop(true),
-                    child: const Text('Ha'),
+                    child: Text(l10n.yes),
                   ),
                 ),
               ],
@@ -90,21 +92,21 @@ class _CustomerDeliveryDetailScreenState
           return BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: AlertDialog(
-              title: const Text('Tasdiqlash'),
-              content: const Text('Haqiqatan ham tasdiqlaysizmi?'),
+              title: Text(l10n.confirmTitle),
+              content: Text(l10n.confirmQuestion),
               actions: [
                 SizedBox(
                   width: 110,
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(false),
-                    child: const Text('Yo‘q'),
+                    child: Text(l10n.no),
                   ),
                 ),
                 SizedBox(
                   width: 110,
                   child: FilledButton(
                     onPressed: () => Navigator.of(context).pop(true),
-                    child: const Text('Ha'),
+                    child: Text(l10n.yes),
                   ),
                 ),
               ],
@@ -138,7 +140,7 @@ class _CustomerDeliveryDetailScreenState
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Javob yuborilmadi: $error')),
+        SnackBar(content: Text(l10n.responseSendFailed(error))),
       );
     } finally {
       if (mounted) {
@@ -150,7 +152,7 @@ class _CustomerDeliveryDetailScreenState
   @override
   Widget build(BuildContext context) {
     return AppShell(
-      title: 'Batafsil',
+      title: context.l10n.detailsTitle,
       subtitle: '',
       leading: AppShellIconAction(
         icon: Icons.arrow_back_rounded,
@@ -193,8 +195,8 @@ class _CustomerDeliveryDetailScreenState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const _CustomerDetailSectionHeader(
-                        label: 'Jo‘natma ma’lumoti',
+                      _CustomerDetailSectionHeader(
+                        label: context.l10n.shipmentInfoTitle,
                         topRounded: true,
                       ),
                       Padding(
@@ -203,29 +205,30 @@ class _CustomerDeliveryDetailScreenState
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _DetailLine(
-                                label: 'Customer', value: record.supplierName),
+                                label: context.l10n.customerLabel,
+                                value: record.supplierName),
                             const SizedBox(height: 12),
                             _DetailLine(
-                              label: 'Mahsulot',
+                              label: context.l10n.itemLabel,
                               value: '${record.itemCode} • ${record.itemName}',
                             ),
                             const SizedBox(height: 12),
                             _DetailLine(
-                              label: 'Jo‘natilgan',
+                              label: context.l10n.pendingStatus,
                               value:
                                   '${record.sentQty.toStringAsFixed(2)} ${record.uom}',
                             ),
                             if (record.acceptedQty > 0) ...[
                               const SizedBox(height: 12),
                               _DetailLine(
-                                label: 'Qabul qilingan',
+                                label: context.l10n.acceptedFromQtyPrefix,
                                 value:
                                     '${record.acceptedQty.toStringAsFixed(2)} ${record.uom}',
                               ),
                             ],
                             const SizedBox(height: 12),
                             _DetailLine(
-                              label: 'Status',
+                              label: context.l10n.statusLabel,
                               value: _statusLabel(record.status),
                             ),
                           ],
@@ -239,8 +242,8 @@ class _CustomerDeliveryDetailScreenState
                           endIndent: 18,
                           color: scheme.outlineVariant.withValues(alpha: 0.55),
                         ),
-                        const _CustomerDetailSectionHeader(
-                          label: 'Izoh',
+                        _CustomerDetailSectionHeader(
+                          label: context.l10n.noteTitle,
                           topRounded: false,
                         ),
                         Padding(
@@ -259,8 +262,8 @@ class _CustomerDeliveryDetailScreenState
                           endIndent: 18,
                           color: scheme.outlineVariant.withValues(alpha: 0.55),
                         ),
-                        const _CustomerDetailSectionHeader(
-                          label: 'Javob',
+                        _CustomerDetailSectionHeader(
+                          label: context.l10n.responseTitle,
                           topRounded: false,
                         ),
                         Padding(
@@ -273,7 +276,7 @@ class _CustomerDeliveryDetailScreenState
                                     onPressed: _submitting
                                         ? null
                                         : () => _respond(false),
-                                    child: const Text('Rad etaman'),
+                                    child: Text(context.l10n.rejectAction),
                                   ),
                                 ),
                               if (detail.canReject && detail.canApprove)
@@ -286,8 +289,8 @@ class _CustomerDeliveryDetailScreenState
                                         : () => _respond(true),
                                     child: Text(
                                       _submitting
-                                          ? 'Yuborilmoqda...'
-                                          : 'Tasdiqlayman',
+                                          ? context.l10n.sending
+                                          : context.l10n.approveAction,
                                     ),
                                   ),
                                 ),
@@ -309,11 +312,11 @@ class _CustomerDeliveryDetailScreenState
   String _statusLabel(DispatchStatus status) {
     switch (status) {
       case DispatchStatus.accepted:
-        return 'Tasdiqlandi';
+        return AppLocalizations.of(context).approvedLabel;
       case DispatchStatus.rejected:
-        return 'Rad etildi';
+        return AppLocalizations.of(context).rejectedStatusLabel;
       default:
-        return 'Kutilmoqda';
+        return AppLocalizations.of(context).pendingLabel;
     }
   }
 }

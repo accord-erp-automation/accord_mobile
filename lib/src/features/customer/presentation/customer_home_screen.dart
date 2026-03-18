@@ -1,4 +1,5 @@
 import '../../../app/app_router.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/notifications/refresh_hub.dart';
 import '../../../core/theme/app_motion.dart';
 import '../../../core/widgets/app_shell.dart';
@@ -77,14 +78,14 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
       builder: (context, _) {
         final store = CustomerStore.instance;
         if (store.loading && !store.loaded) {
-            return const Center(child: CircularProgressIndicator.adaptive());
+          return const Center(child: CircularProgressIndicator.adaptive());
         }
         if (store.error != null && !store.loaded) {
-            return Center(
-              child: _QuietPanel(
-                child: Text('${store.error}'),
-              ),
-            );
+          return Center(
+            child: _QuietPanel(
+              child: Text('${store.error}'),
+            ),
+          );
         }
 
         final summary = store.summary;
@@ -122,7 +123,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     }
 
     return AppShell(
-      title: 'Customer',
+      title: context.l10n.customerRoleName,
       subtitle: '',
       animateOnEnter: false,
       contentPadding: const EdgeInsets.fromLTRB(12, 0, 14, 0),
@@ -184,7 +185,7 @@ class _CustomerStatusPanel extends StatelessWidget {
           SoftReveal(
             delay: const Duration(milliseconds: 20),
             child: _CustomerStatusRow(
-              label: 'Pending',
+              label: context.l10n.pendingLabel,
               value: summary.pendingCount.toString(),
               highlighted: true,
               onTap: () => onOpenStatus(CustomerStatusKind.pending),
@@ -201,7 +202,7 @@ class _CustomerStatusPanel extends StatelessWidget {
           SoftReveal(
             delay: const Duration(milliseconds: 60),
             child: _CustomerStatusRow(
-              label: 'Confirmed',
+              label: context.l10n.confirmedStatus,
               value: summary.confirmedCount.toString(),
               onTap: () => onOpenStatus(CustomerStatusKind.confirmed),
             ),
@@ -216,7 +217,7 @@ class _CustomerStatusPanel extends StatelessWidget {
           SoftReveal(
             delay: const Duration(milliseconds: 100),
             child: _CustomerStatusRow(
-              label: 'Rejected',
+              label: context.l10n.rejectedLabel,
               value: summary.rejectedCount.toString(),
               onTap: () => onOpenStatus(CustomerStatusKind.rejected),
               isLast: true,
@@ -358,7 +359,10 @@ class _CustomerShipmentsPanel extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text('Recent shipments', style: theme.textTheme.titleLarge),
+            child: Text(
+              context.l10n.recentShipmentsTitle,
+              style: theme.textTheme.titleLarge,
+            ),
           ),
           const SizedBox(height: 14),
           if (items.isEmpty)
@@ -412,7 +416,7 @@ class _CustomerEmptyState extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 4, 4, 2),
       child: Text(
-        'No shipments',
+        context.l10n.noShipments,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: scheme.onSurfaceVariant,
             ),

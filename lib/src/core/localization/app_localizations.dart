@@ -285,8 +285,36 @@ class AppLocalizations {
       );
 
   String get werkaRoleName => _t('Omborchi', 'Werka', 'Кладовщик');
+  String get customerRoleName => _t('Haridor', 'Customer', 'Покупатель');
   String get supplierAckTitle => _t('Ta\'minotchi tasdiqladi',
       'Supplier acknowledged', 'Поставщик подтвердил');
+
+  String get pendingLabel => _t('Kutilmoqda', 'Pending', 'Ожидается');
+  String get rejectedLabel => _t('Rad etilgan', 'Rejected', 'Отклонено');
+  String get recentShipmentsTitle =>
+      _t('So‘nggi jo‘natmalar', 'Recent shipments', 'Недавние отправки');
+  String get noShipments => _t('Jo‘natma yo‘q', 'No shipments', 'Нет отправок');
+  String get shipmentsFlowTitle =>
+      _t('Jo‘natmalar oqimi', 'Shipment flow', 'Поток отправок');
+  String get detailsTitle => _t('Batafsil', 'Details', 'Детали');
+  String get shipmentInfoTitle =>
+      _t('Jo‘natma ma’lumoti', 'Shipment details', 'Информация об отправке');
+  String get noteTitle => _t('Izoh', 'Note', 'Примечание');
+  String get responseTitle => _t('Javob', 'Response', 'Ответ');
+  String get rejectTitle => _t('Rad etish', 'Reject', 'Отклонить');
+  String get optionalReasonHint =>
+      _t('Sabab (ixtiyoriy)', 'Reason (optional)', 'Причина (необязательно)');
+  String get confirmQuestion => _t(
+      'Haqiqatan ham tasdiqlaysizmi?',
+      'Are you sure you want to confirm?',
+      'Вы уверены, что хотите подтвердить?');
+  String responseSendFailed(Object error) => _t('Javob yuborilmadi: $error',
+      'Response was not sent: $error', 'Ответ не был отправлен: $error');
+  String get approveAction => _t('Tasdiqlayman', 'Approve', 'Подтверждаю');
+  String get rejectAction => _t('Rad etaman', 'Reject', 'Отклоняю');
+  String get sending => _t('Yuborilmoqda...', 'Sending...', 'Отправка...');
+  String get approvedLabel => _t('Tasdiqlandi', 'Approved', 'Подтверждено');
+  String get rejectedStatusLabel => _t('Rad etildi', 'Rejected', 'Отклонено');
 }
 
 class _AppLocalizationsDelegate

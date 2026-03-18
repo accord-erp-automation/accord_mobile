@@ -1,4 +1,5 @@
 import '../../../app/app_router.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../shared/models/app_models.dart';
 import '../state/customer_store.dart';
@@ -44,13 +45,14 @@ class _CustomerStatusDetailScreenState
   }
 
   String get _title {
+    final l10n = context.l10n;
     switch (widget.kind) {
       case CustomerStatusKind.pending:
-        return 'Kutilmoqda';
+        return l10n.pendingLabel;
       case CustomerStatusKind.confirmed:
-        return 'Tasdiqlangan';
+        return l10n.confirmedStatus;
       case CustomerStatusKind.rejected:
-        return 'Rad etilgan';
+        return l10n.rejectedLabel;
     }
   }
 
@@ -128,7 +130,7 @@ class _CustomerStatusDetailScreenState
                             child: Padding(
                               padding: const EdgeInsets.all(18),
                               child: Text(
-                                'Hozircha yozuv yo‘q.',
+                                context.l10n.noRecordsYet,
                                 style: theme.textTheme.titleMedium,
                               ),
                             ),

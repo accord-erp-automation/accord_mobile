@@ -1,4 +1,5 @@
 import '../../../core/cache/json_cache_store.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/notifications/notification_hidden_store.dart';
 import '../../../core/notifications/notification_unread_store.dart';
 import '../../../core/notifications/refresh_hub.dart';
@@ -116,10 +117,11 @@ class _CustomerNotificationsScreenState
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Tozalash', style: theme.textTheme.headlineSmall),
+                Text(context.l10n.clearTitle,
+                    style: theme.textTheme.headlineSmall),
                 const SizedBox(height: 10),
                 Text(
-                  'Hamma bildirishnomalarni tozalaysizmi?',
+                  context.l10n.clearAllNotificationsPrompt,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: scheme.onSurfaceVariant,
                     height: 1.45,
@@ -131,14 +133,14 @@ class _CustomerNotificationsScreenState
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => Navigator.of(dialogContext).pop(false),
-                        child: const Text('Yo‘q'),
+                        child: Text(context.l10n.no),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: FilledButton(
                         onPressed: () => Navigator.of(dialogContext).pop(true),
-                        child: const Text('Ha'),
+                        child: Text(context.l10n.yes),
                       ),
                     ),
                   ],
@@ -242,9 +244,9 @@ class _CustomerNotificationsScreenState
           );
         }
         if (items.isEmpty) {
-          return const Center(
+          return Center(
             child: _NotificationPanel(
-              child: Text('Hozircha yozuv yo‘q.'),
+              child: Text(context.l10n.noRecordsYet),
             ),
           );
         }
@@ -274,7 +276,7 @@ class _CustomerNotificationsScreenState
     }
 
     return AppShell(
-      title: 'Bildirishnomalar',
+      title: context.l10n.notificationsTitle,
       subtitle: '',
       animateOnEnter: false,
       contentPadding: const EdgeInsets.fromLTRB(12, 0, 14, 0),
@@ -349,7 +351,7 @@ class _NotificationSection extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Jo‘natmalar oqimi',
+              context.l10n.shipmentsFlowTitle,
               style: theme.textTheme.titleLarge,
             ),
           ),
