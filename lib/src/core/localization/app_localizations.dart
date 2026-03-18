@@ -8,6 +8,7 @@ class AppLocalizations {
   static const supportedLocales = [
     Locale('uz'),
     Locale('en'),
+    Locale('ru'),
   ];
 
   static AppLocalizations of(BuildContext context) {
@@ -21,163 +22,214 @@ class AppLocalizations {
       _AppLocalizationsDelegate();
 
   bool get isUzbek => locale.languageCode == 'uz';
+  bool get isRussian => locale.languageCode == 'ru';
 
-  String get appTitle => isUzbek ? 'Accord' : 'Accord';
-  String get profileTitle => isUzbek ? 'Profil' : 'Profile';
-  String get werkaAccount => isUzbek ? 'Omborchi akkaunti' : 'Werka account';
+  String _t(String uz, String en, String ru) {
+    if (isUzbek) return uz;
+    if (isRussian) return ru;
+    return en;
+  }
+
+  String get appTitle => _t('Accord', 'Accord', 'Accord');
+  String get profileTitle => _t('Profil', 'Profile', 'Профиль');
+  String get werkaAccount =>
+      _t('Omborchi akkaunti', 'Werka account', 'Аккаунт кладовщика');
   String get supplierAccount =>
-      isUzbek ? 'Ta\'minotchi akkaunti' : 'Supplier account';
+      _t('Ta\'minotchi akkaunti', 'Supplier account', 'Аккаунт поставщика');
   String get customerAccount =>
-      isUzbek ? 'Haridor akkaunti' : 'Customer account';
-  String get adminAccount => isUzbek ? 'Admin akkaunti' : 'Admin account';
-  String get nicknameSaveFailed =>
-      isUzbek ? 'Nickname saqlanmadi' : 'Nickname was not saved';
-  String get imagePickFailed =>
-      isUzbek ? 'Rasm tanlanmadi' : 'Image selection failed';
+      _t('Haridor akkaunti', 'Customer account', 'Аккаунт покупателя');
+  String get adminAccount =>
+      _t('Admin akkaunti', 'Admin account', 'Аккаунт администратора');
+  String get nicknameSaveFailed => _t(
+      'Nickname saqlanmadi', 'Nickname was not saved', 'Псевдоним не сохранен');
+  String get imagePickFailed => _t('Rasm tanlanmadi', 'Image selection failed',
+      'Не удалось выбрать изображение');
   String get imageSaveFailed =>
-      isUzbek ? 'Rasm saqlanmadi' : 'Image was not saved';
-  String get save => isUzbek ? 'Saqlash' : 'Save';
-  String get saveChanges => isUzbek ? 'O‘zgarishlarni saqlash' : 'Save changes';
-  String get phoneLabel => isUzbek ? 'Telefon' : 'Phone';
-  String get legalNameLabel => isUzbek ? 'Asl ism' : 'Legal name';
-  String get nicknameLabel => isUzbek ? 'Nickname' : 'Nickname';
-  String get nicknameHint =>
-      isUzbek ? 'O‘zingizga ko‘rinadigan ism' : 'The name visible to you';
-  String get securityTitle => isUzbek ? 'Xavfsizlik' : 'Security';
-  String get pinEnabled =>
-      isUzbek ? '4 xonali PIN yoqilgan' : 'A 4-digit PIN is enabled';
-  String get pinDisabled => isUzbek
-      ? 'App uchun 4 xonali PIN o‘rnating'
-      : 'Set a 4-digit PIN for the app';
-  String get pinSaving => isUzbek ? 'Saqlanmoqda...' : 'Saving...';
-  String get pinSet => isUzbek ? 'PIN o‘rnatish' : 'Set PIN';
-  String get pinChange => isUzbek ? 'PIN almashtirish' : 'Change PIN';
-  String get pinRemove => isUzbek ? 'PIN o‘chirish' : 'Remove PIN';
-  String get biometricEnableTitle => isUzbek
-      ? 'Biometrik autentifikatsiyani yoqish'
-      : 'Enable biometric authentication';
-  String get biometricEnabledBody => isUzbek
-      ? 'Yoqilgan. App Face ID yoki fingerprint bilan tez ochiladi.'
-      : 'Enabled. The app can be unlocked quickly with Face ID or fingerprint.';
-  String get biometricDisabledBody => isUzbek
-      ? 'O‘chirilgan. Face ID yoki fingerprint bilan tez ochish ishlamaydi.'
-      : 'Disabled. Fast unlock with Face ID or fingerprint is off.';
-  String get languageTitle => isUzbek ? 'Til' : 'Language';
-  String get languageBody =>
-      isUzbek ? 'Ilova tilini tanlang' : 'Choose the app language';
-  String get uzbek => isUzbek ? 'O‘zbekcha' : 'Uzbek';
-  String get english => 'English';
-  String get selectedImageNotice => isUzbek
-      ? 'Yangi rasm tanlandi. Saqlashni bossangiz profil yangilanadi.'
-      : 'A new image was selected. Save to update the profile.';
-  String get appLockTitle => isUzbek ? 'App qulfi' : 'App lock';
-  String get appLockSubtitle =>
-      isUzbek ? '4 xonali PIN kiriting' : 'Enter your 4-digit PIN';
-  String get unlock => isUzbek ? 'Ochish' : 'Unlock';
-  String get checking => isUzbek ? 'Tekshirilmoqda...' : 'Checking...';
-  String get biometricCta =>
-      isUzbek ? 'Biometrik autentifikatsiya' : 'Biometric authentication';
-  String get pinWrong => isUzbek ? 'PIN noto‘g‘ri' : 'Incorrect PIN';
-  String get biometricFailed => isUzbek
-      ? 'Biometrik tasdiq bajarilmadi'
-      : 'Biometric verification did not complete';
+      _t('Rasm saqlanmadi', 'Image was not saved', 'Изображение не сохранено');
+  String get save => _t('Saqlash', 'Save', 'Сохранить');
+  String get saveChanges =>
+      _t('O‘zgarishlarni saqlash', 'Save changes', 'Сохранить изменения');
+  String get phoneLabel => _t('Telefon', 'Phone', 'Телефон');
+  String get legalNameLabel => _t('Asl ism', 'Legal name', 'Официальное имя');
+  String get nicknameLabel => _t('Nickname', 'Nickname', 'Псевдоним');
+  String get nicknameHint => _t('O‘zingizga ko‘rinadigan ism',
+      'The name visible to you', 'Имя, видимое только вам');
+  String get securityTitle => _t('Xavfsizlik', 'Security', 'Безопасность');
+  String get pinEnabled => _t('4 xonali PIN yoqilgan',
+      'A 4-digit PIN is enabled', '4-значный PIN включен');
+  String get pinDisabled => _t(
+      'App uchun 4 xonali PIN o‘rnating',
+      'Set a 4-digit PIN for the app',
+      'Установите 4-значный PIN для приложения');
+  String get pinSaving => _t('Saqlanmoqda...', 'Saving...', 'Сохранение...');
+  String get pinSet => _t('PIN o‘rnatish', 'Set PIN', 'Установить PIN');
+  String get pinChange => _t('PIN almashtirish', 'Change PIN', 'Изменить PIN');
+  String get pinRemove => _t('PIN o‘chirish', 'Remove PIN', 'Удалить PIN');
+  String get biometricEnableTitle => _t(
+        'Biometrik autentifikatsiyani yoqish',
+        'Enable biometric authentication',
+        'Включить биометрическую аутентификацию',
+      );
+  String get biometricEnabledBody => _t(
+        'Yoqilgan. App Face ID yoki fingerprint bilan tez ochiladi.',
+        'Enabled. The app can be unlocked quickly with Face ID or fingerprint.',
+        'Включено. Приложение можно быстро разблокировать с помощью Face ID или отпечатка пальца.',
+      );
+  String get biometricDisabledBody => _t(
+        'O‘chirilgan. Face ID yoki fingerprint bilan tez ochish ishlamaydi.',
+        'Disabled. Fast unlock with Face ID or fingerprint is off.',
+        'Выключено. Быстрая разблокировка с помощью Face ID или отпечатка пальца недоступна.',
+      );
+  String get languageTitle => _t('Til', 'Language', 'Язык');
+  String get languageBody => _t('Ilova tilini tanlang',
+      'Choose the app language', 'Выберите язык приложения');
+  String get uzbek => _t('O‘zbekcha', 'Uzbek', 'Узбекский');
+  String get english => _t('English', 'English', 'Английский');
+  String get russian => _t('Ruscha', 'Russian', 'Русский');
+  String get selectedImageNotice => _t(
+        'Yangi rasm tanlandi. Saqlashni bossangiz profil yangilanadi.',
+        'A new image was selected. Save to update the profile.',
+        'Выбрано новое изображение. Нажмите сохранить, чтобы обновить профиль.',
+      );
+  String get appLockTitle =>
+      _t('App qulfi', 'App lock', 'Блокировка приложения');
+  String get appLockSubtitle => _t('4 xonali PIN kiriting',
+      'Enter your 4-digit PIN', 'Введите 4-значный PIN');
+  String get unlock => _t('Ochish', 'Unlock', 'Открыть');
+  String get checking => _t('Tekshirilmoqda...', 'Checking...', 'Проверка...');
+  String get biometricCta => _t('Biometrik autentifikatsiya',
+      'Biometric authentication', 'Биометрическая аутентификация');
+  String get pinWrong => _t('PIN noto‘g‘ri', 'Incorrect PIN', 'Неверный PIN');
+  String get biometricFailed => _t(
+        'Biometrik tasdiq bajarilmadi',
+        'Biometric verification did not complete',
+        'Биометрическая проверка не выполнена',
+      );
 
-  String get clearTitle => isUzbek ? 'Tozalash' : 'Clear';
-  String get logoutTitle => isUzbek ? 'Chiqish' : 'Logout';
-  String get logoutPrompt =>
-      isUzbek ? 'Dasturdan chiqaymi?' : 'Do you want to log out?';
-  String get yes => isUzbek ? 'Ha' : 'Yes';
-  String get no => isUzbek ? 'Yo‘q' : 'No';
-  String get retry => isUzbek ? 'Qayta urinish' : 'Retry';
-  String get loading => isUzbek ? 'Yuklanmoqda...' : 'Loading...';
-  String get confirmTitle => isUzbek ? 'Tasdiqlash' : 'Confirm';
-  String get qtyRequired => isUzbek ? 'Miqdor kiriting' : 'Enter quantity';
-  String get amountLabel => isUzbek ? 'Miqdor' : 'Quantity';
-  String get customerLabel => isUzbek ? 'Haridor' : 'Customer';
-  String get supplierLabel => isUzbek ? 'Ta\'minotchi' : 'Supplier';
-  String get itemLabel => isUzbek ? 'Mol' : 'Item';
-  String get selectCustomer => isUzbek ? 'Haridor tanlang' : 'Select customer';
-  String get searchCustomer => isUzbek ? 'Haridor qidiring' : 'Search customer';
+  String get clearTitle => _t('Tozalash', 'Clear', 'Очистить');
+  String get logoutTitle => _t('Chiqish', 'Logout', 'Выход');
+  String get logoutPrompt => _t(
+      'Dasturdan chiqaymi?', 'Do you want to log out?', 'Выйти из приложения?');
+  String get yes => _t('Ha', 'Yes', 'Да');
+  String get no => _t('Yo‘q', 'No', 'Нет');
+  String get retry => _t('Qayta urinish', 'Retry', 'Повторить');
+  String get loading => _t('Yuklanmoqda...', 'Loading...', 'Загрузка...');
+  String get confirmTitle => _t('Tasdiqlash', 'Confirm', 'Подтверждение');
+  String get qtyRequired =>
+      _t('Miqdor kiriting', 'Enter quantity', 'Введите количество');
+  String get amountLabel => _t('Miqdor', 'Quantity', 'Количество');
+  String get customerLabel => _t('Haridor', 'Customer', 'Покупатель');
+  String get supplierLabel => _t('Ta\'minotchi', 'Supplier', 'Поставщик');
+  String get itemLabel => _t('Mol', 'Item', 'Товар');
+  String get selectCustomer =>
+      _t('Haridor tanlang', 'Select customer', 'Выберите покупателя');
+  String get searchCustomer =>
+      _t('Haridor qidiring', 'Search customer', 'Поиск покупателя');
   String get selectSupplier =>
-      isUzbek ? 'Ta\'minotchi tanlang' : 'Select supplier';
+      _t('Ta\'minotchi tanlang', 'Select supplier', 'Выберите поставщика');
   String get searchSupplier =>
-      isUzbek ? 'Ta\'minotchi qidiring' : 'Search supplier';
-  String get selectItem => isUzbek ? 'Mol tanlang' : 'Select item';
-  String get searchItem => isUzbek ? 'Mol qidiring' : 'Search item';
-  String get createHubTitle => isUzbek ? 'Qayd' : 'Create';
+      _t('Ta\'minotchi qidiring', 'Search supplier', 'Поиск поставщика');
+  String get selectItem => _t('Mol tanlang', 'Select item', 'Выберите товар');
+  String get searchItem => _t('Mol qidiring', 'Search item', 'Поиск товара');
+  String get createHubTitle => _t('Qayd', 'Create', 'Создать');
   String get unannouncedTitle =>
-      isUzbek ? 'Aytilmagan mol' : 'Unannounced item';
-  String get customerIssueTitle => isUzbek ? 'Mol jo‘natish' : 'Send item';
-  String get unannouncedDescription => isUzbek
-      ? 'Ta\'minotchi, mol va miqdorni bir oqimda tanlang'
-      : 'Choose supplier, item, and quantity in one flow';
-  String get customerIssueDescription => isUzbek
-      ? 'Haridorga jo‘natma yaratish oqimi'
-      : 'Flow for creating a shipment to a customer';
+      _t('Aytilmagan mol', 'Unannounced item', 'Незаявленный товар');
+  String get customerIssueTitle =>
+      _t('Mol jo‘natish', 'Send item', 'Отправить товар');
+  String get unannouncedDescription => _t(
+        'Ta\'minotchi, mol va miqdorni bir oqimda tanlang',
+        'Choose supplier, item, and quantity in one flow',
+        'Выберите поставщика, товар и количество в одном потоке',
+      );
+  String get customerIssueDescription => _t(
+        'Haridorga jo‘natma yaratish oqimi',
+        'Flow for creating a shipment to a customer',
+        'Поток создания отправки для покупателя',
+      );
   String get notificationsTitle =>
-      isUzbek ? 'Bildirishnomalar' : 'Notifications';
-  String get noNotifications =>
-      isUzbek ? 'Hali bildirishnomalar yo‘q.' : 'No notifications yet.';
-  String get clearAllNotificationsPrompt => isUzbek
-      ? 'Hamma bildirishnomalarni tozalaysizmi?'
-      : 'Clear all notifications?';
-  String get notificationsLoadFailed =>
-      isUzbek ? 'Bildirishnomalar yuklanmadi' : 'Failed to load notifications';
-  String get recentTitle => isUzbek ? 'So‘nggi harakatlar' : 'Recent';
-  String get recentSubtitle => isUzbek
-      ? 'Avvalgi harakatni prefill bilan qayta ishlating'
-      : 'Reuse previous actions with prefill';
-  String get recentLoadFailed =>
-      isUzbek ? 'Recent yuklanmadi' : 'Failed to load recent';
-  String get noRecentActions => isUzbek
-      ? 'Hali repeat qilish uchun recent harakat yo‘q.'
-      : 'There are no recent actions to repeat yet.';
-  String get repeatSendAgain => isUzbek ? 'Yana jo‘natish' : 'Send again';
-  String get repeatCreateAgain => isUzbek ? 'Yana qayd qilish' : 'Create again';
-  String get pendingStatus => isUzbek ? 'Jarayonda' : 'In progress';
-  String get confirmedStatus => isUzbek ? 'Tasdiqlangan' : 'Confirmed';
-  String get returnedStatus => isUzbek ? 'Qaytarilgan' : 'Returned';
+      _t('Bildirishnomalar', 'Notifications', 'Уведомления');
+  String get noNotifications => _t('Hali bildirishnomalar yo‘q.',
+      'No notifications yet.', 'Уведомлений пока нет.');
+  String get clearAllNotificationsPrompt => _t(
+        'Hamma bildirishnomalarni tozalaysizmi?',
+        'Clear all notifications?',
+        'Очистить все уведомления?',
+      );
+  String get notificationsLoadFailed => _t(
+        'Bildirishnomalar yuklanmadi',
+        'Failed to load notifications',
+        'Не удалось загрузить уведомления',
+      );
+  String get recentTitle =>
+      _t('So‘nggi harakatlar', 'Recent', 'Недавние действия');
+  String get recentSubtitle => _t(
+        'Avvalgi harakatni prefill bilan qayta ishlating',
+        'Reuse previous actions with prefill',
+        'Повторно используйте предыдущие действия с предзаполнением',
+      );
+  String get recentLoadFailed => _t('Recent yuklanmadi',
+      'Failed to load recent', 'Не удалось загрузить раздел недавних');
+  String get noRecentActions => _t(
+        'Hali repeat qilish uchun recent harakat yo‘q.',
+        'There are no recent actions to repeat yet.',
+        'Пока нет недавних действий для повтора.',
+      );
+  String get repeatSendAgain =>
+      _t('Yana jo‘natish', 'Send again', 'Отправить снова');
+  String get repeatCreateAgain =>
+      _t('Yana qayd qilish', 'Create again', 'Создать снова');
+  String get pendingStatus => _t('Jarayonda', 'In progress', 'В процессе');
+  String get confirmedStatus => _t('Tasdiqlangan', 'Confirmed', 'Подтверждено');
+  String get returnedStatus => _t('Qaytarilgan', 'Returned', 'Возвращено');
   String get inProgressItemsTitle =>
-      isUzbek ? 'Jarayondagi mahsulotlar' : 'Items in progress';
-  String get recordsLoadFailed =>
-      isUzbek ? 'Yozuvlar yuklanmadi' : 'Failed to load records';
-  String get noRecordsYet => isUzbek
-      ? 'Bu ro‘yxatda hozircha yozuv yo‘q.'
-      : 'No records in this list yet.';
-  String get statusListLoadFailed =>
-      isUzbek ? 'Status ro‘yxati yuklanmadi' : 'Failed to load status list';
-  String get noStatusRecords => isUzbek
-      ? 'Bu statusda hozircha yozuv yo‘q.'
-      : 'No records in this status yet.';
-  String get receiptsSuffix => isUzbek ? 'ta receipt' : 'receipts';
+      _t('Jarayondagi mahsulotlar', 'Items in progress', 'Товары в процессе');
+  String get recordsLoadFailed => _t('Yozuvlar yuklanmadi',
+      'Failed to load records', 'Не удалось загрузить записи');
+  String get noRecordsYet => _t('Bu ro‘yxatda hozircha yozuv yo‘q.',
+      'No records in this list yet.', 'В этом списке пока нет записей.');
+  String get statusListLoadFailed => _t(
+        'Status ro‘yxati yuklanmadi',
+        'Failed to load status list',
+        'Не удалось загрузить список статусов',
+      );
+  String get noStatusRecords => _t(
+        'Bu statusda hozircha yozuv yo‘q.',
+        'No records in this status yet.',
+        'В этом статусе пока нет записей.',
+      );
+  String get receiptsSuffix => _t('ta receipt', 'receipts', 'документов');
   String get sentToCustomer =>
-      isUzbek ? 'haridorga yuborilgan' : 'sent to customer';
-  String get receivedFromSupplier =>
-      isUzbek ? 'ta\'minotchidan qabul qilingan' : 'received from supplier';
-  String get acceptedFromQtyPrefix => isUzbek ? 'Qabul' : 'Accepted';
-  String get createFlowBack => isUzbek ? 'Qaydga qaytish' : 'Back to create';
-  String get pendingListBack =>
-      isUzbek ? 'Pending listga qaytish' : 'Back to pending list';
-  String get sentSuccess => isUzbek ? 'Jo‘natildi' : 'Sent';
-  String get createdSuccess => isUzbek ? 'Qayd qilindi' : 'Created';
-  String get receivedSuccess => isUzbek ? 'Qabul qilindi' : 'Received';
+      _t('haridorga yuborilgan', 'sent to customer', 'отправлено покупателю');
+  String get receivedFromSupplier => _t('ta\'minotchidan qabul qilingan',
+      'received from supplier', 'получено от поставщика');
+  String get acceptedFromQtyPrefix => _t('Qabul', 'Accepted', 'Принято');
+  String get createFlowBack =>
+      _t('Qaydga qaytish', 'Back to create', 'Назад к созданию');
+  String get pendingListBack => _t('Pending listga qaytish',
+      'Back to pending list', 'Назад к списку ожидания');
+  String get sentSuccess => _t('Jo‘natildi', 'Sent', 'Отправлено');
+  String get createdSuccess => _t('Qayd qilindi', 'Created', 'Создано');
+  String get receivedSuccess => _t('Qabul qilindi', 'Received', 'Принято');
   String get customerApproved =>
-      isUzbek ? 'Haridor tasdiqlagan' : 'Customer approved';
+      _t('Haridor tasdiqlagan', 'Customer approved', 'Покупатель подтвердил');
   String get customerRejected =>
-      isUzbek ? 'Haridor rad etgan' : 'Customer rejected';
+      _t('Haridor rad etgan', 'Customer rejected', 'Покупатель отклонил');
   String get partiallyCompleted =>
-      isUzbek ? 'Qisman yakunlangan' : 'Partially completed';
-  String get cancelled => isUzbek ? 'Bekor qilingan' : 'Cancelled';
-  String get waitingCustomerResponse =>
-      isUzbek ? 'Haridor javobi kutilmoqda' : 'Waiting for customer response';
-  String get draft => isUzbek ? 'Draft' : 'Draft';
-  String get noExtraNote =>
-      isUzbek ? 'Qo‘shimcha izoh yo‘q.' : 'No additional note.';
+      _t('Qisman yakunlangan', 'Partially completed', 'Частично завершено');
+  String get cancelled => _t('Bekor qilingan', 'Cancelled', 'Отменено');
+  String get waitingCustomerResponse => _t(
+        'Haridor javobi kutilmoqda',
+        'Waiting for customer response',
+        'Ожидается ответ покупателя',
+      );
+  String get draft => _t('Draft', 'Draft', 'Черновик');
+  String get noExtraNote => _t('Qo‘shimcha izoh yo‘q.', 'No additional note.',
+      'Дополнительного примечания нет.');
   String get customerShipmentTitle =>
-      isUzbek ? 'Haridor jo‘natmasi' : 'Customer shipment';
-  String get statusLabel => isUzbek ? 'Status' : 'Status';
-  String get dateLabel => isUzbek ? 'Sana' : 'Date';
-  String get detailsStateTitle => isUzbek ? 'Holat' : 'State';
+      _t('Haridor jo‘natmasi', 'Customer shipment', 'Отправка покупателю');
+  String get statusLabel => _t('Status', 'Status', 'Статус');
+  String get dateLabel => _t('Sana', 'Date', 'Дата');
+  String get detailsStateTitle => _t('Holat', 'State', 'Состояние');
 
   String statusWithName(String name, String status) => '$status • $name';
   String recordsLoadFailedWith(Object error) => '$recordsLoadFailed: $error';
@@ -198,29 +250,43 @@ class AppLocalizations {
       '$acceptedFromQtyPrefix: ${qty.toStringAsFixed(0)} $uom';
   String customerShipmentPendingNote() => isUzbek
       ? 'Bu jo‘natma omborchi tomonidan haridorga yuborilgan. Qaytarish yoki tasdiqlash haridor tomonidan qilinadi.'
-      : 'This shipment was sent by Werka to the customer. Any rejection or approval must be done by the customer.';
-  String sentToCustomerLine(num qty, String uom) => isUzbek
-      ? '${qty.toStringAsFixed(2)} $uom haridorga jo‘natildi'
-      : '${qty.toStringAsFixed(2)} $uom sent to customer';
-  String createdLine(num qty, String uom) => isUzbek
-      ? '${qty.toStringAsFixed(2)} $uom qayd qilindi'
-      : '${qty.toStringAsFixed(2)} $uom recorded';
-  String receivedLine(num qty, String uom) => isUzbek
-      ? '${qty.toStringAsFixed(2)} $uom qabul qilindi'
-      : '${qty.toStringAsFixed(2)} $uom received';
-  String customerIssueFailed(Object error) => isUzbek
-      ? 'Mol jo‘natish bo‘lmadi: $error'
-      : 'Sending item failed: $error';
-  String unannouncedSuppliersFailed(Object error) => isUzbek
-      ? 'Ta\'minotchilar yuklanmadi: $error'
-      : 'Suppliers failed to load: $error';
-  String customersLoadFailed(Object error) => isUzbek
-      ? 'Haridorlar yuklanmadi: $error'
-      : 'Customers failed to load: $error';
+      : isRussian
+          ? 'Эта отправка была сделана кладовщиком для покупателя. Возврат или подтверждение должен выполнить покупатель.'
+          : 'This shipment was sent by Werka to the customer. Any rejection or approval must be done by the customer.';
+  String sentToCustomerLine(num qty, String uom) => _t(
+        '${qty.toStringAsFixed(2)} $uom haridorga jo‘natildi',
+        '${qty.toStringAsFixed(2)} $uom sent to customer',
+        '${qty.toStringAsFixed(2)} $uom отправлено покупателю',
+      );
+  String createdLine(num qty, String uom) => _t(
+        '${qty.toStringAsFixed(2)} $uom qayd qilindi',
+        '${qty.toStringAsFixed(2)} $uom recorded',
+        '${qty.toStringAsFixed(2)} $uom зафиксировано',
+      );
+  String receivedLine(num qty, String uom) => _t(
+        '${qty.toStringAsFixed(2)} $uom qabul qilindi',
+        '${qty.toStringAsFixed(2)} $uom received',
+        '${qty.toStringAsFixed(2)} $uom принято',
+      );
+  String customerIssueFailed(Object error) => _t(
+        'Mol jo‘natish bo‘lmadi: $error',
+        'Sending item failed: $error',
+        'Не удалось отправить товар: $error',
+      );
+  String unannouncedSuppliersFailed(Object error) => _t(
+        'Ta\'minotchilar yuklanmadi: $error',
+        'Suppliers failed to load: $error',
+        'Не удалось загрузить поставщиков: $error',
+      );
+  String customersLoadFailed(Object error) => _t(
+        'Haridorlar yuklanmadi: $error',
+        'Customers failed to load: $error',
+        'Не удалось загрузить покупателей: $error',
+      );
 
-  String get werkaRoleName => isUzbek ? 'Omborchi' : 'Werka';
-  String get supplierAckTitle =>
-      isUzbek ? 'Ta\'minotchi tasdiqladi' : 'Supplier acknowledged';
+  String get werkaRoleName => _t('Omborchi', 'Werka', 'Кладовщик');
+  String get supplierAckTitle => _t('Ta\'minotchi tasdiqladi',
+      'Supplier acknowledged', 'Поставщик подтвердил');
 }
 
 class _AppLocalizationsDelegate

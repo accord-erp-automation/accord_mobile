@@ -639,6 +639,15 @@ class _LanguagePreferenceRow extends StatelessWidget {
                           onTap: () =>
                               Navigator.of(context).pop(const Locale('en')),
                         ),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(l10n.russian),
+                          trailing: currentLocale.languageCode == 'ru'
+                              ? Icon(Icons.check_rounded, color: scheme.primary)
+                              : null,
+                          onTap: () =>
+                              Navigator.of(context).pop(const Locale('ru')),
+                        ),
                       ],
                     ),
                   ),
@@ -681,7 +690,11 @@ class _LanguagePreferenceRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
-              currentLocale.languageCode == 'uz' ? l10n.uzbek : l10n.english,
+              currentLocale.languageCode == 'uz'
+                  ? l10n.uzbek
+                  : currentLocale.languageCode == 'ru'
+                      ? l10n.russian
+                      : l10n.english,
               style: Theme.of(context).textTheme.labelLarge,
             ),
           ),
