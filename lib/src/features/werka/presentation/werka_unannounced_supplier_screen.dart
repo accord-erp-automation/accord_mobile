@@ -1,5 +1,6 @@
 import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/notifications/werka_runtime_store.dart';
 import '../../../core/search/search_normalizer.dart';
 import '../../../core/theme/app_theme.dart';
@@ -118,8 +119,8 @@ class _WerkaUnannouncedSupplierScreenState
       sheetAnimationStyle: kM3PickerSheetAnimation,
       builder: (context) {
         return M3PickerSheet<SupplierDirectoryEntry>(
-          title: 'Supplier tanlang',
-          hintText: 'Supplier qidiring',
+          title: context.l10n.selectSupplier,
+          hintText: context.l10n.searchSupplier,
           items: suppliers,
           itemTitle: (item) => item.name,
           itemSubtitle: (_) => '',
@@ -167,7 +168,7 @@ class _WerkaUnannouncedSupplierScreenState
     }
     if (_supplierItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Supplierga biriktirilgan mol topilmadi')),
+        SnackBar(content: Text(context.l10n.noRecordsYet)),
       );
       return;
     }
@@ -180,9 +181,9 @@ class _WerkaUnannouncedSupplierScreenState
       sheetAnimationStyle: kM3PickerSheetAnimation,
       builder: (context) {
         return M3PickerSheet<SupplierItem>(
-          title: 'Mol tanlang',
+          title: context.l10n.selectItem,
           supportingText: _selectedSupplier!.name,
-          hintText: 'Mol qidiring',
+          hintText: context.l10n.searchItem,
           items: _supplierItems,
           itemTitle: (item) => item.name,
           itemSubtitle: (_) => '',
@@ -209,7 +210,7 @@ class _WerkaUnannouncedSupplierScreenState
     final qty = double.tryParse(_qtyController.text.trim()) ?? 0;
     if (qty <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Miqdor kiriting')),
+        SnackBar(content: Text(context.l10n.qtyRequired)),
       );
       return;
     }
@@ -230,7 +231,7 @@ class _WerkaUnannouncedSupplierScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Tasdiqlash',
+                  context.l10n.confirmTitle,
                   style: theme.textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 18),
@@ -254,14 +255,14 @@ class _WerkaUnannouncedSupplierScreenState
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text('Yo‘q'),
+                        child: Text(context.l10n.no),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: FilledButton(
                         onPressed: () => Navigator.of(context).pop(true),
-                        child: const Text('Ha'),
+                        child: Text(context.l10n.yes),
                       ),
                     ),
                   ],
@@ -331,11 +332,12 @@ class _WerkaUnannouncedSupplierScreenState
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('Supplierlar yuklanmadi: ${snapshot.error}'),
+                          Text(context.l10n
+                              .unannouncedSuppliersFailed(snapshot.error!)),
                           const SizedBox(height: 12),
                           FilledButton(
                             onPressed: _reloadSuppliers,
-                            child: const Text('Qayta urinish'),
+                            child: Text(context.l10n.retry),
                           ),
                         ],
                       ),
@@ -365,11 +367,12 @@ class _WerkaUnannouncedSupplierScreenState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Aytilmagan mol',
+                          context.l10n.unannouncedTitle,
                           style: theme.textTheme.headlineMedium,
                         ),
                         const SizedBox(height: 18),
-                        Text('Supplier', style: theme.textTheme.bodySmall),
+                        Text(context.l10n.supplierLabel,
+                            style: theme.textTheme.bodySmall),
                         const SizedBox(height: 6),
                         SizedBox(
                           width: double.infinity,
@@ -378,14 +381,16 @@ class _WerkaUnannouncedSupplierScreenState
                             child: Align(
                               alignment: Alignment.centerLeft,
                               child: Text(
-                                _selectedSupplier?.name ?? 'Supplier tanlang',
+                                _selectedSupplier?.name ??
+                                    context.l10n.selectSupplier,
                               ),
                             ),
                           ),
                         ),
                         if (_selectedSupplier != null) ...[
                           const SizedBox(height: 14),
-                          Text('Mol', style: theme.textTheme.bodySmall),
+                          Text(context.l10n.itemLabel,
+                              style: theme.textTheme.bodySmall),
                           const SizedBox(height: 6),
                           SizedBox(
                             width: double.infinity,
@@ -395,8 +400,9 @@ class _WerkaUnannouncedSupplierScreenState
                                 alignment: Alignment.centerLeft,
                                 child: Text(
                                   _loadingItems
-                                      ? 'Yuklanmoqda...'
-                                      : _selectedItem?.name ?? 'Mol tanlang',
+                                      ? context.l10n.loading
+                                      : _selectedItem?.name ??
+                                          context.l10n.selectItem,
                                 ),
                               ),
                             ),
@@ -404,7 +410,8 @@ class _WerkaUnannouncedSupplierScreenState
                         ],
                         if (_selectedItem != null) ...[
                           const SizedBox(height: 14),
-                          Text('Miqdor', style: theme.textTheme.bodySmall),
+                          Text(context.l10n.amountLabel,
+                              style: theme.textTheme.bodySmall),
                           const SizedBox(height: 6),
                           TextField(
                             controller: _qtyController,
@@ -423,7 +430,9 @@ class _WerkaUnannouncedSupplierScreenState
                           child: FilledButton(
                             onPressed: canSubmit ? _submit : null,
                             child: Text(
-                              _submitting ? 'Saqlanmoqda...' : 'Tasdiqlash',
+                              _submitting
+                                  ? context.l10n.pinSaving
+                                  : context.l10n.confirmTitle,
                             ),
                           ),
                         ),
@@ -485,7 +494,7 @@ class _WerkaUnannouncedHeader extends StatelessWidget {
         const SizedBox(width: 14),
         Expanded(
           child: Text(
-            'Aytilmagan mol',
+            context.l10n.unannouncedTitle,
             style: theme.textTheme.headlineMedium,
           ),
         ),

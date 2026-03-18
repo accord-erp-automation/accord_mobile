@@ -1,4 +1,5 @@
 import '../../../app/app_router.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/widgets/app_shell.dart';
 import '../../shared/models/app_models.dart';
 import 'widgets/werka_dock.dart';
@@ -12,24 +13,24 @@ class WerkaSuccessScreen extends StatelessWidget {
 
   final DispatchRecord record;
 
-  String get _title {
+  String _title(AppLocalizations l10n) {
     if (record.eventType == 'customer_issue_pending') {
-      return 'Jo‘natildi';
+      return l10n.sentSuccess;
     }
     if (record.eventType == 'werka_unannounced_pending') {
-      return 'Qayd qilindi';
+      return l10n.createdSuccess;
     }
-    return 'Qabul qilindi';
+    return l10n.receivedSuccess;
   }
 
-  String get _subtitleLine {
+  String _subtitleLine(AppLocalizations l10n) {
     if (record.eventType == 'customer_issue_pending') {
-      return '${record.sentQty.toStringAsFixed(2)} ${record.uom} customerga jo‘natildi';
+      return l10n.sentToCustomerLine(record.sentQty, record.uom);
     }
     if (record.eventType == 'werka_unannounced_pending') {
-      return '${record.sentQty.toStringAsFixed(2)} ${record.uom} qayd qilindi';
+      return l10n.createdLine(record.sentQty, record.uom);
     }
-    return '${record.acceptedQty.toStringAsFixed(2)} ${record.uom} qabul qilindi';
+    return l10n.receivedLine(record.acceptedQty, record.uom);
   }
 
   bool get _returnsToCreateHub {
@@ -37,8 +38,8 @@ class WerkaSuccessScreen extends StatelessWidget {
         record.eventType == 'werka_unannounced_pending';
   }
 
-  String get _ctaLabel {
-    return _returnsToCreateHub ? 'Qaydga qaytish' : 'Pending listga qaytish';
+  String _ctaLabel(AppLocalizations l10n) {
+    return _returnsToCreateHub ? l10n.createFlowBack : l10n.pendingListBack;
   }
 
   String get _targetRoute {
@@ -47,10 +48,11 @@ class WerkaSuccessScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return AppShell(
-      title: _title,
+      title: _title(l10n),
       subtitle: '',
       contentPadding: const EdgeInsets.fromLTRB(12, 0, 14, 0),
       bottom: const WerkaDock(activeTab: null),
@@ -93,7 +95,7 @@ class WerkaSuccessScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    _subtitleLine,
+                    _subtitleLine(l10n),
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: scheme.onSurfaceVariant,
@@ -111,7 +113,7 @@ class WerkaSuccessScreen extends StatelessWidget {
                 _targetRoute,
                 (route) => route.isFirst,
               ),
-              child: Text(_ctaLabel),
+              child: Text(_ctaLabel(l10n)),
             ),
           ),
         ],

@@ -1,5 +1,6 @@
 import '../../../app/app_router.dart';
 import '../../../core/cache/json_cache_store.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/notifications/notification_hidden_store.dart';
 import '../../../core/notifications/refresh_hub.dart';
 import '../../../core/notifications/notification_unread_store.dart';
@@ -63,7 +64,7 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
         current.where((item) => !hidden.contains(item.id)).toList();
     if (visibleItems.isEmpty) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('Hali bildirishnomalar yo‘q.')),
+        SnackBar(content: Text(context.l10n.noNotifications)),
       );
       return;
     }
@@ -71,22 +72,22 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Tozalash'),
-        content: const Text('Hamma bildirishnomalarni tozalaysizmi?'),
+        title: Text(context.l10n.clearTitle),
+        content: Text(context.l10n.clearAllNotificationsPrompt),
         actions: [
           Row(
             children: [
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Yo‘q'),
+                  child: Text(context.l10n.no),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: FilledButton(
                   onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('Ha'),
+                  child: Text(context.l10n.yes),
                 ),
               ),
             ],
@@ -201,7 +202,7 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
   @override
   Widget build(BuildContext context) {
     return AppShell(
-      title: 'Bildirishnomalar',
+      title: context.l10n.notificationsTitle,
       subtitle: '',
       contentPadding: const EdgeInsets.fromLTRB(12, 0, 14, 0),
       actions: [
@@ -244,12 +245,13 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Bildirishnomalar yuklanmadi',
+                            context.l10n.notificationsLoadFailed,
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '${snapshot.error}',
+                            context.l10n
+                                .notificationsLoadFailedWith(snapshot.error!),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                           const SizedBox(height: 14),
@@ -257,7 +259,7 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
                             width: double.infinity,
                             child: OutlinedButton(
                               onPressed: _reload,
-                              child: const Text('Qayta urinish'),
+                              child: Text(context.l10n.retry),
                             ),
                           ),
                         ],
@@ -273,7 +275,7 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
             return Align(
               alignment: const Alignment(0, -0.22),
               child: Text(
-                'Hali bildirishnomalar yo‘q.',
+                context.l10n.noNotifications,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),

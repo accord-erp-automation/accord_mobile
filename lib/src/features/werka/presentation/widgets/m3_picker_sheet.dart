@@ -1,4 +1,5 @@
 import '../../../../core/theme/app_motion.dart';
+import '../../../../core/localization/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 const AnimationStyle kM3PickerSheetAnimation = AnimationStyle(
@@ -72,6 +73,7 @@ class _M3PickerSheetState<T> extends State<M3PickerSheet<T>> {
     final media = MediaQuery.of(context);
     final filtered = _filteredItems;
     final keyboardInset = media.viewInsets.bottom;
+    final l10n = context.l10n;
 
     return AnimatedPadding(
       duration: AppMotion.medium,
@@ -180,7 +182,7 @@ class _M3PickerSheetState<T> extends State<M3PickerSheet<T>> {
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 24),
                                 child: Text(
-                                  'Hech narsa topilmadi',
+                                  l10n.noRecordsYet,
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color: scheme.onSurfaceVariant,
                                   ),

@@ -1,4 +1,5 @@
 import '../../../app/app_router.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/widgets/app_shell.dart';
 import 'widgets/werka_dock.dart';
 import 'package:flutter/material.dart';
@@ -8,10 +9,11 @@ class WerkaCreateHubScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return AppShell(
-      title: 'Qayd',
+      title: l10n.createHubTitle,
       subtitle: '',
       bottom: const WerkaDock(activeTab: null),
       contentPadding: const EdgeInsets.fromLTRB(10, 0, 12, 0),
@@ -50,12 +52,12 @@ class WerkaCreateHubScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Aytilmagan mol',
+                              l10n.unannouncedTitle,
                               style: theme.textTheme.titleLarge,
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              'Supplier, mol va miqdorni bir oqimda tanlang',
+                              l10n.unannouncedDescription,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: scheme.onSurfaceVariant,
                               ),
@@ -85,12 +87,12 @@ class WerkaCreateHubScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Mol jo‘natish',
+                              l10n.customerIssueTitle,
                               style: theme.textTheme.titleLarge,
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              'Customerga jo‘natma yaratish oqimi',
+                              l10n.customerIssueDescription,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: scheme.onSurfaceVariant,
                               ),

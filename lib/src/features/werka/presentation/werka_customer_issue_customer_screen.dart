@@ -1,5 +1,6 @@
 import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/notifications/werka_runtime_store.dart';
 import '../../../core/search/search_normalizer.dart';
 import '../../../core/theme/app_theme.dart';
@@ -118,8 +119,8 @@ class _WerkaCustomerIssueCustomerScreenState
       sheetAnimationStyle: kM3PickerSheetAnimation,
       builder: (context) {
         return M3PickerSheet<CustomerDirectoryEntry>(
-          title: 'Customer tanlang',
-          hintText: 'Customer qidiring',
+          title: context.l10n.selectCustomer,
+          hintText: context.l10n.searchCustomer,
           items: customers,
           itemTitle: (item) => item.name,
           itemSubtitle: (_) => '',
@@ -171,7 +172,7 @@ class _WerkaCustomerIssueCustomerScreenState
       );
       return;
     }
-
+    final l10n = context.l10n;
     final picked = await showModalBottomSheet<SupplierItem>(
       context: context,
       useSafeArea: true,
@@ -180,9 +181,9 @@ class _WerkaCustomerIssueCustomerScreenState
       sheetAnimationStyle: kM3PickerSheetAnimation,
       builder: (context) {
         return M3PickerSheet<SupplierItem>(
-          title: 'Mol tanlang',
+          title: l10n.selectItem,
           supportingText: _selectedCustomer!.name,
-          hintText: 'Mol qidiring',
+          hintText: l10n.searchItem,
           items: _customerItems,
           itemTitle: (item) => item.name,
           itemSubtitle: (_) => '',
@@ -203,13 +204,14 @@ class _WerkaCustomerIssueCustomerScreenState
   }
 
   Future<void> _submit() async {
+    final l10n = context.l10n;
     if (_selectedCustomer == null || _selectedItem == null) {
       return;
     }
     final qty = double.tryParse(_qtyController.text.trim()) ?? 0;
     if (qty <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Miqdor kiriting')),
+        SnackBar(content: Text(l10n.qtyRequired)),
       );
       return;
     }
@@ -230,7 +232,7 @@ class _WerkaCustomerIssueCustomerScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Tasdiqlash',
+                  l10n.confirmTitle,
                   style: theme.textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 18),
@@ -254,14 +256,14 @@ class _WerkaCustomerIssueCustomerScreenState
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text('Yo‘q'),
+                        child: Text(l10n.no),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: FilledButton(
                         onPressed: () => Navigator.of(context).pop(true),
-                        child: const Text('Ha'),
+                        child: Text(l10n.yes),
                       ),
                     ),
                   ],
@@ -314,7 +316,7 @@ class _WerkaCustomerIssueCustomerScreenState
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Mol jo‘natish bo‘lmadi: $error')),
+        SnackBar(content: Text(l10n.customerIssueFailed(error))),
       );
     } finally {
       if (mounted) {
@@ -325,6 +327,7 @@ class _WerkaCustomerIssueCustomerScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final canPickItem = _selectedCustomer != null && !_loadingItems;
@@ -355,11 +358,11 @@ class _WerkaCustomerIssueCustomerScreenState
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('Customerlar yuklanmadi: ${snapshot.error}'),
+                          Text(l10n.customersLoadFailed(snapshot.error!)),
                           const SizedBox(height: 12),
                           FilledButton(
                             onPressed: _reloadCustomers,
-                            child: const Text('Qayta urinish'),
+                            child: Text(l10n.retry),
                           ),
                         ],
                       ),
@@ -389,11 +392,12 @@ class _WerkaCustomerIssueCustomerScreenState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Mol jo‘natish',
+                          l10n.customerIssueTitle,
                           style: theme.textTheme.headlineMedium,
                         ),
                         const SizedBox(height: 18),
-                        Text('Customer', style: theme.textTheme.bodySmall),
+                        Text(l10n.customerLabel,
+                            style: theme.textTheme.bodySmall),
                         const SizedBox(height: 6),
                         SizedBox(
                           width: double.infinity,
@@ -402,14 +406,15 @@ class _WerkaCustomerIssueCustomerScreenState
                             child: Align(
                               alignment: Alignment.centerLeft,
                               child: Text(
-                                _selectedCustomer?.name ?? 'Customer tanlang',
+                                _selectedCustomer?.name ?? l10n.selectCustomer,
                               ),
                             ),
                           ),
                         ),
                         if (_selectedCustomer != null) ...[
                           const SizedBox(height: 14),
-                          Text('Mol', style: theme.textTheme.bodySmall),
+                          Text(l10n.itemLabel,
+                              style: theme.textTheme.bodySmall),
                           const SizedBox(height: 6),
                           SizedBox(
                             width: double.infinity,
@@ -419,8 +424,8 @@ class _WerkaCustomerIssueCustomerScreenState
                                 alignment: Alignment.centerLeft,
                                 child: Text(
                                   _loadingItems
-                                      ? 'Yuklanmoqda...'
-                                      : _selectedItem?.name ?? 'Mol tanlang',
+                                      ? l10n.loading
+                                      : _selectedItem?.name ?? l10n.selectItem,
                                 ),
                               ),
                             ),
@@ -428,7 +433,8 @@ class _WerkaCustomerIssueCustomerScreenState
                         ],
                         if (_selectedItem != null) ...[
                           const SizedBox(height: 14),
-                          Text('Miqdor', style: theme.textTheme.bodySmall),
+                          Text(l10n.amountLabel,
+                              style: theme.textTheme.bodySmall),
                           const SizedBox(height: 6),
                           TextField(
                             controller: _qtyController,
@@ -447,7 +453,7 @@ class _WerkaCustomerIssueCustomerScreenState
                           child: FilledButton(
                             onPressed: canSubmit ? _submit : null,
                             child: Text(
-                              _submitting ? 'Saqlanmoqda...' : 'Tasdiqlash',
+                              _submitting ? l10n.pinSaving : l10n.confirmTitle,
                             ),
                           ),
                         ),
@@ -509,7 +515,7 @@ class _WerkaCustomerIssueHeader extends StatelessWidget {
         const SizedBox(width: 14),
         Expanded(
           child: Text(
-            'Mol jo‘natish',
+            context.l10n.customerIssueTitle,
             style: theme.textTheme.headlineMedium,
           ),
         ),

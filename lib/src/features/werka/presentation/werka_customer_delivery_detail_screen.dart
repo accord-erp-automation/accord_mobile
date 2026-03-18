@@ -1,4 +1,5 @@
 import '../../../core/theme/app_theme.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../shared/models/app_models.dart';
 import 'widgets/werka_dock.dart';
 import 'package:flutter/material.dart';
@@ -11,32 +12,32 @@ class WerkaCustomerDeliveryDetailScreen extends StatelessWidget {
 
   final DispatchRecord record;
 
-  String _statusLabel() {
+  String _statusLabel(AppLocalizations l10n) {
     switch (record.status) {
       case DispatchStatus.accepted:
-        return 'Customer tasdiqlagan';
+        return l10n.customerApproved;
       case DispatchStatus.rejected:
-        return 'Customer rad etgan';
+        return l10n.customerRejected;
       case DispatchStatus.partial:
-        return 'Qisman yakunlangan';
+        return l10n.partiallyCompleted;
       case DispatchStatus.cancelled:
-        return 'Bekor qilingan';
+        return l10n.cancelled;
       case DispatchStatus.pending:
-        return 'Customer javobi kutilmoqda';
+        return l10n.waitingCustomerResponse;
       case DispatchStatus.draft:
-        return 'Draft';
+        return l10n.draft;
     }
   }
 
-  String _noteText() {
+  String _noteText(AppLocalizations l10n) {
     final note = record.note.trim();
     if (note.isNotEmpty) {
       return note;
     }
     if (record.status == DispatchStatus.pending) {
-      return 'Bu jo‘natma Werka tomonidan customerga yuborilgan. Qaytarish yoki tasdiqlash customer tomonidan qilinadi.';
+      return l10n.customerShipmentPendingNote();
     }
-    return 'Qo‘shimcha izoh yo‘q.';
+    return l10n.noExtraNote;
   }
 
   String _formatQty(double value) {
@@ -48,6 +49,7 @@ class WerkaCustomerDeliveryDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return Scaffold(
@@ -72,7 +74,7 @@ class WerkaCustomerDeliveryDetailScreen extends StatelessWidget {
                   const SizedBox(width: 14),
                   Expanded(
                     child: Text(
-                      'Customer jo‘natmasi',
+                      l10n.customerShipmentTitle,
                       style: theme.textTheme.headlineMedium,
                     ),
                   ),
@@ -95,36 +97,36 @@ class WerkaCustomerDeliveryDetailScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _WerkaDeliveryField(
-                            label: 'Customer',
+                            label: l10n.customerLabel,
                             value: record.supplierName,
                           ),
                           const SizedBox(height: 14),
                           _WerkaDeliveryField(
-                            label: 'Mahsulot',
+                            label: l10n.itemLabel,
                             value: '${record.itemCode} • ${record.itemName}',
                           ),
                           const SizedBox(height: 14),
                           _WerkaDeliveryField(
-                            label: 'Jo‘natilgan',
+                            label: l10n.pendingStatus,
                             value:
                                 '${_formatQty(record.sentQty)} ${record.uom}',
                           ),
                           if (record.acceptedQty > 0) ...[
                             const SizedBox(height: 14),
                             _WerkaDeliveryField(
-                              label: 'Tasdiqlangan',
+                              label: l10n.confirmedStatus,
                               value:
                                   '${_formatQty(record.acceptedQty)} ${record.uom}',
                             ),
                           ],
                           const SizedBox(height: 14),
                           _WerkaDeliveryField(
-                            label: 'Status',
-                            value: _statusLabel(),
+                            label: l10n.statusLabel,
+                            value: _statusLabel(l10n),
                           ),
                           const SizedBox(height: 14),
                           _WerkaDeliveryField(
-                            label: 'Sana',
+                            label: l10n.dateLabel,
                             value: record.createdLabel,
                           ),
                         ],
@@ -144,12 +146,12 @@ class WerkaCustomerDeliveryDetailScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Holat',
+                            l10n.detailsStateTitle,
                             style: theme.textTheme.titleLarge,
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            _noteText(),
+                            _noteText(l10n),
                             style: theme.textTheme.bodyMedium,
                           ),
                         ],

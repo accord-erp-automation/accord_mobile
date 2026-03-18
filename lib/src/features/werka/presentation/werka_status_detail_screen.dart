@@ -1,4 +1,5 @@
 import '../../../app/app_router.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../shared/models/app_models.dart';
 import '../state/werka_store.dart';
@@ -35,13 +36,17 @@ class _WerkaStatusDetailScreenState extends State<WerkaStatusDetailScreen> {
   }
 
   String get _title {
+    final l10n = context.l10n;
     switch (widget.args.kind) {
       case WerkaStatusKind.pending:
-        return 'Jarayonda • ${widget.args.supplierName}';
+        return l10n.statusWithName(
+            widget.args.supplierName, l10n.pendingStatus);
       case WerkaStatusKind.confirmed:
-        return 'Tasdiqlangan • ${widget.args.supplierName}';
+        return l10n.statusWithName(
+            widget.args.supplierName, l10n.confirmedStatus);
       case WerkaStatusKind.returned:
-        return 'Qaytarilgan • ${widget.args.supplierName}';
+        return l10n.statusWithName(
+            widget.args.supplierName, l10n.returnedStatus);
     }
   }
 
@@ -116,11 +121,12 @@ class _WerkaStatusDetailScreenState extends State<WerkaStatusDetailScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Yozuvlar yuklanmadi: $error'),
+                                  Text(context.l10n
+                                      .recordsLoadFailedWith(error)),
                                   const SizedBox(height: 12),
                                   FilledButton(
                                     onPressed: _reload,
-                                    child: const Text('Qayta urinish'),
+                                    child: Text(context.l10n.retry),
                                   ),
                                 ],
                               ),
@@ -139,7 +145,7 @@ class _WerkaStatusDetailScreenState extends State<WerkaStatusDetailScreen> {
                             child: Padding(
                               padding: const EdgeInsets.all(18),
                               child: Text(
-                                'Bu ro‘yxatda hozircha yozuv yo‘q.',
+                                context.l10n.noRecordsYet,
                                 style: theme.textTheme.titleMedium,
                               ),
                             ),
@@ -268,7 +274,10 @@ class _WerkaStatusRecordRow extends StatelessWidget {
             if (record.acceptedQty > 0) ...[
               const SizedBox(height: 6),
               Text(
-                'Qabul: ${record.acceptedQty.toStringAsFixed(0)} ${record.uom}',
+                context.l10n.acceptedQtyLabel(
+                  record.acceptedQty,
+                  record.uom,
+                ),
                 style: theme.textTheme.bodySmall,
               ),
             ],

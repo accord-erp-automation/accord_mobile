@@ -1,4 +1,5 @@
 import '../../../app/app_router.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../shared/models/app_models.dart';
 import '../state/werka_store.dart';
@@ -31,24 +32,38 @@ class _WerkaStatusBreakdownScreenState
   }
 
   String get _title {
+    final l10n = context.l10n;
     switch (widget.kind) {
       case WerkaStatusKind.pending:
-        return 'Jarayonda';
+        return l10n.pendingStatus;
       case WerkaStatusKind.confirmed:
-        return 'Tasdiqlangan';
+        return l10n.confirmedStatus;
       case WerkaStatusKind.returned:
-        return 'Qaytarilgan';
+        return l10n.returnedStatus;
     }
   }
 
   String _metricLabel(WerkaStatusBreakdownEntry entry) {
+    final l10n = context.l10n;
     switch (widget.kind) {
       case WerkaStatusKind.pending:
-        return '${entry.totalSentQty.toStringAsFixed(0)} ${entry.uom} jarayonda';
+        return l10n.sentQtyStatus(
+          entry.totalSentQty,
+          entry.uom,
+          l10n.pendingStatus.toLowerCase(),
+        );
       case WerkaStatusKind.confirmed:
-        return '${entry.totalAcceptedQty.toStringAsFixed(0)} ${entry.uom} tasdiqlangan';
+        return l10n.sentQtyStatus(
+          entry.totalAcceptedQty,
+          entry.uom,
+          l10n.confirmedStatus.toLowerCase(),
+        );
       case WerkaStatusKind.returned:
-        return '${entry.totalReturnedQty.toStringAsFixed(0)} ${entry.uom} qaytarilgan';
+        return l10n.sentQtyStatus(
+          entry.totalReturnedQty,
+          entry.uom,
+          l10n.returnedStatus.toLowerCase(),
+        );
     }
   }
 
@@ -109,11 +124,12 @@ class _WerkaStatusBreakdownScreenState
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Status ro‘yxati yuklanmadi: $error'),
+                                Text(context.l10n
+                                    .statusListLoadFailedWith(error)),
                                 const SizedBox(height: 12),
                                 FilledButton(
                                   onPressed: _reload,
-                                  child: const Text('Qayta urinish'),
+                                  child: Text(context.l10n.retry),
                                 ),
                               ],
                             ),
@@ -131,7 +147,7 @@ class _WerkaStatusBreakdownScreenState
                           child: Padding(
                             padding: const EdgeInsets.all(18),
                             child: Text(
-                              'Bu statusda hozircha yozuv yo‘q.',
+                              context.l10n.noStatusRecords,
                               style: theme.textTheme.titleMedium,
                             ),
                           ),
@@ -263,7 +279,8 @@ class _WerkaBreakdownRow extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '${entry.receiptCount} ta receipt',
+                AppLocalizations.of(context)
+                    .receiptCountLabel(entry.receiptCount),
                 style: theme.textTheme.bodySmall,
               ),
             ],

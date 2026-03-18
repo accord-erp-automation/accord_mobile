@@ -1,4 +1,5 @@
 import '../../../app/app_router.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/widgets/app_shell.dart';
 import '../../shared/models/app_models.dart';
 import '../state/werka_store.dart';
@@ -68,16 +69,19 @@ class _WerkaRecentScreenState extends State<WerkaRecentScreen> {
     return '${record.supplierName} • ${record.itemName}';
   }
 
-  String _metric(DispatchRecord record) {
-    final sent = '${record.sentQty.toStringAsFixed(0)} ${record.uom}';
+  String _metric(BuildContext context, DispatchRecord record) {
+    final l10n = context.l10n;
     if (_usesCustomerFlow(record)) {
-      return '$sent customerga yuborilgan';
+      return l10n.customerFlowMetric(record.sentQty, record.uom);
     }
-    return '$sent supplierdan qabul qilingan';
+    return l10n.supplierFlowMetric(record.sentQty, record.uom);
   }
 
-  String _actionLabel(DispatchRecord record) {
-    return _usesCustomerFlow(record) ? 'Yana jo‘natish' : 'Yana qayd qilish';
+  String _actionLabel(BuildContext context, DispatchRecord record) {
+    final l10n = context.l10n;
+    return _usesCustomerFlow(record)
+        ? l10n.repeatSendAgain
+        : l10n.repeatCreateAgain;
   }
 
   @override
@@ -85,8 +89,8 @@ class _WerkaRecentScreenState extends State<WerkaRecentScreen> {
     return AnimatedBuilder(
       animation: WerkaStore.instance,
       builder: (context, _) => AppShell(
-        title: 'Recent',
-        subtitle: 'Avvalgi harakatni prefill bilan qayta ishlating',
+        title: context.l10n.recentTitle,
+        subtitle: context.l10n.recentSubtitle,
         bottom: const WerkaDock(activeTab: WerkaDockTab.recent),
         contentPadding: const EdgeInsets.fromLTRB(10, 0, 12, 0),
         child: _buildBody(Theme.of(context)),
@@ -107,9 +111,9 @@ class _WerkaRecentScreenState extends State<WerkaRecentScreen> {
         padding: const EdgeInsets.only(bottom: 110),
         children: [
           _RecentMessageCard(
-            title: 'Recent yuklanmadi',
-            body: '${store.historyError}',
-            actionLabel: 'Qayta urinish',
+            title: context.l10n.recentLoadFailed,
+            body: context.l10n.recentLoadFailedWith(store.historyError!),
+            actionLabel: context.l10n.retry,
             onPressed: WerkaStore.instance.refreshHistory,
           ),
         ],
@@ -118,9 +122,9 @@ class _WerkaRecentScreenState extends State<WerkaRecentScreen> {
     if (items.isEmpty) {
       return ListView(
         padding: const EdgeInsets.only(bottom: 110),
-        children: const [
+        children: [
           _RecentInfoCard(
-            title: 'Hali repeat qilish uchun recent harakat yo‘q.',
+            title: context.l10n.noRecentActions,
           ),
         ],
       );
@@ -133,8 +137,8 @@ class _WerkaRecentScreenState extends State<WerkaRecentScreen> {
           items: items,
           headlineFor: _headline,
           sublineFor: _subline,
-          metricFor: _metric,
-          actionLabelFor: _actionLabel,
+          metricFor: (record) => _metric(context, record),
+          actionLabelFor: (record) => _actionLabel(context, record),
           onRepeat: _repeat,
         ),
       ],
