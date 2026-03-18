@@ -159,27 +159,14 @@ class _WerkaStatusDetailScreenState extends State<WerkaStatusDetailScreen> {
                         child: ListView(
                           padding: const EdgeInsets.only(bottom: 110),
                           children: [
-                            Card.filled(
-                              margin: EdgeInsets.zero,
-                              color: scheme.surfaceContainerLow,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(28),
+                            for (int index = 0; index < items.length; index++) ...[
+                              _WerkaStatusRecordCard(
+                                record: items[index],
+                                onTap: () => _openRecord(items[index]),
                               ),
-                              child: Column(
-                                children: [
-                                  for (int index = 0;
-                                      index < items.length;
-                                      index++) ...[
-                                    _WerkaStatusRecordRow(
-                                      record: items[index],
-                                      onTap: () => _openRecord(items[index]),
-                                    ),
-                                    if (index != items.length - 1)
-                                      const Divider(height: 1, thickness: 1),
-                                  ],
-                                ],
-                              ),
-                            ),
+                              if (index != items.length - 1)
+                                const SizedBox(height: 12),
+                            ],
                           ],
                         ),
                       );
@@ -230,8 +217,8 @@ class _WerkaStatusDetailScreenState extends State<WerkaStatusDetailScreen> {
   }
 }
 
-class _WerkaStatusRecordRow extends StatelessWidget {
-  const _WerkaStatusRecordRow({
+class _WerkaStatusRecordCard extends StatelessWidget {
+  const _WerkaStatusRecordCard({
     required this.record,
     required this.onTap,
   });
@@ -242,54 +229,65 @@ class _WerkaStatusRecordRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    record.itemName.trim().isEmpty
-                        ? record.itemCode
-                        : record.itemName,
-                    style: theme.textTheme.titleLarge,
+    final scheme = Theme.of(context).colorScheme;
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(28),
+    );
+    return Card.filled(
+      margin: EdgeInsets.zero,
+      color: scheme.surfaceContainerLow,
+      clipBehavior: Clip.antiAlias,
+      shape: shape,
+      child: InkWell(
+        customBorder: shape,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      record.itemName.trim().isEmpty
+                          ? record.itemCode
+                          : record.itemName,
+                      style: theme.textTheme.titleLarge,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
+                  const SizedBox(width: 12),
+                  Text(
+                    record.createdLabel,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                '${record.sentQty.toStringAsFixed(0)} ${record.uom}',
+                style: theme.textTheme.headlineMedium,
+              ),
+              if (record.acceptedQty > 0) ...[
+                const SizedBox(height: 6),
                 Text(
-                  record.createdLabel,
+                  context.l10n.acceptedQtyLabel(
+                    record.acceptedQty,
+                    record.uom,
+                  ),
                   style: theme.textTheme.bodySmall,
                 ),
               ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              '${record.sentQty.toStringAsFixed(0)} ${record.uom}',
-              style: theme.textTheme.headlineMedium,
-            ),
-            if (record.acceptedQty > 0) ...[
-              const SizedBox(height: 6),
-              Text(
-                context.l10n.acceptedQtyLabel(
-                  record.acceptedQty,
-                  record.uom,
+              if (record.note.trim().isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  record.note,
+                  style: theme.textTheme.bodySmall,
                 ),
-                style: theme.textTheme.bodySmall,
-              ),
+              ],
             ],
-            if (record.note.trim().isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                record.note,
-                style: theme.textTheme.bodySmall,
-              ),
-            ],
-          ],
+          ),
         ),
       ),
     );
