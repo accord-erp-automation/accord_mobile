@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../../../app/app_router.dart';
 import '../../../core/cache/json_cache_store.dart';
 import '../../../core/localization/app_localizations.dart';
@@ -6,6 +8,7 @@ import '../../../core/notifications/refresh_hub.dart';
 import '../../../core/notifications/notification_unread_store.dart';
 import '../../../core/session/app_session.dart';
 import '../../../core/widgets/app_shell.dart';
+import '../../../core/widgets/m3_confirm_dialog.dart';
 import '../../../core/widgets/motion_widgets.dart';
 import '../../shared/models/app_models.dart';
 import '../state/werka_store.dart';
@@ -27,6 +30,8 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
   List<DispatchRecord>? _cachedItems;
   Set<String> _highlightedUnreadIds = <String>{};
   int _refreshVersion = 0;
+  double _cardStretch = 0.0;
+  double _cardPull = 0.0;
 
   @override
   void initState() {
@@ -69,31 +74,12 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
       return;
     }
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showM3ConfirmDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(context.l10n.clearTitle),
-        content: Text(context.l10n.clearAllNotificationsPrompt),
-        actions: [
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: Text(context.l10n.no),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: Text(context.l10n.yes),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+      title: context.l10n.clearTitle,
+      message: context.l10n.clearAllNotificationsPrompt,
+      cancelLabel: context.l10n.no,
+      confirmLabel: context.l10n.yes,
     );
     if (confirmed != true) {
       return;
@@ -199,6 +185,34 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
     await future;
   }
 
+  bool _handleScrollNotification(ScrollNotification notification) {
+    if (notification is OverscrollNotification) {
+      final isAtBottom = notification.metrics.extentAfter <= 0.0;
+      if (isAtBottom &&
+          notification.dragDetails != null &&
+          notification.overscroll > 0) {
+        _cardPull = (_cardPull + notification.overscroll).clamp(0.0, 280.0);
+        final easedPull = 1.0 - math.exp(-_cardPull / 110.0);
+        final nextStretch = (easedPull * 0.075).clamp(0.0, 0.075).toDouble();
+        if (nextStretch != _cardStretch) {
+          setState(() => _cardStretch = nextStretch);
+        }
+        return false;
+      }
+    }
+
+    if (notification is ScrollEndNotification) {
+      if (_cardStretch != 0.0 || _cardPull != 0.0) {
+        setState(() {
+          _cardStretch = 0.0;
+          _cardPull = 0.0;
+        });
+      }
+    }
+
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppShell(
@@ -285,19 +299,39 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
 
           return AppRefreshIndicator(
             onRefresh: _reload,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(0, 0, 0, 116),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: _WerkaNotificationsSection(
-                    items: orderedItems,
-                    highlightedUnreadIds: _highlightedUnreadIds,
-                    onTapRecord: _openDetail,
-                  ),
+            child: NotificationListener<ScrollNotification>(
+              onNotification: _handleScrollNotification,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: ClampingScrollPhysics(),
                 ),
-              ],
+                padding: const EdgeInsets.fromLTRB(0, 0, 0, 116),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween<double>(
+                        begin: 1.0,
+                        end: 1.0 + _cardStretch,
+                      ),
+                      duration: const Duration(milliseconds: 110),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, scaleY, child) {
+                        return Transform.scale(
+                          scaleY: scaleY,
+                          alignment: Alignment.bottomCenter,
+                          child: child,
+                        );
+                      },
+                      child: _WerkaNotificationsSection(
+                        items: orderedItems,
+                        highlightedUnreadIds: _highlightedUnreadIds,
+                        onTapRecord: _openDetail,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },
