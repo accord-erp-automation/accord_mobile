@@ -1,5 +1,6 @@
 import '../../../core/api/mobile_api.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/m3_confirm_dialog.dart';
 import '../../shared/models/app_models.dart';
 import 'dart:async';
 
@@ -195,26 +196,14 @@ class _AdminCustomerDetailScreenState extends State<AdminCustomerDetailScreen> {
   }
 
   Future<void> _removeCustomer() async {
-    final bool? confirmed = await showDialog<bool>(
+    final bool? confirmed = await showM3ConfirmDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Customerni chiqarish'),
-          content: const Text(
-            'Bu customer admin panel ro‘yxatidan chiqariladi va kira olmaydi.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Bekor qilish'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Chiqarish'),
-            ),
-          ],
-        );
-      },
+      title: 'Customerni chiqarish',
+      message:
+          'Bu customer admin panel ro‘yxatidan chiqariladi va kira olmaydi.',
+      cancelLabel: 'Bekor qilish',
+      confirmLabel: 'Chiqarish',
+      destructive: true,
     );
     if (confirmed != true) {
       return;
@@ -296,33 +285,12 @@ class _AdminCustomerDetailScreenState extends State<AdminCustomerDetailScreen> {
   }
 
   Future<bool> _removeItem(SupplierItem item) async {
-    final bool? confirmed = await showDialog<bool>(
+    final bool? confirmed = await showM3ConfirmDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Mahsulotni uzish'),
-          content: Text('${item.name} mahsulotini customerdan uzaymi?'),
-          actions: [
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(false),
-                    child: const Text('Yo‘q'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () => Navigator.of(context).pop(true),
-                    child: const Text('Ha'),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        );
-      },
+      title: 'Mahsulotni uzish',
+      message: '${item.name} mahsulotini customerdan uzaymi?',
+      cancelLabel: 'Yo‘q',
+      confirmLabel: 'Ha',
     );
     if (confirmed != true) {
       return false;

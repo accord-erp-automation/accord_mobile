@@ -6,6 +6,7 @@ import '../../../core/notifications/refresh_hub.dart';
 import '../../../core/session/app_session.dart';
 import '../../../core/theme/app_motion.dart';
 import '../../../core/widgets/app_shell.dart';
+import '../../../core/widgets/m3_confirm_dialog.dart';
 import '../../../core/widgets/motion_widgets.dart';
 import '../../shared/models/app_models.dart';
 import '../state/customer_store.dart';
@@ -100,56 +101,12 @@ class _CustomerNotificationsScreenState
   }
 
   Future<void> _clearAll() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showM3ConfirmDialog(
       context: context,
-      builder: (dialogContext) {
-        final theme = Theme.of(dialogContext);
-        final scheme = theme.colorScheme;
-        return Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-          backgroundColor: scheme.surfaceContainerHigh,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(context.l10n.clearTitle,
-                    style: theme.textTheme.headlineSmall),
-                const SizedBox(height: 10),
-                Text(
-                  context.l10n.clearAllNotificationsPrompt,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    height: 1.45,
-                  ),
-                ),
-                const SizedBox(height: 22),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.of(dialogContext).pop(false),
-                        child: Text(context.l10n.no),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: () => Navigator.of(dialogContext).pop(true),
-                        child: Text(context.l10n.yes),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+      title: context.l10n.clearTitle,
+      message: context.l10n.clearAllNotificationsPrompt,
+      cancelLabel: context.l10n.no,
+      confirmLabel: context.l10n.yes,
     );
     if (confirmed != true) {
       return;

@@ -3,6 +3,7 @@ import '../../../core/notifications/refresh_hub.dart';
 import '../../../core/session/app_session.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/widgets/app_shell.dart';
+import '../../../core/widgets/m3_confirm_dialog.dart';
 import '../../shared/models/app_models.dart';
 import '../state/admin_store.dart';
 import 'widgets/admin_dock.dart';
@@ -29,31 +30,12 @@ class _AdminActivityScreenState extends State<AdminActivityScreen> {
   }
 
   Future<void> _clearAll() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showM3ConfirmDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(context.l10n.clearTitle),
-        content: Text(context.l10n.clearAllNotificationsPrompt),
-        actions: [
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: Text(context.l10n.no),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: Text(context.l10n.yes),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+      title: context.l10n.clearTitle,
+      message: context.l10n.clearAllNotificationsPrompt,
+      cancelLabel: context.l10n.no,
+      confirmLabel: context.l10n.yes,
     );
     if (confirmed != true) {
       return;

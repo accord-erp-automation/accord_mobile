@@ -1,6 +1,7 @@
 import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
 import '../../../core/widgets/app_shell.dart';
+import '../../../core/widgets/m3_confirm_dialog.dart';
 import '../../../core/widgets/motion_widgets.dart';
 import '../../shared/models/app_models.dart';
 import 'widgets/admin_dock.dart';
@@ -167,26 +168,14 @@ class _AdminSupplierDetailScreenState extends State<AdminSupplierDetailScreen> {
   }
 
   Future<void> _removeSupplier() async {
-    final bool? confirmed = await showDialog<bool>(
+    final bool? confirmed = await showM3ConfirmDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Supplierni chiqarish'),
-          content: const Text(
-            'Bu supplier admin panel ro‘yxatidan chiqariladi va kira olmaydi.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Bekor qilish'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Chiqarish'),
-            ),
-          ],
-        );
-      },
+      title: 'Supplierni chiqarish',
+      message:
+          'Bu supplier admin panel ro‘yxatidan chiqariladi va kira olmaydi.',
+      cancelLabel: 'Bekor qilish',
+      confirmLabel: 'Chiqarish',
+      destructive: true,
     );
     if (confirmed != true) {
       return;

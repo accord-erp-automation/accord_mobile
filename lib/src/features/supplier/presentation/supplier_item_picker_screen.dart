@@ -2,6 +2,7 @@ import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
 import '../../../core/theme/app_motion.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/search/search_normalizer.dart';
 import '../../../core/widgets/app_shell.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/motion_widgets.dart';
@@ -52,11 +53,13 @@ class _SupplierItemPickerScreenState extends State<SupplierItemPickerScreen>
   }
 
   bool _matchesQuery(SupplierItem item, String query) {
-    if (query.isEmpty) {
-      return true;
-    }
-    return item.name.toLowerCase().contains(query) ||
-        item.code.toLowerCase().contains(query);
+    return searchMatches(
+      query,
+      [
+        item.name,
+        item.code,
+      ],
+    );
   }
 
   @override
@@ -64,10 +67,6 @@ class _SupplierItemPickerScreenState extends State<SupplierItemPickerScreen>
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return AppShell(
-      leading: AppShellIconAction(
-        icon: Icons.arrow_back_rounded,
-        onTap: () => Navigator.of(context).maybePop(),
-      ),
       title: 'Mahsulot tanlash',
       subtitle: '',
       contentPadding: const EdgeInsets.fromLTRB(10, 0, 12, 0),
@@ -141,7 +140,7 @@ class _SupplierItemPickerScreenState extends State<SupplierItemPickerScreen>
                   );
                 }
 
-                final query = controller.text.trim().toLowerCase();
+                final query = controller.text.trim();
                 final allItems = snapshot.data ?? <SupplierItem>[];
                 final filtered = allItems
                     .where((item) => _matchesQuery(item, query))
@@ -150,16 +149,26 @@ class _SupplierItemPickerScreenState extends State<SupplierItemPickerScreen>
                 if (filtered.isEmpty) {
                   return AppRefreshIndicator(
                     onRefresh: _reload,
-                    child: ListView(
+                    child: CustomScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      children: [
-                        const SizedBox(height: 120),
-                        SoftCard(
-                          child: Text(
-                            query.isEmpty
-                                ? 'Bu supplierga item biriktirilmagan.'
-                                : 'Qidiruv bo‘yicha item topilmadi.',
+                      slivers: [
+                        SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                              ),
+                              child: Text(
+                                query.isEmpty
+                                    ? 'Bu supplierga item biriktirilmagan.'
+                                    : 'Mahsulot topilmadi.',
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ],

@@ -1,6 +1,7 @@
 import '../../../core/api/mobile_api.dart';
 import '../../../core/widgets/app_shell.dart';
 import '../../../core/widgets/common_widgets.dart';
+import '../../../core/widgets/m3_confirm_dialog.dart';
 import '../../shared/models/app_models.dart';
 import 'widgets/admin_dock.dart';
 import 'package:flutter/material.dart';
@@ -53,24 +54,12 @@ class _AdminSupplierItemsViewScreenState
   }
 
   Future<void> _removeItem(SupplierItem item) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showM3ConfirmDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Mahsulotni uzish'),
-          content: Text('${item.name} mahsulotini supplierdan uzaymi?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Yo‘q'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Ha'),
-            ),
-          ],
-        );
-      },
+      title: 'Mahsulotni uzish',
+      message: '${item.name} mahsulotini supplierdan uzaymi?',
+      cancelLabel: 'Yo‘q',
+      confirmLabel: 'Ha',
     );
     if (confirm != true) {
       return;

@@ -38,8 +38,7 @@ class SupplierStore extends ChangeNotifier {
   Object? get summaryError => _summaryError;
   Object? get historyError => _historyError;
 
-  SupplierHomeSummary get summary =>
-      SupplierRuntimeStore.instance.applySummary(_summary);
+  SupplierHomeSummary get summary => _summary;
   List<DispatchRecord> get historyItems => _historyItems;
   List<SupplierStatusBreakdownEntry> breakdownItems(SupplierStatusKind kind) =>
       _breakdownItems[kind] ?? const <SupplierStatusBreakdownEntry>[];

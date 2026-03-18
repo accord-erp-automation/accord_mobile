@@ -1,5 +1,6 @@
 import '../../../core/api/mobile_api.dart';
 import '../../../core/widgets/app_shell.dart';
+import '../../../core/widgets/m3_confirm_dialog.dart';
 import '../../shared/models/app_models.dart';
 import 'admin_supplier_items_view_screen.dart';
 import 'widgets/admin_dock.dart';
@@ -56,24 +57,12 @@ class _AdminSupplierItemsAddScreenState
   }
 
   Future<void> _addItem(SupplierItem item) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showM3ConfirmDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Mahsulotni biriktirish'),
-          content: Text('${item.name} mahsulotini supplierga biriktiraymi?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Yo‘q'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Ha'),
-            ),
-          ],
-        );
-      },
+      title: 'Mahsulotni biriktirish',
+      message: '${item.name} mahsulotini supplierga biriktiraymi?',
+      cancelLabel: 'Yo‘q',
+      confirmLabel: 'Ha',
     );
     if (confirm != true) {
       return;
