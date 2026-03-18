@@ -17,8 +17,8 @@ class SupplierDock extends StatelessWidget {
     super.key,
     required this.activeTab,
     this.centerActive = false,
-    this.compact = false,
-    this.tightToEdges = false,
+    this.compact = true,
+    this.tightToEdges = true,
   });
 
   final SupplierDockTab? activeTab;

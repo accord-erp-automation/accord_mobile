@@ -60,7 +60,7 @@ class _SupplierHomeScreenState extends State<SupplierHomeScreen>
   Widget build(BuildContext context) {
     return AppShell(
       title: 'Supplier',
-      subtitle: '',
+      subtitle: 'Jo‘natmalar holati va oqimlari',
       bottom: const SupplierDock(activeTab: SupplierDockTab.home),
       child: AnimatedBuilder(
         animation: SupplierStore.instance,
@@ -84,25 +84,28 @@ class _SupplierHomeScreenState extends State<SupplierHomeScreen>
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(28),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Home yuklanmadi',
-                            style: Theme.of(context).textTheme.titleMedium),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${store.summaryError}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        const SizedBox(height: 14),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton(
-                            onPressed: _reload,
-                            child: const Text('Qayta urinish'),
+                    child: Padding(
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Home yuklanmadi',
+                              style: Theme.of(context).textTheme.titleMedium),
+                          const SizedBox(height: 8),
+                          Text(
+                            '${store.summaryError}',
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: _reload,
+                              child: const Text('Qayta urinish'),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
