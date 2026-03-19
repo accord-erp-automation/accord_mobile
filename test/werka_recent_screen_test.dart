@@ -1,12 +1,21 @@
+import 'package:erpnext_stock_mobile/src/core/localization/app_localizations.dart';
 import 'package:erpnext_stock_mobile/src/features/shared/models/app_models.dart';
 import 'package:erpnext_stock_mobile/src/features/werka/presentation/werka_recent_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
   testWidgets('werka recent renders repeat cards', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         home: WerkaRecentScreen(
           loader: () async => const [
             DispatchRecord(
@@ -31,11 +40,11 @@ void main() {
       ),
     );
 
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('Recent'), findsOneWidget);
     expect(find.text('chers001'), findsOneWidget);
-    expect(find.text('Yana jo‘natish'), findsOneWidget);
+    expect(find.text('Send again'), findsOneWidget);
   });
 
   testWidgets('werka recent renders with semantics enabled', (tester) async {
@@ -43,6 +52,13 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         home: WerkaRecentScreen(
           loader: () async => const [
             DispatchRecord(
@@ -67,10 +83,10 @@ void main() {
       ),
     );
 
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('nachos003'), findsOneWidget);
-    expect(find.text('Yana qayd qilish'), findsOneWidget);
+    expect(find.text('Create again'), findsOneWidget);
     semantics.dispose();
   });
 }

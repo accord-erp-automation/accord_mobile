@@ -112,7 +112,6 @@ class SupplierStore extends ChangeNotifier {
     if (loadingBreakdown(kind)) return;
     _loadingBreakdown[kind] = true;
     _breakdownErrors[kind] = null;
-    notifyListeners();
     try {
       _breakdownItems[kind] = await MobileApi.instance.supplierStatusBreakdown(kind);
     } catch (error) {

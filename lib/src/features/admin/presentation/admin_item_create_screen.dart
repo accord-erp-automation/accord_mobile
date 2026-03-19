@@ -20,11 +20,31 @@ class _AdminItemCreateScreenState extends State<AdminItemCreateScreen> {
   SupplierItem? createdItem;
 
   @override
+  void initState() {
+    super.initState();
+    _hydrateDefaultUom();
+  }
+
+  @override
   void dispose() {
     code.dispose();
     name.dispose();
     uom.dispose();
     super.dispose();
+  }
+
+  Future<void> _hydrateDefaultUom() async {
+    try {
+      final settings = await MobileApi.instance.adminSettings();
+      if (!mounted) {
+        return;
+      }
+      final currentValue = uom.text.trim();
+      if (currentValue.isEmpty || currentValue == 'Kg') {
+        final defaultUom = settings.defaultUom.trim();
+        uom.text = defaultUom.isEmpty ? 'Kg' : defaultUom;
+      }
+    } catch (_) {}
   }
 
   Future<void> _save() async {

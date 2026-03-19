@@ -74,13 +74,15 @@ extension MobileApiAuthProfile on MobileApi {
   Future<void> logout() async {
     final String? token = AppSession.instance.token;
     if (token != null) {
-      await PushMessagingService.instance.unregisterCurrentToken();
-      await _sendAuthorized(
-        () => http.post(
+      try {
+        await PushMessagingService.instance.unregisterCurrentToken();
+      } catch (_) {}
+      try {
+        await http.post(
           Uri.parse('$baseUrl/v1/mobile/auth/logout'),
           headers: _headers(token),
-        ),
-      );
+        );
+      } catch (_) {}
     }
     await AppSession.instance.clear();
   }
