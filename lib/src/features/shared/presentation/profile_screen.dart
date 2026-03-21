@@ -357,16 +357,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ? const CustomerDock(activeTab: CustomerDockTab.profile)
                       : const AdminDock(activeTab: AdminDockTab.profile),
           contentPadding: const EdgeInsets.fromLTRB(12, 0, 14, 0),
-          child: AppRefreshIndicator(
-            onRefresh: _refreshProfile,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.zero,
-              children: [
-                SmoothAppear(
-                  delay: const Duration(milliseconds: 20),
-                  child: _ProfilePanel(
-                    child: Column(
+          child: ListView(
+            physics: const ClampingScrollPhysics(),
+            padding: EdgeInsets.zero,
+            children: [
+              SmoothAppear(
+                delay: const Duration(milliseconds: 20),
+                child: _ProfilePanel(
+                  child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
@@ -537,16 +535,15 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ],
                     ),
                   ),
+              ),
+              if (errorMessage != null) ...[
+                const SizedBox(height: 14),
+                _ProfilePanel(
+                  child: Text(errorMessage!),
                 ),
-                if (errorMessage != null) ...[
-                  const SizedBox(height: 14),
-                  _ProfilePanel(
-                    child: Text(errorMessage!),
-                  ),
-                ],
-                const SizedBox(height: 12),
               ],
-            ),
+              const SizedBox(height: 12),
+            ],
           ),
         );
       },
