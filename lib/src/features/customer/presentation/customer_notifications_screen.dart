@@ -31,7 +31,6 @@ class CustomerNotificationsScreen extends StatefulWidget {
 class _CustomerNotificationsScreenState
     extends State<CustomerNotificationsScreen> {
   static const String _cacheKey = 'cache_customer_notifications';
-  late Future<List<DispatchRecord>> _future;
   List<DispatchRecord>? _cachedItems;
   Set<String> _highlightedUnreadIds = <String>{};
   int _refreshVersion = 0;
@@ -40,13 +39,13 @@ class _CustomerNotificationsScreenState
   void initState() {
     super.initState();
     CustomerStore.instance.bootstrap();
-    _future = _loadAndTrack();
     NotificationHiddenStore.instance.load().then((_) {
       if (mounted) {
         setState(() {});
       }
     });
     _loadCache();
+    CustomerStore.instance.addListener(_handleStoreChanged);
     RefreshHub.instance.addListener(_handlePushRefresh);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.onClearActionChanged?.call(_clearAll);
@@ -55,6 +54,7 @@ class _CustomerNotificationsScreenState
 
   @override
   void dispose() {
+    CustomerStore.instance.removeListener(_handleStoreChanged);
     RefreshHub.instance.removeListener(_handlePushRefresh);
     super.dispose();
   }
@@ -78,9 +78,8 @@ class _CustomerNotificationsScreenState
   }
 
   Future<void> _reload() async {
-    final future = _loadAndTrack();
-    setState(() => _future = future);
-    await future;
+    await CustomerStore.instance.refresh();
+    await _syncFromStore();
   }
 
   Future<void> _openDetail(String deliveryNoteID) async {
@@ -111,7 +110,7 @@ class _CustomerNotificationsScreenState
     if (confirmed != true) {
       return;
     }
-    final current = _cachedItems ?? await _future;
+    final current = CustomerStore.instance.historyItems;
     await NotificationHiddenStore.instance.hideAll(
       profile: AppSession.instance.profile,
       ids: current.map((item) => item.id),
@@ -124,14 +123,11 @@ class _CustomerNotificationsScreenState
       return;
     }
     setState(() {
-      _cachedItems = const [];
       _highlightedUnreadIds.clear();
-      _future = Future.value(const <DispatchRecord>[]);
     });
   }
 
-  Future<List<DispatchRecord>> _loadAndTrack() async {
-    await CustomerStore.instance.refresh();
+  Future<void> _syncFromStore() async {
     final items = CustomerStore.instance.historyItems;
     final hidden = NotificationHiddenStore.instance.hiddenIdsForProfile(
       AppSession.instance.profile,
@@ -160,7 +156,14 @@ class _CustomerNotificationsScreenState
       _cacheKey,
       items.map((item) => item.toJson()).toList(),
     );
-    return items;
+    _cachedItems = items;
+  }
+
+  void _handleStoreChanged() {
+    if (!mounted) {
+      return;
+    }
+    _syncFromStore();
   }
 
   void _handlePushRefresh() {
@@ -176,13 +179,14 @@ class _CustomerNotificationsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final content = FutureBuilder<List<DispatchRecord>>(
-      future: _future,
-      builder: (context, snapshot) {
+    final content = AnimatedBuilder(
+      animation: CustomerStore.instance,
+      builder: (context, _) {
+        final store = CustomerStore.instance;
         final hidden = NotificationHiddenStore.instance.hiddenIdsForProfile(
           AppSession.instance.profile,
         );
-        final items = (snapshot.data ?? _cachedItems ?? <DispatchRecord>[])
+        final items = ((store.loaded ? store.historyItems : (_cachedItems ?? <DispatchRecord>[])))
             .where((item) => !hidden.contains(item.id))
             .toList();
         final orderedItems = [
@@ -190,13 +194,13 @@ class _CustomerNotificationsScreenState
           ...items.where((item) => !_highlightedUnreadIds.contains(item.id)),
         ];
 
-        if (snapshot.connectionState != ConnectionState.done && items.isEmpty) {
+        if (store.loading && !store.loaded && items.isEmpty) {
           return const Center(child: CircularProgressIndicator.adaptive());
         }
-        if (snapshot.hasError && items.isEmpty) {
+        if (store.error != null && !store.loaded && items.isEmpty) {
           return Center(
             child: _NotificationPanel(
-              child: Text('${snapshot.error}'),
+              child: Text('${store.error}'),
             ),
           );
         }
