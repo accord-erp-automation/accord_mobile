@@ -6,6 +6,7 @@ import '../../../core/session/app_session.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/motion_widgets.dart';
 import '../../../core/widgets/app_shell.dart';
+import '../../../core/widgets/top_refresh_scroll_physics.dart';
 import '../../shared/models/app_models.dart';
 import '../state/werka_store.dart';
 import 'widgets/werka_dock.dart';
@@ -116,9 +117,7 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
                   return AppRefreshIndicator(
                     onRefresh: _reload,
                     child: ListView(
-                      physics: const ClampingScrollPhysics(
-                        parent: AlwaysScrollableScrollPhysics(),
-                      ),
+                      physics: const TopRefreshScrollPhysics(),
                       children: [
                         const SizedBox(height: 120),
                         Card.filled(
@@ -163,9 +162,7 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
                 return AppRefreshIndicator(
                   onRefresh: _reload,
                   child: ListView(
-                    physics: const ClampingScrollPhysics(
-                      parent: AlwaysScrollableScrollPhysics(),
-                    ),
+                    physics: const TopRefreshScrollPhysics(),
                     padding: EdgeInsets.zero,
                     children: [
                       Padding(

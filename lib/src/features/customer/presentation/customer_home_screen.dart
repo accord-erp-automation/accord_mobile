@@ -4,6 +4,7 @@ import '../../../core/notifications/refresh_hub.dart';
 import '../../../core/theme/app_motion.dart';
 import '../../../core/widgets/app_shell.dart';
 import '../../../core/widgets/motion_widgets.dart';
+import '../../../core/widgets/top_refresh_scroll_physics.dart';
 import '../../shared/models/app_models.dart';
 import '../state/customer_store.dart';
 import 'widgets/customer_dock.dart';
@@ -94,9 +95,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
         return AppRefreshIndicator(
           onRefresh: _reload,
           child: ListView(
-            physics: const ClampingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
-            ),
+            physics: const TopRefreshScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
             children: [
               SmoothAppear(

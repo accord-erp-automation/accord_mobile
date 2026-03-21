@@ -6,6 +6,7 @@ import '../../../core/session/app_session.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_shell.dart';
 import '../../../core/widgets/motion_widgets.dart';
+import '../../../core/widgets/top_refresh_scroll_physics.dart';
 import '../../shared/models/app_models.dart';
 import '../state/supplier_store.dart';
 import 'supplier_qty_screen.dart';
@@ -114,9 +115,7 @@ class _SupplierHomeScreenState extends State<SupplierHomeScreen>
             return AppRefreshIndicator(
               onRefresh: _reload,
               child: ListView(
-                physics: const ClampingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics(),
-                ),
+                physics: const TopRefreshScrollPhysics(),
                 padding: EdgeInsets.zero,
                 children: [
                   const SizedBox(height: 120),
@@ -167,9 +166,7 @@ class _SupplierHomeScreenState extends State<SupplierHomeScreen>
           return AppRefreshIndicator(
             onRefresh: _reload,
             child: ListView(
-              physics: const ClampingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
-              ),
+              physics: const TopRefreshScrollPhysics(),
               padding: EdgeInsets.zero,
               children: [
                 Padding(
