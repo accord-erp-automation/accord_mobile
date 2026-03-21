@@ -210,43 +210,40 @@ class _SupplierNotificationsScreenState
             return const Center(child: CircularProgressIndicator());
           }
           if (store.historyError != null && !store.loadedHistory && items.isEmpty) {
-            return AppRefreshIndicator(
-              onRefresh: _reload,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(0, 0, 0, 116),
-                children: [
-                  const SizedBox(height: 120),
-                  Card.filled(
-                    margin: EdgeInsets.zero,
-                    child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            context.l10n.notificationsLoadFailed,
-                            style: Theme.of(context).textTheme.titleMedium,
+            return ListView(
+              physics: const ClampingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(0, 0, 0, 116),
+              children: [
+                const SizedBox(height: 120),
+                Card.filled(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.l10n.notificationsLoadFailed,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${store.historyError}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 14),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton(
+                            onPressed: _reload,
+                            child: Text(context.l10n.retry),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '${store.historyError}',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          const SizedBox(height: 14),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: _reload,
-                              child: Text(context.l10n.retry),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             );
           }
 
@@ -261,65 +258,60 @@ class _SupplierNotificationsScreenState
             );
           }
 
-          return AppRefreshIndicator(
-            onRefresh: _reload,
-            child: NotificationListener<ScrollNotification>(
-              onNotification: _handleScrollNotification,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: ClampingScrollPhysics(),
-                ),
-                padding: const EdgeInsets.fromLTRB(0, 0, 0, 116),
-                children: [
-                  TweenAnimationBuilder<double>(
-                    tween: Tween<double>(
-                      begin: 1.0,
-                      end: 1.0 + _cardStretch,
+          return NotificationListener<ScrollNotification>(
+            onNotification: _handleScrollNotification,
+            child: ListView(
+              physics: const ClampingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(0, 0, 0, 116),
+              children: [
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(
+                    begin: 1.0,
+                    end: 1.0 + _cardStretch,
+                  ),
+                  duration: const Duration(milliseconds: 110),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, scaleY, child) {
+                    return Transform.scale(
+                      scaleY: scaleY,
+                      alignment: Alignment.bottomCenter,
+                      child: child,
+                    );
+                  },
+                  child: Card.filled(
+                    margin: EdgeInsets.zero,
+                    color: Theme.of(context).colorScheme.surfaceContainerLow,
+                    clipBehavior: Clip.antiAlias,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
                     ),
-                    duration: const Duration(milliseconds: 110),
-                    curve: Curves.easeOutCubic,
-                    builder: (context, scaleY, child) {
-                      return Transform.scale(
-                        scaleY: scaleY,
-                        alignment: Alignment.bottomCenter,
-                        child: child,
-                      );
-                    },
-                    child: Card.filled(
-                      margin: EdgeInsets.zero,
-                      color: Theme.of(context).colorScheme.surfaceContainerLow,
-                      clipBehavior: Clip.antiAlias,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                      child: Column(
-                        children: [
-                          for (int index = 0;
-                              index < orderedItems.length;
-                              index++) ...[
-                            _SupplierNotificationRow(
-                              record: orderedItems[index],
-                              highlighted: _highlightedUnreadIds
-                                  .contains(orderedItems[index].id),
-                              onTap: () => _openDetail(orderedItems[index].id),
+                    child: Column(
+                      children: [
+                        for (int index = 0;
+                            index < orderedItems.length;
+                            index++) ...[
+                          _SupplierNotificationRow(
+                            record: orderedItems[index],
+                            highlighted: _highlightedUnreadIds
+                                .contains(orderedItems[index].id),
+                            onTap: () => _openDetail(orderedItems[index].id),
+                          ),
+                          if (index != orderedItems.length - 1)
+                            Divider(
+                              height: 1,
+                              thickness: 1,
+                              indent: 18,
+                              endIndent: 18,
+                              color: Theme.of(context)
+                                  .dividerColor
+                                  .withValues(alpha: 0.55),
                             ),
-                            if (index != orderedItems.length - 1)
-                              Divider(
-                                height: 1,
-                                thickness: 1,
-                                indent: 18,
-                                endIndent: 18,
-                                color: Theme.of(context)
-                                    .dividerColor
-                                    .withValues(alpha: 0.55),
-                              ),
-                          ],
                         ],
-                      ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },

@@ -246,44 +246,41 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
             return const Center(child: CircularProgressIndicator());
           }
           if (store.historyError != null && !store.loadedHistory && items.isEmpty) {
-            return AppRefreshIndicator(
-              onRefresh: _reload,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(0, 0, 0, 116),
-                children: [
-                  const SizedBox(height: 120),
-                  Card.filled(
-                    margin: EdgeInsets.zero,
-                    child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            context.l10n.notificationsLoadFailed,
-                            style: Theme.of(context).textTheme.titleMedium,
+            return ListView(
+              physics: const ClampingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(0, 0, 0, 116),
+              children: [
+                const SizedBox(height: 120),
+                Card.filled(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.l10n.notificationsLoadFailed,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          context.l10n
+                              .notificationsLoadFailedWith(store.historyError!),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 14),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton(
+                            onPressed: _reload,
+                            child: Text(context.l10n.retry),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            context.l10n
-                                .notificationsLoadFailedWith(store.historyError!),
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          const SizedBox(height: 14),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: _reload,
-                              child: Text(context.l10n.retry),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             );
           }
 
@@ -299,41 +296,36 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
             );
           }
 
-          return AppRefreshIndicator(
-            onRefresh: _reload,
-            child: NotificationListener<ScrollNotification>(
-              onNotification: _handleScrollNotification,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: ClampingScrollPhysics(),
-                ),
-                padding: const EdgeInsets.fromLTRB(0, 0, 0, 116),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween<double>(
-                        begin: 1.0,
-                        end: 1.0 + _cardStretch,
-                      ),
-                      duration: const Duration(milliseconds: 110),
-                      curve: Curves.easeOutCubic,
-                      builder: (context, scaleY, child) {
-                        return Transform.scale(
-                          scaleY: scaleY,
-                          alignment: Alignment.bottomCenter,
-                          child: child,
-                        );
-                      },
-                      child: _WerkaNotificationsSection(
-                        items: orderedItems,
-                        highlightedUnreadIds: _highlightedUnreadIds,
-                        onTapRecord: _openDetail,
-                      ),
+          return NotificationListener<ScrollNotification>(
+            onNotification: _handleScrollNotification,
+            child: ListView(
+              physics: const ClampingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(0, 0, 0, 116),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(
+                      begin: 1.0,
+                      end: 1.0 + _cardStretch,
+                    ),
+                    duration: const Duration(milliseconds: 110),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, scaleY, child) {
+                      return Transform.scale(
+                        scaleY: scaleY,
+                        alignment: Alignment.bottomCenter,
+                        child: child,
+                      );
+                    },
+                    child: _WerkaNotificationsSection(
+                      items: orderedItems,
+                      highlightedUnreadIds: _highlightedUnreadIds,
+                      onTapRecord: _openDetail,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },

@@ -212,22 +212,19 @@ class _CustomerNotificationsScreenState
           );
         }
 
-        return AppRefreshIndicator(
-          onRefresh: _reload,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
-            children: [
-              SmoothAppear(
-                delay: const Duration(milliseconds: 20),
-                child: _NotificationSection(
-                  items: orderedItems,
-                  highlightedUnreadIds: _highlightedUnreadIds,
-                  onTapRecord: _openDetail,
-                ),
+        return ListView(
+          physics: const ClampingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
+          children: [
+            SmoothAppear(
+              delay: const Duration(milliseconds: 20),
+              child: _NotificationSection(
+                items: orderedItems,
+                highlightedUnreadIds: _highlightedUnreadIds,
+                onTapRecord: _openDetail,
               ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );
