@@ -27,7 +27,16 @@ class AdminDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+    final routeName = ModalRoute.of(context)?.settings.name;
+    final useNativeDock = !kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.iOS &&
+        AppRouter.staticDockRoutes.contains(routeName);
+    if (!kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.iOS &&
+        !useNativeDock) {
+      return const SizedBox.shrink();
+    }
+    if (useNativeDock) {
       return IOSLiquidDock(
         compact: compact,
         tightToEdges: tightToEdges,
