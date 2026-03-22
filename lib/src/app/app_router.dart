@@ -44,7 +44,8 @@ import '../features/werka/presentation/werka_unannounced_supplier_screen.dart';
 import '../features/werka/presentation/werka_status_detail_screen.dart';
 import '../features/werka/presentation/werka_status_breakdown_screen.dart';
 import '../features/werka/presentation/werka_success_screen.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:full_screen_back_gesture/cupertino.dart'
+    as fullscreen_cupertino;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -331,7 +332,7 @@ class AppRouter {
 
   static PageRoute<dynamic> _buildRoute(RouteSettings settings, Widget child) {
     if (_shouldUseEdgeSwipeBack(settings)) {
-      return CupertinoPageRoute<dynamic>(
+      return fullscreen_cupertino.CupertinoPageRoute<dynamic>(
         settings: settings,
         builder: (context) {
           return child;
@@ -351,7 +352,7 @@ class AppRouter {
     Widget child,
   ) {
     if (_shouldUseEdgeSwipeBack(settings)) {
-      return CupertinoPageRoute<dynamic>(
+      return fullscreen_cupertino.CupertinoPageRoute<dynamic>(
         settings: settings,
         builder: (context) {
           return child;

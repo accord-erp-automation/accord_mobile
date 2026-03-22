@@ -26,6 +26,7 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   firebase_core: ^3.15.2
   firebase_messaging: ^15.2.10
+  full_screen_back_gesture: ^0.0.2
 
 dev_dependencies:
   flutter_test:
