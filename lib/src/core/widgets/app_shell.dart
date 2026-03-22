@@ -431,9 +431,12 @@ class _AppRefreshIndicatorState extends State<AppRefreshIndicator> {
         onNotification: _handleScrollNotification,
         child: Stack(
           children: [
-            Transform.translate(
-              offset: Offset(0, contentTranslateY),
-              child: widget.child,
+            IgnorePointer(
+              ignoring: _refreshing,
+              child: Transform.translate(
+                offset: Offset(0, contentTranslateY),
+                child: widget.child,
+              ),
             ),
             if (visible)
               Positioned(
