@@ -5,6 +5,8 @@ import 'package:flutter/widgets.dart';
 class TopRefreshScrollPhysics extends ClampingScrollPhysics {
   const TopRefreshScrollPhysics({super.parent});
 
+  static const double _maxTopRefreshOverscroll = 88.0;
+
   @override
   TopRefreshScrollPhysics applyTo(ScrollPhysics? ancestor) {
     return TopRefreshScrollPhysics(parent: buildParent(ancestor));
@@ -15,6 +17,11 @@ class TopRefreshScrollPhysics extends ClampingScrollPhysics {
 
   @override
   double applyBoundaryConditions(ScrollMetrics position, double value) {
+    final double minTopOffset =
+        position.minScrollExtent - _maxTopRefreshOverscroll;
+    if (value < minTopOffset) {
+      return value - minTopOffset;
+    }
     if (position.maxScrollExtent <= position.pixels && position.pixels < value) {
       return value - position.pixels;
     }
