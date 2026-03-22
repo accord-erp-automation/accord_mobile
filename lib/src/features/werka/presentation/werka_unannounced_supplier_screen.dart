@@ -10,7 +10,6 @@ import 'widgets/m3_picker_sheet.dart';
 import 'widgets/werka_dock.dart';
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class WerkaUnannouncedSupplierScreen extends StatefulWidget {
@@ -307,7 +306,6 @@ class _WerkaUnannouncedSupplierScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final usesGlobalIOSDock = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
     final canPickItem = _selectedSupplier != null && !_loadingItems;
     final canSubmit = _selectedSupplier != null &&
         _selectedItem != null &&
@@ -449,15 +447,13 @@ class _WerkaUnannouncedSupplierScreenState
           },
         ),
       ),
-      bottomNavigationBar: usesGlobalIOSDock
-          ? null
-          : const SafeArea(
-              top: false,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: WerkaDock(activeTab: null),
-              ),
-            ),
+      bottomNavigationBar: const SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: WerkaDock(activeTab: null),
+        ),
+      ),
     );
   }
 }

@@ -6,7 +6,6 @@ import '../../../core/widgets/motion_widgets.dart';
 import '../../shared/models/app_models.dart';
 import '../state/customer_store.dart';
 import 'widgets/customer_dock.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class CustomerStatusDetailScreen extends StatefulWidget {
@@ -60,7 +59,6 @@ class _CustomerStatusDetailScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final usesGlobalIOSDock = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
     return Scaffold(
       extendBody: true,
       backgroundColor: AppTheme.shellStart(context),
@@ -170,15 +168,13 @@ class _CustomerStatusDetailScreenState
           ],
         ),
       ),
-      bottomNavigationBar: usesGlobalIOSDock
-          ? null
-          : const SafeArea(
-              top: false,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: CustomerDock(activeTab: null),
-              ),
-            ),
+      bottomNavigationBar: const SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: CustomerDock(activeTab: null),
+        ),
+      ),
     );
   }
 }

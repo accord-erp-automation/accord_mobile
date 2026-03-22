@@ -5,7 +5,6 @@ import '../../../core/notifications/werka_runtime_store.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../shared/models/app_models.dart';
 import 'widgets/werka_dock.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class WerkaDetailScreen extends StatefulWidget {
@@ -203,7 +202,6 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
-    final usesGlobalIOSDock = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
     return Scaffold(
       extendBody: true,
       backgroundColor: AppTheme.shellStart(context),
@@ -431,15 +429,13 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: usesGlobalIOSDock
-          ? null
-          : const SafeArea(
-              top: false,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: WerkaDock(activeTab: null),
-              ),
-            ),
+      bottomNavigationBar: const SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: WerkaDock(activeTab: null),
+        ),
+      ),
     );
   }
 }
