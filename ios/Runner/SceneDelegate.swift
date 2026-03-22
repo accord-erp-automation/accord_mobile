@@ -91,7 +91,7 @@ private final class AccordLiquidDockHostController: UITabBarController, UITabBar
     contentController.didMove(toParent: self)
 
     if #available(iOS 26.0, *) {
-      tabBar.itemPositioning = .automatic
+      // Keep the iOS 26 tab bar on the system default layout path.
     } else {
       tabBar.itemPositioning = .centered
       tabBar.itemWidth = 64
@@ -99,11 +99,7 @@ private final class AccordLiquidDockHostController: UITabBarController, UITabBar
     }
 
     if #available(iOS 26.0, *) {
-      let appearance = UITabBarAppearance()
-      appearance.configureWithDefaultBackground()
-      appearance.shadowColor = .clear
-      tabBar.standardAppearance = appearance
-      tabBar.scrollEdgeAppearance = appearance
+      // Keep the iOS 26 tab bar on the system default appearance path.
     } else if #available(iOS 15.0, *) {
       let appearance = UITabBarAppearance()
       appearance.configureWithDefaultBackground()
@@ -168,8 +164,10 @@ private final class AccordLiquidDockHostController: UITabBarController, UITabBar
         blue: 0.28,
         alpha: 1.0
       )
-      tabBarItem.imageInsets = UIEdgeInsets(top: 10, left: 0, bottom: -10, right: 0)
-      tabBarItem.titlePositionAdjustment = UIOffset(horizontal: 0, vertical: 1000)
+      if #unavailable(iOS 26.0) {
+        tabBarItem.imageInsets = UIEdgeInsets(top: 10, left: 0, bottom: -10, right: 0)
+        tabBarItem.titlePositionAdjustment = UIOffset(horizontal: 0, vertical: 1000)
+      }
       controller.tabBarItem = tabBarItem
       return controller
     }
