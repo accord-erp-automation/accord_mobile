@@ -212,9 +212,15 @@ class AppRefreshIndicator extends StatefulWidget {
 }
 
 class _AppRefreshIndicatorState extends State<AppRefreshIndicator> {
-  ScrollPosition? _lastPosition;
+  final ScrollController _scrollController = ScrollController();
 
   static const double _edgeTolerance = 0.5;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   bool _isNearTop(ScrollMetrics metrics) {
     return metrics.extentBefore <= _edgeTolerance &&
@@ -231,10 +237,6 @@ class _AppRefreshIndicatorState extends State<AppRefreshIndicator> {
   }
 
   bool _matchesRefreshContext(ScrollNotification notification) {
-    final notificationContext = notification.context;
-    if (notificationContext != null) {
-      _lastPosition = Scrollable.maybeOf(notificationContext)?.position;
-    }
     if (!widget.notificationPredicate(notification)) {
       return false;
     }
@@ -266,10 +268,10 @@ class _AppRefreshIndicatorState extends State<AppRefreshIndicator> {
 
   void _settleTopEdge({bool forceJump = false}) {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final position = _lastPosition;
-      if (!mounted || position == null || !position.hasPixels) {
+      if (!mounted || !_scrollController.hasClients) {
         return;
       }
+      final position = _scrollController.position;
       final target = position.minScrollExtent;
       final distance = position.pixels - target;
       if (distance.abs() <= _edgeTolerance) {
@@ -297,15 +299,18 @@ class _AppRefreshIndicatorState extends State<AppRefreshIndicator> {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: _handleRefresh,
-      displacement: widget.displacement,
-      edgeOffset: widget.edgeOffset,
-      notificationPredicate: _matchesRefreshContext,
-      semanticsLabel: widget.semanticsLabel,
-      semanticsValue: widget.semanticsValue,
-      triggerMode: widget.triggerMode,
-      child: widget.child,
+    return PrimaryScrollController(
+      controller: _scrollController,
+      child: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        displacement: widget.displacement,
+        edgeOffset: widget.edgeOffset,
+        notificationPredicate: _matchesRefreshContext,
+        semanticsLabel: widget.semanticsLabel,
+        semanticsValue: widget.semanticsValue,
+        triggerMode: widget.triggerMode,
+        child: widget.child,
+      ),
     );
   }
 }
