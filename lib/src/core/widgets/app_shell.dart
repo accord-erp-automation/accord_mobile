@@ -217,7 +217,6 @@ class _AppRefreshIndicatorState extends State<AppRefreshIndicator> {
   final ScrollController _scrollController = ScrollController();
   double _pullExtent = 0.0;
   bool _refreshing = false;
-  bool _topLockActive = false;
 
   static const double _edgeTolerance = 0.5;
 
@@ -265,13 +264,10 @@ class _AppRefreshIndicatorState extends State<AppRefreshIndicator> {
       _refreshing = true;
       _pullExtent = 0.0;
     });
-    _topLockActive = true;
-    _startTopLock();
     _settleTopEdge(forceJump: true);
     try {
       await widget.onRefresh();
     } finally {
-      _topLockActive = false;
       if (mounted) {
         setState(() {
           _refreshing = false;
@@ -294,26 +290,6 @@ class _AppRefreshIndicatorState extends State<AppRefreshIndicator> {
     }
   }
 
-  void _startTopLock() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_topLockActive) {
-        return;
-      }
-      if (_scrollController.hasClients) {
-        final position = _scrollController.position;
-        final target = position.minScrollExtent;
-        if ((position.pixels - target).abs() > _edgeTolerance) {
-          try {
-            position.jumpTo(target);
-          } catch (_) {}
-        }
-      }
-      if (_topLockActive) {
-        _startTopLock();
-      }
-    });
-  }
-
   void _setPullExtent(double nextExtent) {
     final clamped = nextExtent.clamp(0.0, _maxPullDistance);
     if ((clamped - _pullExtent).abs() <= _edgeTolerance) {
@@ -331,8 +307,8 @@ class _AppRefreshIndicatorState extends State<AppRefreshIndicator> {
       }
       final position = _scrollController.position;
       final target = position.minScrollExtent;
-      final distance = position.pixels - target;
-      if (distance.abs() <= _edgeTolerance) {
+      final topOverscrollDistance = target - position.pixels;
+      if (topOverscrollDistance <= _edgeTolerance) {
         return;
       }
       if (forceJump) {
@@ -349,7 +325,7 @@ class _AppRefreshIndicatorState extends State<AppRefreshIndicator> {
       if (!mounted || !position.hasPixels) {
         return;
       }
-      if ((position.pixels - target).abs() > _edgeTolerance) {
+      if (position.pixels < target - _edgeTolerance) {
         position.jumpTo(target);
       }
     });
@@ -361,15 +337,6 @@ class _AppRefreshIndicatorState extends State<AppRefreshIndicator> {
     }
 
     if (_refreshing) {
-      if (_scrollController.hasClients) {
-        final position = _scrollController.position;
-        final target = position.minScrollExtent;
-        if ((position.pixels - target).abs() > _edgeTolerance) {
-          try {
-            position.jumpTo(target);
-          } catch (_) {}
-        }
-      }
       return false;
     }
 
@@ -431,12 +398,9 @@ class _AppRefreshIndicatorState extends State<AppRefreshIndicator> {
         onNotification: _handleScrollNotification,
         child: Stack(
           children: [
-            IgnorePointer(
-              ignoring: _refreshing,
-              child: Transform.translate(
-                offset: Offset(0, contentTranslateY),
-                child: widget.child,
-              ),
+            Transform.translate(
+              offset: Offset(0, contentTranslateY),
+              child: widget.child,
             ),
             if (visible)
               Positioned(
