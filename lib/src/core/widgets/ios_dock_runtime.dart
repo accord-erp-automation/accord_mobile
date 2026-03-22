@@ -56,14 +56,17 @@ class _IOSDockRuntimeState extends State<IOSDockRuntime>
   Future<void> _handleMethodCall(MethodCall call) async {
     final config = _lastConfig;
     if (config == null) {
+      debugPrint('accord_dock flutter call ignored method=${call.method}');
       return;
     }
     final args = (call.arguments as Map<dynamic, dynamic>? ??
         const <dynamic, dynamic>{});
     final id = '${args['id'] ?? ''}'.trim();
     if (id.isEmpty) {
+      debugPrint('accord_dock flutter call empty method=${call.method}');
       return;
     }
+    debugPrint('accord_dock flutter call method=${call.method} id=$id');
     switch (call.method) {
       case 'tap':
         config.handleTap(id);
@@ -97,6 +100,11 @@ class _IOSDockRuntimeState extends State<IOSDockRuntime>
                 )
                 .toList(),
           };
+    debugPrint(
+      'accord_dock flutter sync visible=${config != null} '
+      'route=${AppRouteTracker.instance.currentRouteName} '
+      'items=${config?.items.length ?? 0}',
+    );
     _channel.invokeMethod<void>('updateDock', payload);
   }
 

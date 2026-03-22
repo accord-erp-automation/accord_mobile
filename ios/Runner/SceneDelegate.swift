@@ -118,6 +118,7 @@ private final class AccordLiquidDockOverlayView: UIView, UITabBarDelegate {
     buttonStack.alignment = .fill
     buttonStack.distribution = .fillEqually
     buttonStack.spacing = 0
+    buttonStack.isUserInteractionEnabled = true
     NSLayoutConstraint.activate([
       buttonStack.leadingAnchor.constraint(equalTo: tabBar.leadingAnchor),
       buttonStack.trailingAnchor.constraint(equalTo: tabBar.trailingAnchor),
@@ -137,6 +138,22 @@ private final class AccordLiquidDockOverlayView: UIView, UITabBarDelegate {
     return hitBounds.contains(tabPoint)
   }
 
+  override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+    guard !isHidden, point(inside: point, with: event) else {
+      return nil
+    }
+
+    for button in buttonStack.arrangedSubviews.reversed() {
+      let localPoint = convert(point, to: button)
+      if let hit = button.hitTest(localPoint, with: event) {
+        return hit
+      }
+    }
+
+    let tabPoint = convert(point, to: tabBar)
+    return tabBar.hitTest(tabPoint, with: event)
+  }
+
   private func handle(call: FlutterMethodCall, result: FlutterResult) {
     guard call.method == "updateDock" else {
       result(FlutterMethodNotImplemented)
@@ -145,6 +162,7 @@ private final class AccordLiquidDockOverlayView: UIView, UITabBarDelegate {
 
     let args = call.arguments as? [String: Any] ?? [:]
     let visible = args["visible"] as? Bool ?? false
+    NSLog("accord_dock updateDock visible=%@ items=%lu", visible ? "true" : "false", ((args["items"] as? [[String: Any]]) ?? []).count)
     isHidden = !visible
     buttonStack.isUserInteractionEnabled = visible
     if !visible {
@@ -242,6 +260,7 @@ private final class AccordLiquidDockOverlayView: UIView, UITabBarDelegate {
 
   @objc private func handleOverlayButtonTap(_ sender: UIButton) {
     guard items.indices.contains(sender.tag) else { return }
+    NSLog("accord_dock tap id=%@", items[sender.tag].id)
     channel.invokeMethod("tap", arguments: ["id": items[sender.tag].id])
   }
 
@@ -253,6 +272,7 @@ private final class AccordLiquidDockOverlayView: UIView, UITabBarDelegate {
     }
     let item = items[button.tag]
     if item.allowLongPress {
+      NSLog("accord_dock longPress id=%@", item.id)
       channel.invokeMethod("longPress", arguments: ["id": item.id])
     }
   }
