@@ -48,6 +48,7 @@ private final class AccordLiquidDockWindowController {
 private final class AccordLiquidDockOverlayView: UIView, UITabBarDelegate {
   private let channel: FlutterMethodChannel
   private let tabBar = UITabBar()
+  private let buttonStack = UIStackView()
   private var items: [AccordLiquidDockItem] = []
 
   init(messenger: FlutterBinaryMessenger) {
@@ -70,8 +71,9 @@ private final class AccordLiquidDockOverlayView: UIView, UITabBarDelegate {
 
   private func setup() {
     addSubview(tabBar)
+    addSubview(buttonStack)
     tabBar.translatesAutoresizingMaskIntoConstraints = false
-    tabBar.isUserInteractionEnabled = true
+    tabBar.isUserInteractionEnabled = false
     tabBar.clipsToBounds = false
     tabBar.delegate = self
     tabBar.tintColor = UIColor.white.withAlphaComponent(0.98)
@@ -111,17 +113,21 @@ private final class AccordLiquidDockOverlayView: UIView, UITabBarDelegate {
       tabBar.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
     ])
 
+    buttonStack.translatesAutoresizingMaskIntoConstraints = false
+    buttonStack.axis = .horizontal
+    buttonStack.alignment = .fill
+    buttonStack.distribution = .fillEqually
+    buttonStack.spacing = 0
+    NSLayoutConstraint.activate([
+      buttonStack.leadingAnchor.constraint(equalTo: tabBar.leadingAnchor),
+      buttonStack.trailingAnchor.constraint(equalTo: tabBar.trailingAnchor),
+      buttonStack.topAnchor.constraint(equalTo: tabBar.topAnchor),
+      buttonStack.bottomAnchor.constraint(equalTo: tabBar.bottomAnchor),
+    ])
+
     layer.zPosition = 999
     tabBar.layer.zPosition = 1000
-
-    let tap = UITapGestureRecognizer(target: self, action: #selector(handleTabBarTap(_:)))
-    tap.cancelsTouchesInView = false
-    tabBar.addGestureRecognizer(tap)
-
-    let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleTabBarLongPress(_:)))
-    longPress.minimumPressDuration = 0.65
-    longPress.cancelsTouchesInView = false
-    tabBar.addGestureRecognizer(longPress)
+    buttonStack.layer.zPosition = 1001
   }
 
   override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
@@ -140,10 +146,11 @@ private final class AccordLiquidDockOverlayView: UIView, UITabBarDelegate {
     let args = call.arguments as? [String: Any] ?? [:]
     let visible = args["visible"] as? Bool ?? false
     isHidden = !visible
-    tabBar.isUserInteractionEnabled = visible
+    buttonStack.isUserInteractionEnabled = visible
     if !visible {
       items = []
       tabBar.items = []
+      rebuildButtons()
       result(nil)
       return
     }
@@ -175,6 +182,7 @@ private final class AccordLiquidDockOverlayView: UIView, UITabBarDelegate {
     }
 
     tabBar.setItems(tabItems, animated: false)
+    rebuildButtons()
     if let activeIndex = items.firstIndex(where: { $0.active }),
        let activeItem = tabBar.items?[activeIndex] {
       tabBar.selectedItem = activeItem
@@ -211,38 +219,41 @@ private final class AccordLiquidDockOverlayView: UIView, UITabBarDelegate {
     channel.invokeMethod("tap", arguments: ["id": items[item.tag].id])
   }
 
-  @objc private func handleTabBarTap(_ recognizer: UITapGestureRecognizer) {
-    guard recognizer.state == .ended else { return }
-    invokeTap(at: recognizer.location(in: tabBar))
-  }
+  private func rebuildButtons() {
+    for view in buttonStack.arrangedSubviews {
+      buttonStack.removeArrangedSubview(view)
+      view.removeFromSuperview()
+    }
 
-  @objc private func handleTabBarLongPress(_ recognizer: UILongPressGestureRecognizer) {
-    guard recognizer.state == .began else { return }
-    let location = recognizer.location(in: tabBar)
-    let buttons = dockButtons()
-
-    for (index, button) in buttons.enumerated() where button.frame.contains(location) {
-      guard items.indices.contains(index) else { continue }
-      let item = items[index]
+    for (index, item) in items.enumerated() {
+      let button = UIButton(type: .custom)
+      button.backgroundColor = .clear
+      button.tag = index
+      button.accessibilityIdentifier = "accord-dock-\(item.id)"
+      button.addTarget(self, action: #selector(handleOverlayButtonTap(_:)), for: .touchUpInside)
       if item.allowLongPress {
-        channel.invokeMethod("longPress", arguments: ["id": item.id])
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleOverlayButtonLongPress(_:)))
+        longPress.minimumPressDuration = 0.65
+        button.addGestureRecognizer(longPress)
       }
-      return
+      buttonStack.addArrangedSubview(button)
     }
   }
 
-  private func invokeTap(at location: CGPoint) {
-    let buttons = dockButtons()
-    for (index, button) in buttons.enumerated() where button.frame.contains(location) {
-      guard items.indices.contains(index) else { continue }
-      channel.invokeMethod("tap", arguments: ["id": items[index].id])
-      return
-    }
+  @objc private func handleOverlayButtonTap(_ sender: UIButton) {
+    guard items.indices.contains(sender.tag) else { return }
+    channel.invokeMethod("tap", arguments: ["id": items[sender.tag].id])
   }
 
-  private func dockButtons() -> [UIControl] {
-    tabBar.subviews
-      .compactMap { $0 as? UIControl }
-      .sorted { $0.frame.minX < $1.frame.minX }
+  @objc private func handleOverlayButtonLongPress(_ recognizer: UILongPressGestureRecognizer) {
+    guard recognizer.state == .began,
+          let button = recognizer.view as? UIButton,
+          items.indices.contains(button.tag) else {
+      return
+    }
+    let item = items[button.tag]
+    if item.allowLongPress {
+      channel.invokeMethod("longPress", arguments: ["id": item.id])
+    }
   }
 }
