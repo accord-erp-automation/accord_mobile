@@ -827,6 +827,15 @@ class _ThemePreferenceRow extends StatelessWidget {
                           onTap: () =>
                               Navigator.of(context).pop(AppThemeVariant.blush),
                         ),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(l10n.themeMossLabel),
+                          trailing: variant == AppThemeVariant.moss
+                              ? Icon(Icons.check_rounded, color: scheme.primary)
+                              : null,
+                          onTap: () =>
+                              Navigator.of(context).pop(AppThemeVariant.moss),
+                        ),
                       ],
                     ),
                   ),
@@ -873,6 +882,8 @@ class _ThemePreferenceRow extends StatelessWidget {
                   ? l10n.themeClassicLabel
                   : variant == AppThemeVariant.blush
                       ? l10n.themeBlushLabel
+                      : variant == AppThemeVariant.moss
+                          ? l10n.themeMossLabel
                       : l10n.themeEarthLabel,
               style: Theme.of(context).textTheme.labelLarge,
             ),

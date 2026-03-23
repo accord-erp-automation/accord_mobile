@@ -89,6 +89,7 @@ class AppLocalizations {
   String get themeClassicLabel => _t('Klassik', 'Classic', 'Классика');
   String get themeEarthLabel => _t('Qumli', 'Earthy', 'Песочная');
   String get themeBlushLabel => _t('Atirgul', 'Blush', 'Розовая');
+  String get themeMossLabel => _t('Yaproq', 'Moss', 'Листва');
   String get uzbek => _t('O‘zbekcha', 'Uzbek', 'Узбекский');
   String get english => _t('English', 'English', 'Английский');
   String get russian => _t('Ruscha', 'Russian', 'Русский');
