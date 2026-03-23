@@ -443,23 +443,28 @@ class _PinGlyph extends StatelessWidget {
       return _startShape();
     }
     if (t < 0.78) {
-      final local = AppMotion.standardDecelerate.transform((t - 0.46) / 0.32);
+      final local = AppMotion.standardDecelerate
+          .transform(((t - 0.46) / 0.32).clamp(0.0, 1.0));
       return ShapeBorder.lerp(_startShape(), _midShape(), local)!;
     }
-    final local = AppMotion.standardDecelerate.transform((t - 0.78) / 0.22);
+    final local = AppMotion.standardDecelerate
+        .transform(((t - 0.78) / 0.22).clamp(0.0, 1.0));
     return ShapeBorder.lerp(_midShape(), _settledShape(), local)!;
   }
 
   double _sizeAt(double t) {
     if (t < 0.18) {
-      final local = AppMotion.standardDecelerate.transform(t / 0.18);
+      final local = AppMotion.standardDecelerate
+          .transform((t / 0.18).clamp(0.0, 1.0));
       return 20.0 + (18.0 * local);
     }
     if (t < 0.46) {
-      final local = AppMotion.standardDecelerate.transform((t - 0.18) / 0.16);
+      final local = AppMotion.standardDecelerate
+          .transform(((t - 0.18) / 0.28).clamp(0.0, 1.0));
       return 38.0 - (2.0 * local);
     }
-    final local = AppMotion.standardDecelerate.transform((t - 0.46) / 0.54);
+    final local = AppMotion.standardDecelerate
+        .transform(((t - 0.46) / 0.54).clamp(0.0, 1.0));
     return 34.0 - (14.0 * local);
   }
 
