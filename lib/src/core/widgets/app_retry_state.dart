@@ -1,5 +1,6 @@
 import '../localization/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class AppRetryState extends StatelessWidget {
   const AppRetryState({
@@ -13,26 +14,39 @@ class AppRetryState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Padding(
       padding: padding,
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 360),
+          constraints: const BoxConstraints(maxWidth: 280),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                context.l10n.serverDisconnectedRetry,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: onRetry,
-                  child: Text(context.l10n.retry),
+              SvgPicture.asset(
+                'assets/icons/server-disconnected.svg',
+                width: 112,
+                height: 112,
+                colorFilter: ColorFilter.mode(
+                  scheme.onSurfaceVariant,
+                  BlendMode.srcIn,
                 ),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: onRetry,
+                style: TextButton.styleFrom(
+                  foregroundColor: scheme.onSurfaceVariant,
+                  textStyle: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(context.l10n.retry),
               ),
             ],
           ),
