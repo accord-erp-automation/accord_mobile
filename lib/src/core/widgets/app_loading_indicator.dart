@@ -21,6 +21,7 @@ class _AppLoadingIndicatorState extends State<AppLoadingIndicator>
     vsync: this,
     duration: const Duration(milliseconds: 3600),
   )..repeat();
+  late final int _startOffset = math.Random().nextInt(_shapeCycle.length);
 
   static const List<_LoaderShapeKind> _shapeCycle = <_LoaderShapeKind>[
     _LoaderShapeKind.clover,
@@ -108,7 +109,8 @@ class _AppLoadingIndicatorState extends State<AppLoadingIndicator>
       animation: _controller,
       builder: (context, _) {
         final rotation = _controller.value * math.pi * 2;
-        final morphValue = _controller.value * _shapeCycle.length;
+        final morphValue =
+            (_controller.value * _shapeCycle.length) + _startOffset;
         final currentIndex = morphValue.floor() % _shapeCycle.length;
         final nextIndex = (currentIndex + 1) % _shapeCycle.length;
         final localT = Curves.easeInOutCubicEmphasized
