@@ -193,17 +193,24 @@ class _SupplierRecentScreenState extends State<SupplierRecentScreen>
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              record.itemCode,
+                                              record.itemName.trim().isEmpty
+                                                  ? record.itemCode
+                                                  : record.itemName,
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .titleLarge,
                                             ),
                                             const SizedBox(height: 6),
                                             Text(
-                                              '${record.sentQty.toStringAsFixed(0)} ${record.uom}',
+                                              record.itemCode,
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodyMedium,
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
+                                                  ),
                                             ),
                                             if (record.amount > 0) ...[
                                               const SizedBox(height: 4),
