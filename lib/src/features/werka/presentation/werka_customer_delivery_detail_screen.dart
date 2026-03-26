@@ -53,6 +53,20 @@ class WerkaCustomerDeliveryDetailScreen extends StatelessWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final detailRows = <({String label, String value})>[
+      (label: l10n.itemLabel, value: record.itemName),
+      (
+        label: l10n.pendingStatus,
+        value: '${_formatQty(record.sentQty)} ${record.uom}',
+      ),
+      if (record.acceptedQty > 0)
+        (
+          label: l10n.confirmedStatus,
+          value: '${_formatQty(record.acceptedQty)} ${record.uom}',
+        ),
+      (label: l10n.statusLabel, value: _statusLabel(l10n)),
+      (label: l10n.dateLabel, value: record.createdLabel),
+    ];
     return Scaffold(
       extendBody: true,
       backgroundColor: AppTheme.shellStart(context),
@@ -89,6 +103,7 @@ class WerkaCustomerDeliveryDetailScreen extends StatelessWidget {
                   Card.filled(
                     margin: EdgeInsets.zero,
                     color: scheme.surfaceContainerLow,
+                    clipBehavior: Clip.antiAlias,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(28),
                     ),
@@ -97,38 +112,63 @@ class WerkaCustomerDeliveryDetailScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _WerkaDeliveryField(
-                            label: l10n.customerLabel,
-                            value: record.supplierName,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  record.supplierName,
+                                  style: theme.textTheme.headlineSmall,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: scheme.secondaryContainer,
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  _statusLabel(l10n),
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: scheme.onSecondaryContainer,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 14),
-                          _WerkaDeliveryField(
-                            label: l10n.itemLabel,
-                            value: '${record.itemCode} • ${record.itemName}',
-                          ),
-                          const SizedBox(height: 14),
-                          _WerkaDeliveryField(
-                            label: l10n.pendingStatus,
-                            value:
-                                '${_formatQty(record.sentQty)} ${record.uom}',
-                          ),
-                          if (record.acceptedQty > 0) ...[
-                            const SizedBox(height: 14),
-                            _WerkaDeliveryField(
-                              label: l10n.confirmedStatus,
-                              value:
-                                  '${_formatQty(record.acceptedQty)} ${record.uom}',
+                          const SizedBox(height: 18),
+                          Card.filled(
+                            margin: EdgeInsets.zero,
+                            color: scheme.surfaceContainer,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
                             ),
-                          ],
-                          const SizedBox(height: 14),
-                          _WerkaDeliveryField(
-                            label: l10n.statusLabel,
-                            value: _statusLabel(l10n),
-                          ),
-                          const SizedBox(height: 14),
-                          _WerkaDeliveryField(
-                            label: l10n.dateLabel,
-                            value: record.createdLabel,
+                            child: Column(
+                              children: [
+                                for (int index = 0;
+                                    index < detailRows.length;
+                                    index++) ...[
+                                  _WerkaDeliveryInfoRow(
+                                    label: detailRows[index].label,
+                                    value: detailRows[index].value,
+                                    isFirst: index == 0,
+                                    isLast: index == detailRows.length - 1,
+                                  ),
+                                  if (index != detailRows.length - 1)
+                                    Divider(
+                                      height: 1,
+                                      thickness: 1,
+                                      indent: 16,
+                                      endIndent: 16,
+                                      color: scheme.outlineVariant
+                                          .withValues(alpha: 0.55),
+                                    ),
+                                ],
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -190,45 +230,54 @@ class WerkaCustomerDeliveryDetailScreen extends StatelessWidget {
   }
 }
 
-class _WerkaDeliveryField extends StatelessWidget {
-  const _WerkaDeliveryField({
+class _WerkaDeliveryInfoRow extends StatelessWidget {
+  const _WerkaDeliveryInfoRow({
     required this.label,
     required this.value,
+    required this.isFirst,
+    required this.isLast,
   });
 
   final String label;
   final String value;
+  final bool isFirst;
+  final bool isLast;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: scheme.onSurfaceVariant,
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(isFirst ? 24 : 0),
+          topRight: Radius.circular(isFirst ? 24 : 0),
+          bottomLeft: Radius.circular(isLast ? 24 : 0),
+          bottomRight: Radius.circular(isLast ? 24 : 0),
         ),
-        const SizedBox(height: 8),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainer,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: scheme.outlineVariant.withValues(alpha: 0.7),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
             ),
           ),
-          child: Text(
-            value,
-            style: theme.textTheme.titleMedium,
+          const SizedBox(width: 16),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: theme.textTheme.titleMedium,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
