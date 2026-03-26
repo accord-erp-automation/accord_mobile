@@ -126,6 +126,10 @@ class WerkaStore extends ChangeNotifier {
       ]);
       _pendingItems = results[0] as List<DispatchRecord>;
       _historyItems = results[1] as List<DispatchRecord>;
+      WerkaRuntimeStore.instance.reconcileWithServer(
+        pendingItems: _pendingItems,
+        historyItems: _historyItems,
+      );
       _loadedHome = true;
       _loadedHistory = true;
       _historyError = null;

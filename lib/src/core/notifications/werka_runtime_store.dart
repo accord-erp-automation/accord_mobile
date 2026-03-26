@@ -37,6 +37,23 @@ class WerkaRuntimeStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  void reconcileWithServer({
+    required List<DispatchRecord> pendingItems,
+    required List<DispatchRecord> historyItems,
+  }) {
+    final serverById = <String, DispatchRecord>{
+      for (final item in pendingItems) item.id: item,
+      for (final item in historyItems) item.id: item,
+    };
+    _mutations.removeWhere((id, mutation) {
+      final server = serverById[id];
+      if (server == null) {
+        return false;
+      }
+      return _signature(server) == _signature(mutation.after);
+    });
+  }
+
   WerkaHomeSummary applySummary(WerkaHomeSummary summary) {
     var pending = summary.pendingCount;
     var confirmed = summary.confirmedCount;
@@ -119,6 +136,16 @@ class WerkaRuntimeStore extends ChangeNotifier {
       case DispatchStatus.cancelled:
         return _WerkaBucket.returned;
     }
+  }
+
+  String _signature(DispatchRecord record) {
+    return [
+      record.id,
+      record.status.name,
+      record.sentQty.toStringAsFixed(4),
+      record.acceptedQty.toStringAsFixed(4),
+      record.note.trim(),
+    ].join('|');
   }
 }
 
