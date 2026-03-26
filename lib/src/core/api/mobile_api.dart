@@ -33,7 +33,7 @@ class MobileApi {
 
   static const String baseUrl = String.fromEnvironment(
     'MOBILE_API_BASE_URL',
-    defaultValue: 'http://127.0.0.1:8081',
+    defaultValue: 'https://core.wspace.sbs',
   );
 
   Map<String, String> _headers(String token) {

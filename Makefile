@@ -1,8 +1,10 @@
-API_URL ?= http://127.0.0.1:8081
+API_URL ?= https://core.wspace.sbs
+LOCAL_API_URL ?= http://127.0.0.1:8081
 JDK_HOME ?= /usr/lib/jvm/java-17-openjdk
 APK_NAME ?= accord.apk
+ERP_ROOT ?= ../../erpnext_n1/erp
 
-.PHONY: run web analyze test deps backend-up backend-stop core-up core-stop remote-up remote-stop remote-url apk-remote run-remote android-sdk-setup domain-up domain-url apk-domain run-domain
+.PHONY: run web analyze test deps backend-up backend-stop core-up core-stop remote-up remote-stop remote-url apk-remote run-remote android-sdk-setup domain-up domain-up-fast domain-url apk-domain run-domain bench-start bench-restart bench-stop bench-limit-start bench-limit-stop prepare-run run-local web-local
 
 deps:
 	@flutter pub get
@@ -13,8 +15,31 @@ android-sdk-setup:
 backend-up:
 	@API_URL=$(API_URL) BACKEND_ROOT="$$(cd .. && pwd)" ./ensure_mobileapi.sh
 
+prepare-run:
+	@case "$(API_URL)" in \
+		http://127.0.0.1:*|http://localhost:*|https://127.0.0.1:*|https://localhost:*) \
+			echo "Using local API: $(API_URL)"; \
+			API_URL=$(API_URL) BACKEND_ROOT="$$(cd .. && pwd)" ./ensure_mobileapi.sh ;; \
+		*) \
+			echo "Using external API: $(API_URL)" ;; \
+	esac
+
 core-up:
 	@API_URL=$(API_URL) BACKEND_ROOT="$$(cd .. && pwd)" ./ensure_core.sh
+
+bench-start:
+	@$(ERP_ROOT)/restart_bench.sh
+
+bench-restart: bench-start
+
+bench-stop:
+	@$(ERP_ROOT)/stop_bench.sh
+
+bench-limit-start:
+	@$(ERP_ROOT)/start_limited_bench.sh
+
+bench-limit-stop:
+	@$(ERP_ROOT)/stop_limited_bench.sh
 
 backend-stop:
 	@if [ -f .mobileapi.pid ]; then \
@@ -33,6 +58,9 @@ remote-up:
 
 domain-up:
 	@BACKEND_ROOT="$$(cd .. && pwd)" ./start_domain_core.sh
+
+domain-up-fast:
+	@SKIP_PUBLIC_HEALTHCHECK=1 BACKEND_ROOT="$$(cd .. && pwd)" ./start_domain_core.sh
 
 remote-url:
 	@if [ -f .core_tunnel_url ]; then \
@@ -53,11 +81,17 @@ domain-url:
 remote-stop:
 	@./stop_remote_core.sh
 
-run: backend-up deps
+run: prepare-run deps
 	@flutter run -d linux --dart-define=MOBILE_API_BASE_URL=$(API_URL)
 
-web: backend-up deps
+web: prepare-run deps
 	@flutter run -d chrome --dart-define=MOBILE_API_BASE_URL=$(API_URL)
+
+run-local: API_URL=$(LOCAL_API_URL)
+run-local: run
+
+web-local: API_URL=$(LOCAL_API_URL)
+web-local: web
 
 run-remote: deps remote-up
 	@REMOTE_URL="$$(cat .core_tunnel_url)" && \
