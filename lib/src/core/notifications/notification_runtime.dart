@@ -147,7 +147,7 @@ class _NotificationRuntimeState extends State<NotificationRuntime>
         await SupplierStore.instance.refreshHistory();
         return SupplierStore.instance.historyItems;
       case UserRole.werka:
-        await WerkaStore.instance.refreshHistory();
+        await WerkaStore.instance.refreshHome();
         return WerkaStore.instance.historyItems;
       case UserRole.customer:
         await CustomerStore.instance.refresh();
