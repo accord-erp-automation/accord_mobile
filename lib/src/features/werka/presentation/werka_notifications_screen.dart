@@ -16,6 +16,7 @@ import '../../../core/widgets/top_refresh_scroll_physics.dart';
 import '../../shared/models/app_models.dart';
 import '../state/werka_store.dart';
 import 'widgets/werka_dock.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class WerkaNotificationsScreen extends StatefulWidget {
@@ -43,6 +44,12 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
     NotificationHiddenStore.instance.load().then((_) {
       if (mounted) setState(() {});
     });
+    NotificationUnreadStore.instance.load().then((_) {
+      if (!mounted) {
+        return;
+      }
+      _syncHighlightedUnreadIds();
+    });
     _loadCache();
     WerkaStore.instance.addListener(_handleStoreChanged);
     RefreshHub.instance.addListener(_handlePushRefresh);
@@ -56,6 +63,7 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
     setState(() {
       _cachedItems = raw.map((item) => DispatchRecord.fromJson(item)).toList();
     });
+    _syncHighlightedUnreadIds();
   }
 
   Future<void> _clearAll() async {
@@ -163,13 +171,9 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
     final unread = NotificationUnreadStore.instance.unreadIdsForProfile(
       AppSession.instance.profile,
     );
-    final highlighted =
-        items.map((item) => item.id).where((id) => unread.contains(id)).toSet();
-    if (mounted) {
-      setState(() {
-        _highlightedUnreadIds = highlighted;
-      });
-    }
+    _applyHighlightedUnreadIds(
+      items.map((item) => item.id).where((id) => unread.contains(id)).toSet(),
+    );
     await JsonCacheStore.instance.writeList(
       _cacheKey,
       items.map((item) => item.toJson()).toList(),
@@ -182,6 +186,27 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
       return;
     }
     _syncFromStore();
+  }
+
+  void _syncHighlightedUnreadIds() {
+    final items = WerkaStore.instance.loadedHistory
+        ? WerkaStore.instance.historyItems
+        : (_cachedItems ?? const <DispatchRecord>[]);
+    final unread = NotificationUnreadStore.instance.unreadIdsForProfile(
+      AppSession.instance.profile,
+    );
+    _applyHighlightedUnreadIds(
+      items.map((item) => item.id).where((id) => unread.contains(id)).toSet(),
+    );
+  }
+
+  void _applyHighlightedUnreadIds(Set<String> next) {
+    if (!mounted || setEquals(_highlightedUnreadIds, next)) {
+      return;
+    }
+    setState(() {
+      _highlightedUnreadIds = next;
+    });
   }
 
   Future<void> _reload() async {
@@ -238,8 +263,9 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
           final hidden = NotificationHiddenStore.instance.hiddenIdsForProfile(
             AppSession.instance.profile,
           );
-          final items =
-              ((store.loadedHistory ? store.historyItems : (_cachedItems ?? <DispatchRecord>[])))
+          final items = ((store.loadedHistory
+                  ? store.historyItems
+                  : (_cachedItems ?? <DispatchRecord>[])))
               .where((item) => !hidden.contains(item.id))
               .toList();
           final orderedItems = [
@@ -249,7 +275,9 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
           if (store.loadingHistory && !store.loadedHistory && items.isEmpty) {
             return const Center(child: AppLoadingIndicator());
           }
-          if (store.historyError != null && !store.loadedHistory && items.isEmpty) {
+          if (store.historyError != null &&
+              !store.loadedHistory &&
+              items.isEmpty) {
             return AppRefreshIndicator(
               onRefresh: _reload,
               allowRefreshOnShortContent: true,
@@ -277,7 +305,8 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
                     child: Text(
                       context.l10n.noNotifications,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     ),
                   ),

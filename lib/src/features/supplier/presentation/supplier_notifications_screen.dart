@@ -15,6 +15,7 @@ import '../../../core/widgets/top_refresh_scroll_physics.dart';
 import '../../shared/models/app_models.dart';
 import '../state/supplier_store.dart';
 import 'widgets/supplier_dock.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class SupplierNotificationsScreen extends StatefulWidget {
@@ -39,6 +40,12 @@ class _SupplierNotificationsScreenState
     SupplierStore.instance.bootstrapHistory();
     NotificationHiddenStore.instance.load().then((_) {
       if (mounted) setState(() {});
+    });
+    NotificationUnreadStore.instance.load().then((_) {
+      if (!mounted) {
+        return;
+      }
+      _syncHighlightedUnreadIds();
     });
     SupplierStore.instance.addListener(_handleStoreChanged);
     RefreshHub.instance.addListener(_handlePushRefresh);
@@ -133,13 +140,9 @@ class _SupplierNotificationsScreenState
     final unread = NotificationUnreadStore.instance.unreadIdsForProfile(
       AppSession.instance.profile,
     );
-    final highlighted =
-        items.map((item) => item.id).where((id) => unread.contains(id)).toSet();
-    if (mounted) {
-      setState(() {
-        _highlightedUnreadIds = highlighted;
-      });
-    }
+    _applyHighlightedUnreadIds(
+      items.map((item) => item.id).where((id) => unread.contains(id)).toSet(),
+    );
   }
 
   void _handleStoreChanged() {
@@ -147,6 +150,25 @@ class _SupplierNotificationsScreenState
       return;
     }
     _syncFromStore();
+  }
+
+  void _syncHighlightedUnreadIds() {
+    final items = SupplierStore.instance.historyItems;
+    final unread = NotificationUnreadStore.instance.unreadIdsForProfile(
+      AppSession.instance.profile,
+    );
+    _applyHighlightedUnreadIds(
+      items.map((item) => item.id).where((id) => unread.contains(id)).toSet(),
+    );
+  }
+
+  void _applyHighlightedUnreadIds(Set<String> next) {
+    if (!mounted || setEquals(_highlightedUnreadIds, next)) {
+      return;
+    }
+    setState(() {
+      _highlightedUnreadIds = next;
+    });
   }
 
   Future<void> _reload() async {
@@ -213,7 +235,9 @@ class _SupplierNotificationsScreenState
           if (store.loadingHistory && !store.loadedHistory && items.isEmpty) {
             return const Center(child: AppLoadingIndicator());
           }
-          if (store.historyError != null && !store.loadedHistory && items.isEmpty) {
+          if (store.historyError != null &&
+              !store.loadedHistory &&
+              items.isEmpty) {
             return AppRefreshIndicator(
               onRefresh: _reload,
               allowRefreshOnShortContent: true,
@@ -240,7 +264,8 @@ class _SupplierNotificationsScreenState
                     child: Text(
                       context.l10n.noNotifications,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     ),
                   ),

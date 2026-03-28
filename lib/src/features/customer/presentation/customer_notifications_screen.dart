@@ -14,6 +14,7 @@ import '../../../core/widgets/top_refresh_scroll_physics.dart';
 import '../../shared/models/app_models.dart';
 import '../state/customer_store.dart';
 import 'widgets/customer_dock.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class CustomerNotificationsScreen extends StatefulWidget {
@@ -48,6 +49,12 @@ class _CustomerNotificationsScreenState
         setState(() {});
       }
     });
+    NotificationUnreadStore.instance.load().then((_) {
+      if (!mounted) {
+        return;
+      }
+      _syncHighlightedUnreadIds();
+    });
     _loadCache();
     CustomerStore.instance.addListener(_handleStoreChanged);
     RefreshHub.instance.addListener(_handlePushRefresh);
@@ -79,6 +86,7 @@ class _CustomerNotificationsScreenState
     setState(() {
       _cachedItems = raw.map((item) => DispatchRecord.fromJson(item)).toList();
     });
+    _syncHighlightedUnreadIds();
   }
 
   Future<void> _reload() async {
@@ -149,13 +157,9 @@ class _CustomerNotificationsScreenState
     final unread = NotificationUnreadStore.instance.unreadIdsForProfile(
       AppSession.instance.profile,
     );
-    final highlighted =
-        items.map((item) => item.id).where((id) => unread.contains(id)).toSet();
-    if (mounted) {
-      setState(() {
-        _highlightedUnreadIds = highlighted;
-      });
-    }
+    _applyHighlightedUnreadIds(
+      items.map((item) => item.id).where((id) => unread.contains(id)).toSet(),
+    );
     await JsonCacheStore.instance.writeList(
       _cacheKey,
       items.map((item) => item.toJson()).toList(),
@@ -177,6 +181,27 @@ class _CustomerNotificationsScreenState
         return;
       }
       _syncFromStore();
+    });
+  }
+
+  void _syncHighlightedUnreadIds() {
+    final items = CustomerStore.instance.loaded
+        ? CustomerStore.instance.historyItems
+        : (_cachedItems ?? const <DispatchRecord>[]);
+    final unread = NotificationUnreadStore.instance.unreadIdsForProfile(
+      AppSession.instance.profile,
+    );
+    _applyHighlightedUnreadIds(
+      items.map((item) => item.id).where((id) => unread.contains(id)).toSet(),
+    );
+  }
+
+  void _applyHighlightedUnreadIds(Set<String> next) {
+    if (!mounted || setEquals(_highlightedUnreadIds, next)) {
+      return;
+    }
+    setState(() {
+      _highlightedUnreadIds = next;
     });
   }
 
