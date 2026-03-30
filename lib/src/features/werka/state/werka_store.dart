@@ -78,6 +78,7 @@ class WerkaStore extends ChangeNotifier {
       returnedCount: adjusted.returnedCount,
     );
   }
+
   List<DispatchRecord> get pendingItems =>
       WerkaRuntimeStore.instance.applyPendingItems(_pendingItems);
   List<DispatchRecord> get historyItems => _historyItems;
@@ -85,14 +86,16 @@ class WerkaStore extends ChangeNotifier {
       kind == WerkaStatusKind.pending
           ? _pendingBreakdownItems()
           : _breakdownItems[kind] ?? const <WerkaStatusBreakdownEntry>[];
-  bool loadingBreakdown(WerkaStatusKind kind) =>
-      kind == WerkaStatusKind.pending ? _loadingHome : _loadingBreakdown[kind] == true;
+  bool loadingBreakdown(WerkaStatusKind kind) => kind == WerkaStatusKind.pending
+      ? _loadingHome
+      : _loadingBreakdown[kind] == true;
   Object? breakdownError(WerkaStatusKind kind) =>
       kind == WerkaStatusKind.pending ? _homeError : _breakdownErrors[kind];
   List<DispatchRecord> detailItems(WerkaStatusKind kind, String supplierRef) =>
       kind == WerkaStatusKind.pending
           ? _pendingDetailItems(supplierRef)
-          : _detailItems[_detailKey(kind, supplierRef)] ?? const <DispatchRecord>[];
+          : _detailItems[_detailKey(kind, supplierRef)] ??
+              const <DispatchRecord>[];
   bool loadingDetail(WerkaStatusKind kind, String supplierRef) =>
       kind == WerkaStatusKind.pending
           ? _loadingHome
@@ -121,18 +124,16 @@ class WerkaStore extends ChangeNotifier {
     notifyListeners();
     try {
       final results = await Future.wait<dynamic>([
+        MobileApi.instance.werkaSummary(),
         MobileApi.instance.werkaPending(),
-        MobileApi.instance.werkaHistory(),
       ]);
-      _pendingItems = results[0] as List<DispatchRecord>;
-      _historyItems = results[1] as List<DispatchRecord>;
+      _summary = results[0] as WerkaHomeSummary;
+      _pendingItems = results[1] as List<DispatchRecord>;
       WerkaRuntimeStore.instance.reconcileWithServer(
         pendingItems: _pendingItems,
         historyItems: _historyItems,
       );
       _loadedHome = true;
-      _loadedHistory = true;
-      _historyError = null;
     } catch (error) {
       _homeError = error;
     } finally {
@@ -185,7 +186,8 @@ class WerkaStore extends ChangeNotifier {
     _breakdownErrors[kind] = null;
     notifyListeners();
     try {
-      _breakdownItems[kind] = await MobileApi.instance.werkaStatusBreakdown(kind);
+      _breakdownItems[kind] =
+          await MobileApi.instance.werkaStatusBreakdown(kind);
     } catch (error) {
       _breakdownErrors[kind] = error;
     } finally {
@@ -271,7 +273,8 @@ class WerkaStore extends ChangeNotifier {
       if (createdLabelIsAfter(item.createdLabel, current.latestCreatedLabel)) {
         current.latestCreatedLabel = item.createdLabel;
       }
-      if (current.supplierName.trim().isEmpty && item.supplierName.trim().isNotEmpty) {
+      if (current.supplierName.trim().isEmpty &&
+          item.supplierName.trim().isNotEmpty) {
         current.supplierName = item.supplierName;
       }
       if (current.uom.trim().isEmpty && item.uom.trim().isNotEmpty) {
@@ -280,7 +283,8 @@ class WerkaStore extends ChangeNotifier {
     }
 
     final items = grouped.values.toList()
-      ..sort((a, b) => compareCreatedLabelsDesc(a.latestCreatedLabel, b.latestCreatedLabel));
+      ..sort((a, b) =>
+          compareCreatedLabelsDesc(a.latestCreatedLabel, b.latestCreatedLabel));
     return items
         .map(
           (item) => WerkaStatusBreakdownEntry(
@@ -298,7 +302,9 @@ class WerkaStore extends ChangeNotifier {
 
   List<DispatchRecord> _pendingDetailItems(String supplierRef) {
     final expectedRef = supplierRef.trim();
-    return pendingItems.where((item) => item.supplierRef.trim() == expectedRef).toList();
+    return pendingItems
+        .where((item) => item.supplierRef.trim() == expectedRef)
+        .toList();
   }
 
   String _detailKey(WerkaStatusKind kind, String supplierRef) =>
