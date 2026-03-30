@@ -1,5 +1,4 @@
 import '../../../../app/app_router.dart';
-import '../../../../core/api/mobile_api.dart';
 import '../../../../core/notifications/notification_unread_store.dart';
 import '../../../../core/session/app_session.dart';
 import '../../../../core/widgets/common_widgets.dart';
@@ -76,7 +75,6 @@ class WerkaDock extends StatelessWidget {
             primary: true,
             compact: compact,
             onTap: () {
-              MobileApi.instance.primeWerkaCustomerIssueLookups();
               Navigator.of(context).pushNamed(AppRoutes.werkaCreateHub);
             },
           ),

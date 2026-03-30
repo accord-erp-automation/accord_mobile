@@ -1,4 +1,3 @@
-import '../api/mobile_api.dart';
 import '../../features/admin/state/admin_store.dart';
 import '../../features/customer/state/customer_store.dart';
 import '../../features/shared/data/profile_avatar_cache.dart';
@@ -27,7 +26,6 @@ class AppRuntimeReset {
     CustomerDeliveryRuntimeStore.instance.clear();
     SupplierRuntimeStore.instance.clear();
     WerkaRuntimeStore.instance.clear();
-    MobileApi.instance.clearSessionCaches();
     await NotificationUnreadStore.instance.clearAll();
     await NotificationHiddenStore.instance.clearAll();
     if (previousProfile != null) {

@@ -3,14 +3,10 @@ import '../../../core/api/mobile_api.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/notifications/refresh_hub.dart';
 import '../../../core/notifications/werka_runtime_store.dart';
-import '../../../core/search/search_normalizer.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/app_loading_indicator.dart';
-import '../../../core/widgets/app_retry_state.dart';
 import '../../shared/models/app_models.dart';
 import 'widgets/m3_picker_sheet.dart';
 import 'widgets/werka_dock.dart';
-import 'dart:async';
 
 import 'package:flutter/material.dart';
 
@@ -29,21 +25,29 @@ class WerkaUnannouncedSupplierScreen extends StatefulWidget {
 
 class _WerkaUnannouncedSupplierScreenState
     extends State<WerkaUnannouncedSupplierScreen> {
-  late Future<List<SupplierDirectoryEntry>> _suppliersFuture;
   final TextEditingController _qtyController = TextEditingController(text: '1');
 
   SupplierDirectoryEntry? _selectedSupplier;
   SupplierItem? _selectedItem;
-  List<SupplierItem> _supplierItems = const <SupplierItem>[];
-  bool _loadingItems = false;
   bool _submitting = false;
 
   @override
   void initState() {
     super.initState();
-    _suppliersFuture = MobileApi.instance.werkaSuppliers();
     if (widget.prefill != null) {
-      _applyPrefill(widget.prefill!);
+      final prefill = widget.prefill!;
+      _selectedSupplier = SupplierDirectoryEntry(
+        ref: prefill.supplierRef,
+        name: prefill.supplierName,
+        phone: '',
+      );
+      _selectedItem = SupplierItem(
+        code: prefill.itemCode,
+        name: prefill.itemName,
+        uom: prefill.uom,
+        warehouse: '',
+      );
+      _qtyController.text = _formatQty(prefill.qty);
     }
   }
 
@@ -51,52 +55,6 @@ class _WerkaUnannouncedSupplierScreenState
   void dispose() {
     _qtyController.dispose();
     super.dispose();
-  }
-
-  Future<void> _reloadSuppliers() async {
-    final future = MobileApi.instance.werkaSuppliers();
-    setState(() => _suppliersFuture = future);
-    await future;
-  }
-
-  Future<void> _applyPrefill(WerkaUnannouncedPrefillArgs prefill) async {
-    setState(() {
-      _selectedSupplier = SupplierDirectoryEntry(
-        ref: prefill.supplierRef,
-        name: prefill.supplierName,
-        phone: '',
-      );
-      _selectedItem = null;
-      _supplierItems = const <SupplierItem>[];
-      _loadingItems = true;
-      _qtyController.text = _formatQty(prefill.qty);
-    });
-    try {
-      final items = await MobileApi.instance.werkaSupplierItems(
-        supplierRef: prefill.supplierRef,
-      );
-      if (!mounted) {
-        return;
-      }
-      final selected = items.cast<SupplierItem?>().firstWhere(
-                (item) => item?.code == prefill.itemCode,
-                orElse: () => null,
-              ) ??
-          SupplierItem(
-            code: prefill.itemCode,
-            name: prefill.itemName,
-            uom: prefill.uom,
-            warehouse: '',
-          );
-      setState(() {
-        _supplierItems = items;
-        _selectedItem = selected;
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _loadingItems = false);
-      }
-    }
   }
 
   String _formatQty(double qty) {
@@ -110,10 +68,6 @@ class _WerkaUnannouncedSupplierScreenState
   }
 
   Future<void> _pickSupplier() async {
-    final suppliers = await _suppliersFuture;
-    if (!mounted) {
-      return;
-    }
     final picked = await showModalBottomSheet<SupplierDirectoryEntry>(
       context: context,
       useSafeArea: true,
@@ -121,19 +75,15 @@ class _WerkaUnannouncedSupplierScreenState
       backgroundColor: Colors.transparent,
       sheetAnimationStyle: kM3PickerSheetAnimation,
       builder: (context) {
-        return M3PickerSheet<SupplierDirectoryEntry>(
+        return M3AsyncPickerSheet<SupplierDirectoryEntry>(
           title: context.l10n.selectSupplier,
           hintText: context.l10n.searchSupplier,
-          items: suppliers,
+          loadItems: (query) => MobileApi.instance.werkaSuppliers(
+            query: query,
+            limit: MobileApi.werkaPickerLimit,
+          ),
           itemTitle: (item) => item.name,
-          itemSubtitle: (_) => '',
-          matchesQuery: (item, query) {
-            return searchMatches(query, [
-              item.name,
-              item.phone,
-              item.ref,
-            ]);
-          },
+          itemSubtitle: (item) => item.phone,
           onSelected: (item) => Navigator.of(context).pop(item),
         );
       },
@@ -145,34 +95,11 @@ class _WerkaUnannouncedSupplierScreenState
     setState(() {
       _selectedSupplier = picked;
       _selectedItem = null;
-      _supplierItems = const <SupplierItem>[];
-      _loadingItems = true;
     });
-    try {
-      final items = await MobileApi.instance.werkaSupplierItems(
-        supplierRef: picked.ref,
-      );
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _supplierItems = items;
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _loadingItems = false);
-      }
-    }
   }
 
   Future<void> _pickItem() async {
-    if (_selectedSupplier == null || _loadingItems) {
-      return;
-    }
-    if (_supplierItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.noRecordsYet)),
-      );
+    if (_selectedSupplier == null || _submitting) {
       return;
     }
 
@@ -183,19 +110,17 @@ class _WerkaUnannouncedSupplierScreenState
       backgroundColor: Colors.transparent,
       sheetAnimationStyle: kM3PickerSheetAnimation,
       builder: (context) {
-        return M3PickerSheet<SupplierItem>(
+        return M3AsyncPickerSheet<SupplierItem>(
           title: context.l10n.selectItem,
           supportingText: _selectedSupplier!.name,
           hintText: context.l10n.searchItem,
-          items: _supplierItems,
+          loadItems: (query) => MobileApi.instance.werkaSupplierItems(
+            supplierRef: _selectedSupplier!.ref,
+            query: query,
+            limit: MobileApi.werkaPickerLimit,
+          ),
           itemTitle: (item) => item.name,
-          itemSubtitle: (_) => '',
-          matchesQuery: (item, query) {
-            return searchMatches(query, [
-              item.name,
-              item.code,
-            ]);
-          },
+          itemSubtitle: (item) => item.code,
           onSelected: (item) => Navigator.of(context).pop(item),
         );
       },
@@ -308,128 +233,110 @@ class _WerkaUnannouncedSupplierScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final canPickItem = _selectedSupplier != null && !_loadingItems;
-    final canSubmit = _selectedSupplier != null &&
-        _selectedItem != null &&
-        !_submitting &&
-        !_loadingItems;
+    final canPickItem = _selectedSupplier != null && !_submitting;
+    final canSubmit =
+        _selectedSupplier != null && _selectedItem != null && !_submitting;
 
     return Scaffold(
       backgroundColor: AppTheme.shellStart(context),
       body: SafeArea(
-        child: FutureBuilder<List<SupplierDirectoryEntry>>(
-          future: _suppliersFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const Center(child: AppLoadingIndicator());
-            }
-            if (snapshot.hasError) {
-              return ListView(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-                children: [
-                  _WerkaUnannouncedHeader(theme: theme),
-                  const SizedBox(height: 20),
-                  AppRetryState(onRetry: _reloadSuppliers),
-                ],
-              );
-            }
-
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-              children: [
-                _WerkaUnannouncedHeader(theme: theme),
-                const SizedBox(height: 20),
-                Card.filled(
-                  margin: EdgeInsets.zero,
-                  color: scheme.surfaceContainerLow,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                    side: BorderSide(
-                      color: scheme.outlineVariant.withValues(alpha: 0.7),
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(18),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          context.l10n.unannouncedTitle,
-                          style: theme.textTheme.headlineMedium,
-                        ),
-                        const SizedBox(height: 18),
-                        Text(context.l10n.supplierLabel,
-                            style: theme.textTheme.bodySmall),
-                        const SizedBox(height: 6),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton(
-                            onPressed: _pickSupplier,
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                _selectedSupplier?.name ??
-                                    context.l10n.selectSupplier,
-                              ),
-                            ),
-                          ),
-                        ),
-                        if (_selectedSupplier != null) ...[
-                          const SizedBox(height: 14),
-                          Text(context.l10n.itemLabel,
-                              style: theme.textTheme.bodySmall),
-                          const SizedBox(height: 6),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: canPickItem ? _pickItem : null,
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  _loadingItems
-                                      ? context.l10n.loading
-                                      : _selectedItem?.name ??
-                                          context.l10n.selectItem,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                        if (_selectedItem != null) ...[
-                          const SizedBox(height: 14),
-                          Text(context.l10n.amountLabel,
-                              style: theme.textTheme.bodySmall),
-                          const SizedBox(height: 6),
-                          TextField(
-                            controller: _qtyController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: '0',
-                              suffixText: _selectedItem!.uom,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 18),
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton(
-                            onPressed: canSubmit ? _submit : null,
-                            child: Text(
-                              _submitting
-                                  ? context.l10n.pinSaving
-                                  : context.l10n.confirmTitle,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+          children: [
+            _WerkaUnannouncedHeader(theme: theme),
+            const SizedBox(height: 20),
+            Card.filled(
+              margin: EdgeInsets.zero,
+              color: scheme.surfaceContainerLow,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(28),
+                side: BorderSide(
+                  color: scheme.outlineVariant.withValues(alpha: 0.7),
                 ),
-              ],
-            );
-          },
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.l10n.unannouncedTitle,
+                      style: theme.textTheme.headlineMedium,
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      context.l10n.supplierLabel,
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: _submitting ? null : _pickSupplier,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            _selectedSupplier?.name ??
+                                context.l10n.selectSupplier,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (_selectedSupplier != null) ...[
+                      const SizedBox(height: 14),
+                      Text(
+                        context.l10n.itemLabel,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 6),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: canPickItem ? _pickItem : null,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              _selectedItem?.name ?? context.l10n.selectItem,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                    if (_selectedItem != null) ...[
+                      const SizedBox(height: 14),
+                      Text(
+                        context.l10n.amountLabel,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: _qtyController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: '0',
+                          suffixText: _selectedItem!.uom,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: canSubmit ? _submit : null,
+                        child: Text(
+                          _submitting
+                              ? context.l10n.pinSaving
+                              : context.l10n.confirmTitle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
       bottomNavigationBar: const SafeArea(

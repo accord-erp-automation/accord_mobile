@@ -3,42 +3,6 @@ part of 'mobile_api.dart';
 extension MobileApiWerka on MobileApi {
   String get baseUrl => MobileApi.baseUrl;
 
-  Future<List<CustomerDirectoryEntry>> _cacheWerkaCustomers() {
-    final cached = _werkaCustomersFuture;
-    if (cached != null) {
-      return cached;
-    }
-    final future = _fetchWerkaCustomers(
-      query: '',
-      limit: MobileApi.werkaPickerLimit,
-    );
-    _werkaCustomersFuture = future;
-    future.catchError((_) {
-      if (identical(_werkaCustomersFuture, future)) {
-        _werkaCustomersFuture = null;
-      }
-    });
-    return future;
-  }
-
-  Future<List<CustomerItemOption>> _cacheWerkaCustomerItemOptions() {
-    final cached = _werkaCustomerItemOptionsFuture;
-    if (cached != null) {
-      return cached;
-    }
-    final future = _fetchWerkaCustomerItemOptions(
-      query: '',
-      limit: MobileApi.werkaPickerLimit,
-    );
-    _werkaCustomerItemOptionsFuture = future;
-    future.catchError((_) {
-      if (identical(_werkaCustomerItemOptionsFuture, future)) {
-        _werkaCustomerItemOptionsFuture = null;
-      }
-    });
-    return future;
-  }
-
   Future<List<DispatchRecord>> werkaPending() async {
     final http.Response response = await _sendAuthorized(
       () => http.get(
@@ -55,10 +19,18 @@ extension MobileApiWerka on MobileApi {
         .toList();
   }
 
-  Future<List<SupplierDirectoryEntry>> werkaSuppliers() async {
+  Future<List<SupplierDirectoryEntry>> werkaSuppliers({
+    String query = '',
+    int limit = 200,
+  }) async {
     final http.Response response = await _sendAuthorized(
       () => http.get(
-        Uri.parse('$baseUrl/v1/mobile/werka/suppliers'),
+        Uri.parse('$baseUrl/v1/mobile/werka/suppliers').replace(
+          queryParameters: {
+            if (query.trim().isNotEmpty) 'q': query.trim(),
+            if (limit > 0) 'limit': '$limit',
+          },
+        ),
         headers: _headers(requireToken()),
       ),
     );
@@ -79,11 +51,7 @@ extension MobileApiWerka on MobileApi {
     String query = '',
     int limit = 200,
   }) async {
-    final trimmedQuery = query.trim();
-    if (trimmedQuery.isEmpty && limit == MobileApi.werkaPickerLimit) {
-      return _cacheWerkaCustomers();
-    }
-    return _fetchWerkaCustomers(query: trimmedQuery, limit: limit);
+    return _fetchWerkaCustomers(query: query.trim(), limit: limit);
   }
 
   Future<List<CustomerDirectoryEntry>> _fetchWerkaCustomers({
@@ -117,6 +85,7 @@ extension MobileApiWerka on MobileApi {
   Future<List<SupplierItem>> werkaSupplierItems({
     required String supplierRef,
     String query = '',
+    int limit = 100,
   }) async {
     final response = await _sendAuthorized(
       () => http.get(
@@ -124,6 +93,7 @@ extension MobileApiWerka on MobileApi {
           queryParameters: {
             'supplier_ref': supplierRef,
             if (query.trim().isNotEmpty) 'q': query.trim(),
+            if (limit > 0) 'limit': '$limit',
           },
         ),
         headers: _headers(requireToken()),
@@ -168,11 +138,7 @@ extension MobileApiWerka on MobileApi {
     String query = '',
     int limit = 200,
   }) async {
-    final trimmedQuery = query.trim();
-    if (trimmedQuery.isEmpty && limit == MobileApi.werkaPickerLimit) {
-      return _cacheWerkaCustomerItemOptions();
-    }
-    return _fetchWerkaCustomerItemOptions(query: trimmedQuery, limit: limit);
+    return _fetchWerkaCustomerItemOptions(query: query.trim(), limit: limit);
   }
 
   Future<List<CustomerItemOption>> _fetchWerkaCustomerItemOptions({
