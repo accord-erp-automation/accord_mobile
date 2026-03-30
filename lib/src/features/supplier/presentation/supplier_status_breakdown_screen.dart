@@ -27,7 +27,7 @@ class _SupplierStatusBreakdownScreenState
   bool _isApprovedUnannounced(DispatchRecord item) {
     final note = item.note.trim().toLowerCase();
     return item.eventType == 'werka_unannounced_approved' ||
-        note.startsWith('aytilmagan mol tasdiqlandi') ||
+        note.startsWith('aytilmagan mahsulot tasdiqlandi') ||
         note.startsWith('unannounced item approved');
   }
 

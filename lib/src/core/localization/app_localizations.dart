@@ -126,7 +126,7 @@ class AppLocalizations {
   String get amountLabel => _t('Miqdor', 'Quantity', 'Количество');
   String get customerLabel => _t('Haridor', 'Customer', 'Покупатель');
   String get supplierLabel => _t('Ta\'minotchi', 'Supplier', 'Поставщик');
-  String get itemLabel => _t('Mol', 'Item', 'Товар');
+  String get itemLabel => _t('Mahsulot', 'Item', 'Товар');
   String get selectCustomer =>
       _t('Haridor tanlang', 'Select customer', 'Выберите покупателя');
   String get searchCustomer =>
@@ -135,15 +135,17 @@ class AppLocalizations {
       _t('Ta\'minotchi tanlang', 'Select supplier', 'Выберите поставщика');
   String get searchSupplier =>
       _t('Ta\'minotchi qidiring', 'Search supplier', 'Поиск поставщика');
-  String get selectItem => _t('Mol tanlang', 'Select item', 'Выберите товар');
-  String get searchItem => _t('Mol qidiring', 'Search item', 'Поиск товара');
+  String get selectItem =>
+      _t('Mahsulot tanlang', 'Select item', 'Выберите товар');
+  String get searchItem =>
+      _t('Mahsulot qidiring', 'Search item', 'Поиск товара');
   String get createHubTitle => _t('Qayd', 'Create', 'Создать');
   String get unannouncedTitle =>
-      _t('Aytilmagan mol', 'Unannounced item', 'Незаявленный товар');
+      _t('Aytilmagan mahsulot', 'Unannounced item', 'Незаявленный товар');
   String get customerIssueTitle =>
-      _t('Mol jo‘natish', 'Send item', 'Отправить товар');
+      _t('Mahsulot jo‘natish', 'Send item', 'Отправить товар');
   String get unannouncedDescription => _t(
-        'Ta\'minotchi, mol va miqdorni bir oqimda tanlang',
+        'Ta\'minotchi, mahsulot va miqdorni bir oqimda tanlang',
         'Choose supplier, item, and quantity in one flow',
         'Выберите поставщика, товар и количество в одном потоке',
       );
@@ -283,7 +285,7 @@ class AppLocalizations {
         'Сервер отключен. Повторите попытку.',
       );
   String get insufficientStockMessage => _t(
-        'Omborda yetarli mol yo‘q.',
+        'Omborda yetarli mahsulot yo‘q.',
         'There is not enough stock in the warehouse.',
         'На складе недостаточно товара.',
       );
@@ -306,7 +308,7 @@ class AppLocalizations {
   String get supplierAcceptedByWerkaTitle => _t(
       'Omborchi qabul qilganlar', 'Accepted by Werka', 'Принято кладовщиком');
   String get supplierAcceptedUnannouncedTitle => _t(
-        'Aytilmagan mol tasdiqlanganlar',
+        'Aytilmagan mahsulot tasdiqlanganlar',
         'Approved unannounced items',
         'Подтвержденные незаявленные товары',
       );
@@ -316,7 +318,7 @@ class AppLocalizations {
         'Отправлено, ожидается ответ',
       );
   String get supplierPendingUnannouncedTitle => _t(
-        'Aytilmagan mol bo‘yicha javob kutilayotganlar',
+        'Aytilmagan mahsulot bo‘yicha javob kutilayotganlar',
         'Awaiting reply on unannounced items',
         'Ожидается ответ по незаявленным товарам',
       );
