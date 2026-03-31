@@ -40,38 +40,6 @@ class WerkaStore extends ChangeNotifier {
   Object? get homeError => _homeError;
   Object? get historyError => _historyError;
   WerkaHomeSummary get summary {
-    if (_loadedHome && _loadedHistory) {
-      var confirmed = 0;
-      var returned = 0;
-      for (final item in _historyItems) {
-        if (!_countsTowardWerkaSummary(item)) {
-          continue;
-        }
-        switch (item.status) {
-          case DispatchStatus.accepted:
-            confirmed += 1;
-          case DispatchStatus.partial:
-          case DispatchStatus.rejected:
-          case DispatchStatus.cancelled:
-            returned += 1;
-          case DispatchStatus.pending:
-          case DispatchStatus.draft:
-            break;
-        }
-      }
-      final adjusted = WerkaRuntimeStore.instance.applySummary(
-        WerkaHomeSummary(
-          pendingCount: pendingItems.length,
-          confirmedCount: confirmed,
-          returnedCount: returned,
-        ),
-      );
-      return WerkaHomeSummary(
-        pendingCount: adjusted.pendingCount,
-        confirmedCount: adjusted.confirmedCount,
-        returnedCount: adjusted.returnedCount,
-      );
-    }
     final adjusted = WerkaRuntimeStore.instance.applySummary(_summary);
     return WerkaHomeSummary(
       pendingCount: adjusted.pendingCount,
@@ -157,6 +125,10 @@ class WerkaStore extends ChangeNotifier {
     notifyListeners();
     try {
       _historyItems = await MobileApi.instance.werkaHistory();
+      WerkaRuntimeStore.instance.reconcileWithServer(
+        pendingItems: _pendingItems,
+        historyItems: _historyItems,
+      );
       _loadedHistory = true;
     } catch (error) {
       _historyError = error;
@@ -252,11 +224,6 @@ class WerkaStore extends ChangeNotifier {
 
   void _forwardRuntimeChange() {
     notifyListeners();
-  }
-
-  bool _countsTowardWerkaSummary(DispatchRecord record) {
-    return record.eventType.isEmpty ||
-        record.eventType.startsWith('customer_delivery_');
   }
 
   List<WerkaStatusBreakdownEntry> _pendingBreakdownItems() {
