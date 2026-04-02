@@ -149,7 +149,6 @@ final class NativeTabBarController: UITabBarController, UITabBarControllerDelega
   private var currentState = NativeDockState(arguments: [:])
   private var placeholderControllers: [NativeTabPlaceholderViewController] = []
   private var isApplyingState = false
-  private var accessoryButton: UIButton?
 
   init(messenger: FlutterBinaryMessenger) {
     self.messenger = messenger
@@ -176,8 +175,7 @@ final class NativeTabBarController: UITabBarController, UITabBarControllerDelega
 
   private func applyDockState(_ state: NativeDockState) {
     currentState = state
-    let tabItems = state.items.filter { !$0.primary }
-    let accessoryItem = state.items.first(where: \.primary)
+    let tabItems = state.items
 
     isApplyingState = true
     defer { isApplyingState = false }
@@ -200,7 +198,9 @@ final class NativeTabBarController: UITabBarController, UITabBarControllerDelega
       self.selectedIndex = 0
     }
 
-    configureBottomAccessory(with: accessoryItem)
+    if #available(iOS 26.0, *) {
+      setBottomAccessory(nil, animated: false)
+    }
     setSystemTabBarHidden(false)
   }
 
@@ -216,53 +216,6 @@ final class NativeTabBarController: UITabBarController, UITabBarControllerDelega
       let controller = placeholderControllers[index]
       controller.update(with: item)
     }
-  }
-
-  private func configureBottomAccessory(with item: NativeDockItem?) {
-    guard #available(iOS 26.0, *) else {
-      return
-    }
-    guard let item else {
-      setBottomAccessory(nil, animated: false)
-      accessoryButton = nil
-      return
-    }
-
-    let symbolConfig = UIImage.SymbolConfiguration(pointSize: 20, weight: .bold)
-    var configuration = UIButton.Configuration.prominentGlass()
-    configuration.cornerStyle = .capsule
-    configuration.image = UIImage(
-      systemName: item.active ? (item.selectedSymbol ?? item.symbol) : item.symbol,
-      withConfiguration: symbolConfig
-    )
-    configuration.preferredSymbolConfigurationForImage = symbolConfig
-    configuration.baseForegroundColor = .white
-    configuration.contentInsets = NSDirectionalEdgeInsets(
-      top: 12,
-      leading: 18,
-      bottom: 12,
-      trailing: 18
-    )
-
-    let button: UIButton
-    if let existing = accessoryButton {
-      button = existing
-    } else {
-      button = UIButton(type: .system)
-      button.addTarget(self, action: #selector(handleAccessoryTap), for: .primaryActionTriggered)
-      accessoryButton = button
-    }
-    button.accessibilityIdentifier = item.id
-    button.configuration = configuration
-    setBottomAccessory(UITabAccessory(contentView: button), animated: false)
-  }
-
-  @objc
-  private func handleAccessoryTap() {
-    guard let id = accessoryButton?.accessibilityIdentifier else {
-      return
-    }
-    dockBridge.sendTap(id: id)
   }
 
   private func setSystemTabBarHidden(_ hidden: Bool) {
@@ -308,7 +261,10 @@ private final class NativeTabPlaceholderViewController: UIViewController {
 
   func update(with item: NativeDockItem) {
     itemId = item.id
-    let imageConfig = UIImage.SymbolConfiguration(pointSize: 17, weight: .semibold)
+    let imageConfig = UIImage.SymbolConfiguration(
+      pointSize: item.primary ? 19 : 17,
+      weight: item.primary ? .bold : .semibold
+    )
     tabBarItem = UITabBarItem(
       title: nil,
       image: UIImage(systemName: item.symbol, withConfiguration: imageConfig),
@@ -318,6 +274,10 @@ private final class NativeTabPlaceholderViewController: UIViewController {
       )
     )
     tabBarItem.badgeValue = item.showBadge ? " " : nil
+    if item.primary {
+      tabBarItem.titlePositionAdjustment = UIOffset(horizontal: 0, vertical: 100)
+      tabBarItem.imageInsets = UIEdgeInsets(top: -1, left: 0, bottom: 1, right: 0)
+    }
   }
 }
 
