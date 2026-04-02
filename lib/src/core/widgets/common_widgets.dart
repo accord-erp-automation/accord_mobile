@@ -313,6 +313,8 @@ class ActionDock extends StatelessWidget {
           showBadge: widget.showBadge,
           onTap: widget.onTap,
           onHoldComplete: widget.onHoldComplete,
+          routeName: widget.nativeRouteName,
+          replaceStack: widget.nativeReplaceStack,
         ),
       );
     }
@@ -337,6 +339,8 @@ class DockButton extends StatefulWidget {
     this.nativeId,
     this.nativeSymbol,
     this.nativeSelectedSymbol,
+    this.nativeRouteName,
+    this.nativeReplaceStack = false,
   });
 
   final IconData? icon;
@@ -353,6 +357,8 @@ class DockButton extends StatefulWidget {
   final String? nativeId;
   final String? nativeSymbol;
   final String? nativeSelectedSymbol;
+  final String? nativeRouteName;
+  final bool nativeReplaceStack;
 
   @override
   State<DockButton> createState() => _DockButtonState();

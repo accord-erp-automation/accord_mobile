@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'native_back_button_bridge.dart';
 
 class NativeDockBridge extends NavigatorObserver with ChangeNotifier {
   NativeDockBridge._();
@@ -20,6 +21,9 @@ class NativeDockBridge extends NavigatorObserver with ChangeNotifier {
       <String, VoidCallback>{};
   final Map<String, VoidCallback> _lastVisibleHoldHandlers =
       <String, VoidCallback>{};
+  final Map<String, NativeDockItem> _itemsById = <String, NativeDockItem>{};
+  final Map<String, NativeDockItem> _lastVisibleItemsById =
+      <String, NativeDockItem>{};
 
   static bool get isSupportedPlatform =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
@@ -51,6 +55,9 @@ class NativeDockBridge extends NavigatorObserver with ChangeNotifier {
             .where((item) => item.onHoldComplete != null)
             .map((item) => MapEntry(item.id, item.onHoldComplete!)),
       );
+    _itemsById
+      ..clear()
+      ..addEntries(state.items.map((item) => MapEntry(item.id, item)));
     if (state.visible) {
       _lastVisibleState = state;
       _lastVisibleTapHandlers
@@ -59,6 +66,9 @@ class NativeDockBridge extends NavigatorObserver with ChangeNotifier {
       _lastVisibleHoldHandlers
         ..clear()
         ..addAll(_holdHandlers);
+      _lastVisibleItemsById
+        ..clear()
+        ..addAll(_itemsById);
     }
     _scheduleSync();
   }
@@ -70,6 +80,7 @@ class NativeDockBridge extends NavigatorObserver with ChangeNotifier {
     _pendingState = const NativeDockState.hidden();
     _tapHandlers.clear();
     _holdHandlers.clear();
+    _itemsById.clear();
     _scheduleSync();
   }
 
@@ -92,6 +103,9 @@ class NativeDockBridge extends NavigatorObserver with ChangeNotifier {
       _holdHandlers
         ..clear()
         ..addAll(_lastVisibleHoldHandlers);
+      _itemsById
+        ..clear()
+        ..addAll(_lastVisibleItemsById);
       unawaited(_sync());
       notifyListeners();
     });
@@ -128,6 +142,22 @@ class NativeDockBridge extends NavigatorObserver with ChangeNotifier {
       case 'nativeDockTap':
         final id = call.arguments as String?;
         if (id != null) {
+          final item = _itemsById[id] ?? _lastVisibleItemsById[id];
+          final navigator = NativeBackButtonBridge.instance.navigatorKey.currentState;
+          if (item != null &&
+              navigator != null &&
+              item.routeName != null &&
+              !item.active) {
+            if (item.replaceStack) {
+              navigator.pushNamedAndRemoveUntil(
+                item.routeName!,
+                (route) => false,
+              );
+            } else {
+              navigator.pushNamed(item.routeName!);
+            }
+            return null;
+          }
           _tapHandlers[id]?.call();
         }
         return null;
@@ -182,6 +212,8 @@ class NativeDockItem {
     required this.showBadge,
     required this.onTap,
     this.onHoldComplete,
+    this.routeName,
+    this.replaceStack = false,
   });
 
   final String id;
@@ -192,6 +224,8 @@ class NativeDockItem {
   final bool showBadge;
   final VoidCallback onTap;
   final VoidCallback? onHoldComplete;
+  final String? routeName;
+  final bool replaceStack;
 
   Map<String, Object?> toMap() {
     return <String, Object?>{
@@ -202,6 +236,8 @@ class NativeDockItem {
       'primary': primary,
       'showBadge': showBadge,
       'supportsLongPress': onHoldComplete != null,
+      'routeName': routeName,
+      'replaceStack': replaceStack,
     };
   }
 }
