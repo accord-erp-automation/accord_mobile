@@ -459,6 +459,29 @@ extension MobileApiWerka on MobileApi {
         .toList();
   }
 
+  Future<WerkaArchiveResponse> werkaArchive({
+    required WerkaArchiveKind kind,
+    required WerkaArchivePeriod period,
+  }) async {
+    final http.Response response = await _sendAuthorized(
+      () => http.get(
+        Uri.parse('$baseUrl/v1/mobile/werka/archive').replace(
+          queryParameters: {
+            'kind': kind.name,
+            'period': period.name,
+          },
+        ),
+        headers: _headers(requireToken()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Werka archive failed');
+    }
+    return WerkaArchiveResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
   Future<DispatchRecord> confirmReceipt({
     required String receiptID,
     required double acceptedQty,

@@ -35,6 +35,8 @@ import '../features/supplier/presentation/supplier_recent_screen.dart';
 import '../features/supplier/presentation/supplier_success_screen.dart';
 import '../features/werka/presentation/werka_detail_screen.dart';
 import '../features/werka/presentation/werka_archive_screen.dart';
+import '../features/werka/presentation/werka_archive_period_screen.dart';
+import '../features/werka/presentation/werka_archive_list_screen.dart';
 import '../features/werka/presentation/werka_home_screen.dart';
 import '../features/werka/presentation/werka_batch_dispatch_screen.dart';
 import '../features/werka/presentation/werka_create_hub_screen.dart';
@@ -72,6 +74,8 @@ class AppRoutes {
   static const String werkaUnannouncedSupplier = '/werka-unannounced-supplier';
   static const String werkaNotifications = '/werka-notifications';
   static const String werkaArchive = '/werka-archive';
+  static const String werkaArchivePeriods = '/werka-archive-periods';
+  static const String werkaArchiveList = '/werka-archive-list';
   static const String werkaStatusBreakdown = '/werka-status-breakdown';
   static const String werkaStatusDetail = '/werka-status-detail';
   static const String werkaDetail = '/werka-detail';
@@ -236,6 +240,19 @@ class AppRouter {
         return _buildRoute(settings, const WerkaNotificationsScreen());
       case AppRoutes.werkaArchive:
         return _buildRoute(settings, const WerkaArchiveScreen());
+      case AppRoutes.werkaArchivePeriods:
+        final WerkaArchiveKind kind = settings.arguments as WerkaArchiveKind;
+        return _buildRoute(
+          settings,
+          WerkaArchivePeriodScreen(kind: kind),
+        );
+      case AppRoutes.werkaArchiveList:
+        final WerkaArchiveListArgs args =
+            settings.arguments as WerkaArchiveListArgs;
+        return _buildRoute(
+          settings,
+          WerkaArchiveListScreen(args: args),
+        );
       case AppRoutes.werkaStatusBreakdown:
         final WerkaStatusKind kind = settings.arguments as WerkaStatusKind;
         return _buildRoute(

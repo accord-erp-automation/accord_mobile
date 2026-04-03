@@ -208,6 +208,39 @@ class AppLocalizations {
         'A new archive flow will be added here later.',
         'Позже сюда будет добавлена новая логика архива.',
       );
+  String get archiveReceivedTitle =>
+      _t('Qabul qilingan', 'Received', 'Принятые');
+  String get archiveSentTitle => _t('Jo\'natilgan', 'Sent', 'Отправленные');
+  String get archiveReturnedTitle =>
+      _t('Qaytarilgan', 'Returned', 'Возвращённые');
+  String get archiveDailyTitle => _t('Kunlik', 'Daily', 'Дневной');
+  String get archiveMonthlyTitle => _t('Oylik', 'Monthly', 'Месячный');
+  String get archiveYearlyTitle => _t('Yillik', 'Yearly', 'Годовой');
+  String get archiveChoosePeriod => _t(
+        'Periodni tanlang',
+        'Choose a period',
+        'Выберите период',
+      );
+  String get archiveNoItems => _t(
+        'Bu bo‘limda hozircha yozuv yo‘q.',
+        'There are no records in this section yet.',
+        'В этом разделе пока нет записей.',
+      );
+  String get archivePdfNextPhase => _t(
+        'PDF yuklab olish keyingi bosqichda qo‘shiladi.',
+        'PDF download will be added in the next phase.',
+        'Загрузка PDF будет добавлена на следующем этапе.',
+      );
+  String archiveRecordCountLabel(int count) => _t(
+        '$count ta yozuv',
+        '$count records',
+        '$count записей',
+      );
+  String archiveTotalByUomLabel(String uom, double qty) => _t(
+        '${qty.toStringAsFixed(qty == qty.roundToDouble() ? 0 : 2)} $uom',
+        '${qty.toStringAsFixed(qty == qty.roundToDouble() ? 0 : 2)} $uom',
+        '${qty.toStringAsFixed(qty == qty.roundToDouble() ? 0 : 2)} $uom',
+      );
   String get recentTitle =>
       _t('So‘nggi harakatlar', 'Recent', 'Недавние действия');
   String get recentSubtitle => _t(

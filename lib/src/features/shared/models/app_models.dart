@@ -454,6 +454,112 @@ enum WerkaStatusKind {
   returned,
 }
 
+enum WerkaArchiveKind {
+  received,
+  sent,
+  returned,
+}
+
+enum WerkaArchivePeriod {
+  daily,
+  monthly,
+  yearly,
+}
+
+class ArchiveTotalByUOM {
+  const ArchiveTotalByUOM({
+    required this.uom,
+    required this.qty,
+  });
+
+  final String uom;
+  final double qty;
+
+  factory ArchiveTotalByUOM.fromJson(Map<String, dynamic> json) {
+    return ArchiveTotalByUOM(
+      uom: json['uom'] as String? ?? '',
+      qty: (json['qty'] as num?)?.toDouble() ?? 0,
+    );
+  }
+}
+
+class WerkaArchiveSummary {
+  const WerkaArchiveSummary({
+    required this.recordCount,
+    required this.totalsByUOM,
+  });
+
+  final int recordCount;
+  final List<ArchiveTotalByUOM> totalsByUOM;
+
+  factory WerkaArchiveSummary.fromJson(Map<String, dynamic> json) {
+    final totals = json['totals_by_uom'] as List<dynamic>? ?? const [];
+    return WerkaArchiveSummary(
+      recordCount: (json['record_count'] as num?)?.toInt() ?? 0,
+      totalsByUOM: totals
+          .map((item) =>
+              ArchiveTotalByUOM.fromJson(item as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+class WerkaArchiveResponse {
+  const WerkaArchiveResponse({
+    required this.kind,
+    required this.period,
+    required this.from,
+    required this.to,
+    required this.summary,
+    required this.items,
+  });
+
+  final WerkaArchiveKind kind;
+  final WerkaArchivePeriod period;
+  final DateTime? from;
+  final DateTime? to;
+  final WerkaArchiveSummary summary;
+  final List<DispatchRecord> items;
+
+  factory WerkaArchiveResponse.fromJson(Map<String, dynamic> json) {
+    final itemsJson = json['items'] as List<dynamic>? ?? const [];
+    return WerkaArchiveResponse(
+      kind: parseWerkaArchiveKind(json['kind'] as String? ?? ''),
+      period: parseWerkaArchivePeriod(json['period'] as String? ?? ''),
+      from: DateTime.tryParse(json['from'] as String? ?? ''),
+      to: DateTime.tryParse(json['to'] as String? ?? ''),
+      summary: WerkaArchiveSummary.fromJson(
+        json['summary'] as Map<String, dynamic>? ?? const {},
+      ),
+      items: itemsJson
+          .map((item) => DispatchRecord.fromJson(item as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+WerkaArchiveKind parseWerkaArchiveKind(String value) {
+  switch (value.trim().toLowerCase()) {
+    case 'received':
+      return WerkaArchiveKind.received;
+    case 'returned':
+      return WerkaArchiveKind.returned;
+    default:
+      return WerkaArchiveKind.sent;
+  }
+}
+
+WerkaArchivePeriod parseWerkaArchivePeriod(String value) {
+  switch (value.trim().toLowerCase()) {
+    case 'daily':
+      return WerkaArchivePeriod.daily;
+    case 'monthly':
+      return WerkaArchivePeriod.monthly;
+    default:
+      return WerkaArchivePeriod.yearly;
+  }
+}
+
 class WerkaStatusBreakdownEntry {
   const WerkaStatusBreakdownEntry({
     required this.supplierRef,
