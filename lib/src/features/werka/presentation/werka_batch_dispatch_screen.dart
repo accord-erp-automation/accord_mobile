@@ -688,36 +688,18 @@ class _WerkaBatchDispatchReviewScreenState
   final ScrollController _scrollController = ScrollController();
 
   late List<_WerkaBatchDraftLine> _lines;
-  bool _reviewUnlocked = false;
   bool _submitting = false;
 
   @override
   void initState() {
     super.initState();
     _lines = List<_WerkaBatchDraftLine>.from(widget.initialLines);
-    _scrollController.addListener(_handleScroll);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _handleScroll());
   }
 
   @override
   void dispose() {
-    _scrollController
-      ..removeListener(_handleScroll)
-      ..dispose();
+    _scrollController.dispose();
     super.dispose();
-  }
-
-  void _handleScroll() {
-    if (!_scrollController.hasClients) {
-      return;
-    }
-    final position = _scrollController.position;
-    final atEnd = position.maxScrollExtent <= 0 ||
-        position.pixels >= position.maxScrollExtent - 12;
-    if (_reviewUnlocked == atEnd) {
-      return;
-    }
-    setState(() => _reviewUnlocked = atEnd);
   }
 
   int get _customerCount =>
@@ -744,7 +726,7 @@ class _WerkaBatchDispatchReviewScreenState
   }
 
   Future<void> _submit() async {
-    if (_submitting || _lines.length < 2 || !_reviewUnlocked) {
+    if (_submitting || _lines.length < 2) {
       return;
     }
 
@@ -862,7 +844,7 @@ class _WerkaBatchDispatchReviewScreenState
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final canSubmit = !_submitting && _reviewUnlocked && _lines.length >= 2;
+    final canSubmit = !_submitting && _lines.length >= 2;
 
     return PopScope(
       canPop: false,
@@ -984,10 +966,6 @@ class _WerkaBatchDispatchReviewScreenState
                                               )
                                               .toList();
                                         });
-                                        WidgetsBinding.instance
-                                            .addPostFrameCallback(
-                                          (_) => _handleScroll(),
-                                        );
                                       },
                                 icon: const Icon(Icons.delete_outline_rounded),
                               ),
@@ -1012,15 +990,15 @@ class _WerkaBatchDispatchReviewScreenState
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  _lines.length < 2
-                      ? l10n.batchNeedAtLeastTwoItems
-                      : l10n.batchReviewUnlockHint,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
+                if (_lines.length < 2) ...[
+                  Text(
+                    l10n.batchNeedAtLeastTwoItems,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
+                  const SizedBox(height: 10),
+                ],
                 FilledButton(
                   onPressed: canSubmit ? _submit : null,
                   child: Text(
