@@ -112,8 +112,7 @@ extension MobileApiWerka on MobileApi {
             .toList();
 
     filtered.sort(
-      (left, right) =>
-          left.name.toLowerCase().compareTo(right.name.toLowerCase()),
+      (left, right) => compareCustomerNamesForDefault(left.name, right.name),
     );
 
     if (offset >= filtered.length) {
@@ -568,9 +567,10 @@ extension MobileApiWerka on MobileApi {
     if (itemCompare != 0) {
       return itemCompare;
     }
-    final customerCompare = left.customerName.toLowerCase().compareTo(
-          right.customerName.toLowerCase(),
-        );
+    final customerCompare = compareCustomerNamesForDefault(
+      left.customerName,
+      right.customerName,
+    );
     if (customerCompare != 0) {
       return customerCompare;
     }

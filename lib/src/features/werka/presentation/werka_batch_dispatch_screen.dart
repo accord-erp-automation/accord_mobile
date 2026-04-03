@@ -1,6 +1,7 @@
 import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
 import '../../../core/app_preview.dart';
+import '../../../core/customer/customer_priority.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/notifications/refresh_hub.dart';
 import '../../../core/notifications/werka_runtime_store.dart';
@@ -33,9 +34,10 @@ int _compareCustomerItemOptionsByName(
   if (itemCompare != 0) {
     return itemCompare;
   }
-  final customerCompare = left.customerName.toLowerCase().compareTo(
-        right.customerName.toLowerCase(),
-      );
+  final customerCompare = compareCustomerNamesForDefault(
+    left.customerName,
+    right.customerName,
+  );
   if (customerCompare != 0) {
     return customerCompare;
   }
@@ -81,6 +83,37 @@ class _WerkaBatchDispatchScreenState extends State<WerkaBatchDispatchScreen> {
     );
   }
 
+  Future<CustomerDirectoryEntry> _preferredCustomerForOption(
+    CustomerItemOption option,
+  ) async {
+    final fallback = _customerFromOption(option);
+    if (_previewMode) {
+      final previewCustomers = _previewOptions
+          .where((item) => item.itemCode == option.itemCode)
+          .map(_customerFromOption);
+      return preferPrimaryCustomer<CustomerDirectoryEntry>(
+            previewCustomers,
+            customerName: (item) => item.name,
+          ) ??
+          fallback;
+    }
+    try {
+      final customers = await MobileApi.instance.werkaCustomersForItem(
+        itemCode: option.itemCode,
+        itemName: option.itemName,
+        limit: 200,
+        offset: 0,
+      );
+      return preferPrimaryCustomer<CustomerDirectoryEntry>(
+            customers,
+            customerName: (item) => item.name,
+          ) ??
+          fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
   void _clearSelectedItem() {
     setState(() {
       _selectedItem = null;
@@ -114,7 +147,11 @@ class _WerkaBatchDispatchScreenState extends State<WerkaBatchDispatchScreen> {
                 return result;
               }
               return [...result, customer];
-            });
+            })
+        ..sort((left, right) => compareCustomerNamesForDefault(
+              left.name,
+              right.name,
+            ));
       final picked = await showModalBottomSheet<CustomerDirectoryEntry>(
         context: context,
         useSafeArea: true,
@@ -267,8 +304,12 @@ class _WerkaBatchDispatchScreenState extends State<WerkaBatchDispatchScreen> {
       if (picked == null || !mounted) {
         return;
       }
+      final preferredCustomer = await _preferredCustomerForOption(picked);
+      if (!mounted) {
+        return;
+      }
       setState(() {
-        _selectedCustomer = _customerFromOption(picked);
+        _selectedCustomer = preferredCustomer;
         _selectedItem = _itemFromOption(picked);
         _qtyController.clear();
       });
@@ -337,8 +378,12 @@ class _WerkaBatchDispatchScreenState extends State<WerkaBatchDispatchScreen> {
     if (picked == null || !mounted) {
       return;
     }
+    final preferredCustomer = await _preferredCustomerForOption(picked);
+    if (!mounted) {
+      return;
+    }
     setState(() {
-      _selectedCustomer = _customerFromOption(picked);
+      _selectedCustomer = preferredCustomer;
       _selectedItem = _itemFromOption(picked);
       _qtyController.clear();
     });

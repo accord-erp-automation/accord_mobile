@@ -1,5 +1,6 @@
 import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
+import '../../../core/customer/customer_priority.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/notifications/refresh_hub.dart';
 import '../../../core/notifications/werka_runtime_store.dart';
@@ -84,6 +85,27 @@ class _WerkaCustomerIssueCustomerScreenState
       uom: option.uom,
       warehouse: option.warehouse,
     );
+  }
+
+  Future<CustomerDirectoryEntry> _preferredCustomerForOption(
+    CustomerItemOption option,
+  ) async {
+    final fallback = _customerFromOption(option);
+    try {
+      final customers = await MobileApi.instance.werkaCustomersForItem(
+        itemCode: option.itemCode,
+        itemName: option.itemName,
+        limit: 200,
+        offset: 0,
+      );
+      return preferPrimaryCustomer<CustomerDirectoryEntry>(
+            customers,
+            customerName: (item) => item.name,
+          ) ??
+          fallback;
+    } catch (_) {
+      return fallback;
+    }
   }
 
   void _clearSelectedItem() {
@@ -201,8 +223,12 @@ class _WerkaCustomerIssueCustomerScreenState
     if (!mounted || picked == null) {
       return;
     }
+    final preferredCustomer = await _preferredCustomerForOption(picked);
+    if (!mounted) {
+      return;
+    }
     setState(() {
-      _selectedCustomer = _customerFromOption(picked);
+      _selectedCustomer = preferredCustomer;
       _selectedItem = _itemFromOption(picked);
     });
   }
