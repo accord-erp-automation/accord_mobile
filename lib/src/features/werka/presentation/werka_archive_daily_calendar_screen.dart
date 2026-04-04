@@ -33,6 +33,7 @@ class WerkaArchiveDailyCalendarScreen extends StatefulWidget {
 class _WerkaArchiveDailyCalendarScreenState
     extends State<WerkaArchiveDailyCalendarScreen> {
   late DateTime _displayMonth;
+  DateTime? _selectedDate;
   bool _loading = true;
   Object? _error;
   Set<int> _activeDays = <int>{};
@@ -42,6 +43,7 @@ class _WerkaArchiveDailyCalendarScreenState
     super.initState();
     final now = DateTime.now();
     _displayMonth = DateTime(now.year, now.month, 1);
+    _selectedDate = DateUtils.dateOnly(now);
     _loadMonth();
   }
 
@@ -126,52 +128,6 @@ class _WerkaArchiveDailyCalendarScreenState
     }
   }
 
-  List<String> _weekdayLabels(MaterialLocalizations localizations) {
-    final narrow = localizations.narrowWeekdays;
-    final start = localizations.firstDayOfWeekIndex;
-    return [
-      for (int i = 0; i < 7; i++) narrow[(start + i) % 7],
-    ];
-  }
-
-  List<_CalendarCell> _buildCells(MaterialLocalizations localizations) {
-    final year = _displayMonth.year;
-    final month = _displayMonth.month;
-    final daysInMonth = DateTime(year, month + 1, 0).day;
-    final firstDayOffset = DateUtils.firstDayOffset(year, month, localizations);
-    final total = ((firstDayOffset + daysInMonth + 6) ~/ 7) * 7;
-    return [
-      for (int index = 0; index < total; index++)
-        if (index < firstDayOffset || index >= firstDayOffset + daysInMonth)
-          const _CalendarCell.empty()
-        else
-          _CalendarCell.day(
-            day: index - firstDayOffset + 1,
-            active: _activeDays.contains(index - firstDayOffset + 1),
-          ),
-    ];
-  }
-
-  void _openDay(int day) {
-    final selected = DateTime(_displayMonth.year, _displayMonth.month, day);
-    Navigator.of(context).pushNamed(
-      AppRoutes.werkaArchiveList,
-      arguments: WerkaArchiveListArgs(
-        kind: widget.kind,
-        period: WerkaArchivePeriod.daily,
-        from: selected,
-        to: selected,
-      ),
-    );
-  }
-
-  bool _isToday(int day) {
-    final now = DateTime.now();
-    return now.year == _displayMonth.year &&
-        now.month == _displayMonth.month &&
-        now.day == day;
-  }
-
   String _monthSummaryLabel(AppLocalizations l10n) {
     final count = _activeDays.length;
     if (count == 0) {
@@ -180,31 +136,26 @@ class _WerkaArchiveDailyCalendarScreenState
     return '$count ta faol kun';
   }
 
-  String _monthAccentLabel(MaterialLocalizations localizations) {
-    return localizations
-        .formatMonthYear(_displayMonth)
-        .split(' ')
-        .first
-        .toUpperCase();
-  }
-
-  void _shiftMonth(int delta) {
-    setState(() {
-      _displayMonth = DateTime(
-        _displayMonth.year,
-        _displayMonth.month + delta,
-        1,
-      );
-    });
-    _loadMonth();
+  void _openDay(DateTime selected) {
+    final normalized = DateUtils.dateOnly(selected);
+    Navigator.of(context).pushNamed(
+      AppRoutes.werkaArchiveList,
+      arguments: WerkaArchiveListArgs(
+        kind: widget.kind,
+        period: WerkaArchivePeriod.daily,
+        from: normalized,
+        to: normalized,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    useNativeNavigationTitle(context, '${_kindTitle(l10n)} • ${l10n.archiveDailyTitle}');
+    final title = '${_kindTitle(l10n)} • ${l10n.archiveDailyTitle}';
+    useNativeNavigationTitle(context, title);
     return AppShell(
-      title: '${_kindTitle(l10n)} • ${l10n.archiveDailyTitle}',
+      title: title,
       subtitle: l10n.archiveCalendarHint,
       leading: NativeBackButtonSlot(
         onPressed: () => Navigator.of(context).maybePop(),
@@ -224,14 +175,7 @@ class _WerkaArchiveDailyCalendarScreenState
 
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final localizations = MaterialLocalizations.of(context);
     final l10n = context.l10n;
-    final cells = _buildCells(localizations);
-    final weekdayLabels = _weekdayLabels(localizations);
-    final rowCount = (cells.length / 7).ceil();
-    const gridSpacing = 8.0;
-    const cellHeight = 50.0;
-    final gridHeight = rowCount * cellHeight + (rowCount - 1) * gridSpacing;
 
     return RefreshIndicator(
       onRefresh: _loadMonth,
@@ -245,328 +189,58 @@ class _WerkaArchiveDailyCalendarScreenState
               borderRadius: BorderRadius.circular(28),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      _CalendarNavButton(
-                        icon: Icons.chevron_left_rounded,
-                        onTap: () => _shiftMonth(-1),
-                      ),
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Text(
-                              localizations.formatMonthYear(_displayMonth),
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.titleLarge,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _monthSummaryLabel(l10n),
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: scheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      _CalendarNavButton(
-                        icon: Icons.chevron_right_rounded,
-                        onTap: () => _shiftMonth(1),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: scheme.primaryContainer.withValues(alpha: 0.7),
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(
-                          color: scheme.primary.withValues(alpha: 0.22),
-                        ),
-                      ),
-                      child: Text(
-                        _monthAccentLabel(localizations),
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: scheme.onPrimaryContainer,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.7,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      for (final label in weekdayLabels)
-                        Expanded(
-                          child: Container(
-                            height: 34,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: scheme.surface.withValues(alpha: 0.45),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              label,
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: scheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _CalendarLegendDot(
-                        color: scheme.primary,
-                        label: 'Faol',
-                      ),
-                      const SizedBox(width: 14),
-                      _CalendarLegendDot(
-                        color: scheme.outline,
-                        label: 'Bugun',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: scheme.surface.withValues(alpha: 0.22),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: scheme.outlineVariant.withValues(alpha: 0.45),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 16,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(12),
-                    child: SizedBox(
-                      height: gridHeight,
-                      child: GridView.builder(
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: cells.length,
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 7,
-                          mainAxisSpacing: gridSpacing,
-                          crossAxisSpacing: gridSpacing,
-                          childAspectRatio: 1,
-                        ),
-                        itemBuilder: (context, index) {
-                          final cell = cells[index];
-                          if (!cell.hasDay) {
-                            return const SizedBox.shrink();
-                          }
-                          return _CalendarDayCell(
-                            day: cell.day!,
-                            active: cell.active,
-                            isToday: _isToday(cell.day!),
-                            onTap: () => _openDay(cell.day!),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  if (_activeDays.isEmpty) ...[
-                    const SizedBox(height: 14),
-                    Text(
-                      context.l10n.archiveCalendarEmptyMonth,
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: Text(
+                      _monthSummaryLabel(l10n),
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),
                     ),
-                  ],
+                  ),
+                  const SizedBox(height: 10),
+                  Theme(
+                    data: theme.copyWith(
+                      colorScheme: scheme.copyWith(
+                        primary: scheme.primary,
+                        onPrimary: scheme.onPrimary,
+                        surface: scheme.surfaceContainerHigh,
+                        onSurface: scheme.onSurface,
+                        onSurfaceVariant: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                    child: CalendarDatePicker(
+                      initialDate: _selectedDate ?? _displayMonth,
+                      firstDate: DateTime(DateTime.now().year - 5),
+                      lastDate: DateTime(DateTime.now().year + 1, 12, 31),
+                      currentDate: DateTime.now(),
+                      onDisplayedMonthChanged: (value) {
+                        final nextMonth = DateTime(value.year, value.month, 1);
+                        if (nextMonth == _displayMonth) {
+                          return;
+                        }
+                        setState(() {
+                          _displayMonth = nextMonth;
+                        });
+                        _loadMonth();
+                      },
+                      onDateChanged: (value) {
+                        setState(() {
+                          _selectedDate = DateUtils.dateOnly(value);
+                        });
+                        _openDay(value);
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CalendarCell {
-  const _CalendarCell.empty()
-      : hasDay = false,
-        day = null,
-        active = false;
-
-  const _CalendarCell.day({
-    required this.day,
-    required this.active,
-  }) : hasDay = true;
-
-  final bool hasDay;
-  final int? day;
-  final bool active;
-}
-
-class _CalendarDayCell extends StatelessWidget {
-  const _CalendarDayCell({
-    required this.day,
-    required this.active,
-    required this.isToday,
-    required this.onTap,
-  });
-
-  final int day;
-  final bool active;
-  final bool isToday;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final theme = Theme.of(context);
-    return Material(
-      color: active
-          ? scheme.primaryContainer
-          : scheme.surfaceContainerHighest.withValues(alpha: 0.38),
-      borderRadius: BorderRadius.circular(18),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Container(
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            gradient: active
-                ? LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      scheme.primaryContainer,
-                      scheme.primaryContainer.withValues(alpha: 0.84),
-                    ],
-                  )
-                : null,
-            border: Border.all(
-              color: active
-                  ? scheme.primary
-                  : isToday
-                      ? scheme.outline
-                      : Colors.transparent,
-              width: active || isToday ? 1.2 : 0,
-            ),
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Text(
-                '$day',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: active
-                      ? scheme.onPrimaryContainer
-                      : scheme.onSurfaceVariant,
-                  fontWeight: active || isToday ? FontWeight.w700 : FontWeight.w500,
-                ),
-              ),
-              if (active)
-                Positioned(
-                  bottom: 6,
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: scheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CalendarLegendDot extends StatelessWidget {
-  const _CalendarLegendDot({
-    required this.color,
-    required this.label,
-  });
-
-  final Color color;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: scheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CalendarNavButton extends StatelessWidget {
-  const _CalendarNavButton({
-    required this.icon,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.surface.withValues(alpha: 0.48),
-      borderRadius: BorderRadius.circular(16),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Container(
-          width: 44,
-          height: 44,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: scheme.outlineVariant.withValues(alpha: 0.55),
-            ),
-          ),
-          child: Icon(icon, color: scheme.onSurfaceVariant),
-        ),
       ),
     );
   }
