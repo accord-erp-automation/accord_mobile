@@ -153,9 +153,6 @@ class _WerkaArchiveDailyCalendarScreenState
   }
 
   void _openDay(int day) {
-    if (!_activeDays.contains(day)) {
-      return;
-    }
     final selected = DateTime(_displayMonth.year, _displayMonth.month, day);
     Navigator.of(context).pushNamed(
       AppRoutes.werkaArchiveList,
@@ -285,7 +282,7 @@ class _WerkaArchiveDailyCalendarScreenState
                       return _CalendarDayCell(
                         day: cell.day!,
                         active: cell.active,
-                        onTap: cell.active ? () => _openDay(cell.day!) : null,
+                        onTap: () => _openDay(cell.day!),
                       );
                     },
                   ),
