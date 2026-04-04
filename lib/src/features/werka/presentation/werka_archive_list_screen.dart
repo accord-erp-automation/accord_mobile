@@ -110,12 +110,16 @@ class _WerkaArchiveListScreenState extends State<WerkaArchiveListScreen> {
   }
 
   String _subtitle(BuildContext context) {
-    final from = widget.args.from;
-    final to = widget.args.to;
+    final from = _from;
+    final to = _to;
     if (from == null || to == null) {
       return '';
     }
-    final localizations = MaterialLocalizations.of(context);
+    final localizations =
+        Localizations.of<MaterialLocalizations>(context, MaterialLocalizations);
+    if (localizations == null) {
+      return '';
+    }
     return '${localizations.formatMediumDate(from)} - ${localizations.formatMediumDate(to)}';
   }
 
@@ -360,7 +364,12 @@ class _WerkaArchiveListScreenState extends State<WerkaArchiveListScreen> {
     if (value == null) {
       return context.l10n.archiveSelectDateAction;
     }
-    return MaterialLocalizations.of(context).formatMediumDate(value);
+    final localizations =
+        Localizations.of<MaterialLocalizations>(context, MaterialLocalizations);
+    if (localizations == null) {
+      return context.l10n.archiveSelectDateAction;
+    }
+    return localizations.formatMediumDate(value);
   }
 
   String _selectedMonthLabel(BuildContext context) {
@@ -368,7 +377,12 @@ class _WerkaArchiveListScreenState extends State<WerkaArchiveListScreen> {
     if (value == null) {
       return context.l10n.archiveSelectMonthAction;
     }
-    return MaterialLocalizations.of(context).formatMonthYear(value);
+    final localizations =
+        Localizations.of<MaterialLocalizations>(context, MaterialLocalizations);
+    if (localizations == null) {
+      return context.l10n.archiveSelectMonthAction;
+    }
+    return localizations.formatMonthYear(value);
   }
 
   Future<void> _pickDailyDate() async {
