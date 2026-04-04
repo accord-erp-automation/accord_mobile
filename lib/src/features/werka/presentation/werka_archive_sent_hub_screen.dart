@@ -290,6 +290,7 @@ class _WerkaArchiveSentHubScreenState extends State<WerkaArchiveSentHubScreen> {
             value: _selectedDateLabel(context),
             actionLabel: l10n.archiveSelectDateAction,
             open: _dailyOpen,
+            topGap: 0,
             onToggle: () => _toggleSection(WerkaArchivePeriod.daily),
             child: Padding(
               padding: EdgeInsets.zero,
@@ -453,6 +454,7 @@ class _SentArchiveExpandableCard extends StatelessWidget {
     required this.value,
     required this.actionLabel,
     required this.open,
+    this.topGap = 14,
     required this.onToggle,
     required this.child,
   });
@@ -461,6 +463,7 @@ class _SentArchiveExpandableCard extends StatelessWidget {
   final String value;
   final String actionLabel;
   final bool open;
+  final double topGap;
   final VoidCallback onToggle;
   final Widget child;
 
@@ -533,7 +536,7 @@ class _SentArchiveExpandableCard extends StatelessWidget {
                   _AnimatedSentCalendarReveal(
                     open: open,
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 14),
+                      padding: EdgeInsets.only(top: topGap),
                       child: child,
                     ),
                   ),
