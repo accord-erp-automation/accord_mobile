@@ -50,6 +50,17 @@ class _WerkaArchiveListScreenState extends State<WerkaArchiveListScreen> {
     super.initState();
     _from = widget.args.from;
     _to = widget.args.to;
+    final now = DateTime.now();
+    if (widget.args.period == WerkaArchivePeriod.daily &&
+        (_from == null || _to == null)) {
+      final selected = DateUtils.dateOnly(now);
+      _from = selected;
+      _to = selected;
+    } else if (widget.args.period == WerkaArchivePeriod.monthly &&
+        (_from == null || _to == null)) {
+      _from = DateTime(now.year, now.month, 1);
+      _to = DateTime(now.year, now.month + 1, 0);
+    }
     _monthPickerYear = (_from ?? DateTime.now()).year;
     _load();
   }
