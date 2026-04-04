@@ -36,6 +36,7 @@ class _WerkaArchiveDailyCalendarScreenState
   DateTime? _selectedDate;
   bool _loading = true;
   Object? _error;
+  bool _calendarOpen = false;
   Set<int> _activeDays = <int>{};
 
   @override
@@ -149,6 +150,15 @@ class _WerkaArchiveDailyCalendarScreenState
     );
   }
 
+  String _selectedDateLabel(BuildContext context) {
+    final selected = _selectedDate;
+    if (selected == null) {
+      return context.l10n.archiveSelectDateAction;
+    }
+    final localizations = MaterialLocalizations.of(context);
+    return localizations.formatMediumDate(selected);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -193,6 +203,60 @@ class _WerkaArchiveDailyCalendarScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: scheme.surface.withValues(alpha: 0.32),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(
+                        color: scheme.outlineVariant.withValues(alpha: 0.38),
+                      ),
+                    ),
+                    padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.archiveDateTitle,
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _selectedDateLabel(context),
+                                style: theme.textTheme.headlineSmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        FilledButton.tonalIcon(
+                          onPressed: () {
+                            setState(() {
+                              _calendarOpen = !_calendarOpen;
+                            });
+                          },
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(0, 48),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
+                          icon: Icon(
+                            _calendarOpen
+                                ? Icons.keyboard_arrow_up_rounded
+                                : Icons.calendar_month_outlined,
+                          ),
+                          label: Text(l10n.archiveSelectDateAction),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 6),
                     child: Text(
@@ -203,38 +267,73 @@ class _WerkaArchiveDailyCalendarScreenState
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Theme(
-                    data: theme.copyWith(
-                      colorScheme: scheme.copyWith(
-                        primary: scheme.primary,
-                        onPrimary: scheme.onPrimary,
-                        surface: scheme.surfaceContainerHigh,
-                        onSurface: scheme.onSurface,
-                        onSurfaceVariant: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                    child: CalendarDatePicker(
-                      initialDate: _selectedDate ?? _displayMonth,
-                      firstDate: DateTime(DateTime.now().year - 5),
-                      lastDate: DateTime(DateTime.now().year + 1, 12, 31),
-                      currentDate: DateTime.now(),
-                      onDisplayedMonthChanged: (value) {
-                        final nextMonth = DateTime(value.year, value.month, 1);
-                        if (nextMonth == _displayMonth) {
-                          return;
-                        }
-                        setState(() {
-                          _displayMonth = nextMonth;
-                        });
-                        _loadMonth();
-                      },
-                      onDateChanged: (value) {
-                        setState(() {
-                          _selectedDate = DateUtils.dateOnly(value);
-                        });
-                        _openDay(value);
-                      },
-                    ),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 280),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    transitionBuilder: (child, animation) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SizeTransition(
+                          sizeFactor: animation,
+                          axisAlignment: -1,
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: !_calendarOpen
+                        ? const SizedBox.shrink()
+                        : Container(
+                            key: const ValueKey('daily_calendar_open'),
+                            decoration: BoxDecoration(
+                              color: scheme.surface.withValues(alpha: 0.22),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: scheme.outlineVariant.withValues(
+                                  alpha: 0.45,
+                                ),
+                              ),
+                            ),
+                            padding: const EdgeInsets.all(12),
+                            child: Theme(
+                              data: theme.copyWith(
+                                colorScheme: scheme.copyWith(
+                                  primary: scheme.primary,
+                                  onPrimary: scheme.onPrimary,
+                                  surface: scheme.surfaceContainerHigh,
+                                  onSurface: scheme.onSurface,
+                                  onSurfaceVariant: scheme.onSurfaceVariant,
+                                ),
+                              ),
+                              child: CalendarDatePicker(
+                                initialDate: _selectedDate ?? _displayMonth,
+                                firstDate: DateTime(DateTime.now().year - 5),
+                                lastDate: DateTime(DateTime.now().year + 1, 12, 31),
+                                currentDate: DateTime.now(),
+                                onDisplayedMonthChanged: (value) {
+                                  final nextMonth = DateTime(
+                                    value.year,
+                                    value.month,
+                                    1,
+                                  );
+                                  if (nextMonth == _displayMonth) {
+                                    return;
+                                  }
+                                  setState(() {
+                                    _displayMonth = nextMonth;
+                                  });
+                                  _loadMonth();
+                                },
+                                onDateChanged: (value) {
+                                  setState(() {
+                                    _selectedDate = DateUtils.dateOnly(value);
+                                    _calendarOpen = false;
+                                  });
+                                  _openDay(value);
+                                },
+                              ),
+                            ),
+                          ),
                   ),
                 ],
               ),
