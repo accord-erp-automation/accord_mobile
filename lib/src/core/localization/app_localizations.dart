@@ -202,7 +202,7 @@ class AppLocalizations {
         'Failed to load notifications',
         'Не удалось загрузить уведомления',
       );
-  String get archiveTitle => _t('Arxiv', 'Archive', 'Архив');
+  String get archiveTitle => _t('Arxiv', 'Data', 'Данные');
   String get archivePlaceholder => _t(
         'Bu bo‘limga keyin yangi archive logikasi qo‘yiladi.',
         'A new archive flow will be added here later.',

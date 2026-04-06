@@ -95,12 +95,12 @@ class WerkaDock extends StatelessWidget {
           trailing: [
             DockButton(
               nativeId: 'werka_archive',
-              nativeSymbol: 'archivebox',
-              nativeSelectedSymbol: 'archivebox.fill',
+              nativeSymbol: 'checklist',
+              nativeSelectedSymbol: 'checklist.checked',
               nativeRouteName: AppRoutes.werkaArchive,
               nativeReplaceStack: true,
-              icon: Icons.archive_outlined,
-              selectedIcon: Icons.archive_rounded,
+              icon: Icons.data_object_outlined,
+              selectedIcon: Icons.data_object_rounded,
               active: activeTab == WerkaDockTab.archive,
               compact: compact,
               onTap: () {
