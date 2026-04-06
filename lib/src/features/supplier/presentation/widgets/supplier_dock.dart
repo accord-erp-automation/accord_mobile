@@ -35,12 +35,10 @@ class SupplierDock extends StatelessWidget {
               AppSession.instance.profile,
             ) &&
             activeTab != SupplierDockTab.notifications;
-        return SharedDockHero(
-          tag: 'supplier',
-          child: ActionDock(
-            compact: compact,
-            tightToEdges: tightToEdges,
-            leading: [
+        return ActionDock(
+          compact: compact,
+          tightToEdges: tightToEdges,
+          leading: [
             DockButton(
               nativeId: 'supplier_home',
               nativeSymbol: 'house',
@@ -82,8 +80,8 @@ class SupplierDock extends StatelessWidget {
                 );
               },
             ),
-            ],
-            center: DockButton(
+          ],
+          center: DockButton(
             nativeId: 'supplier_create',
             nativeSymbol: 'plus',
             nativeSelectedSymbol: 'plus',
@@ -98,8 +96,8 @@ class SupplierDock extends StatelessWidget {
               }
               Navigator.of(context).pushNamed(AppRoutes.supplierItemPicker);
             },
-            ),
-            trailing: [
+          ),
+          trailing: [
             DockButton(
               nativeId: 'supplier_recent',
               nativeSymbol: 'clock',
@@ -143,8 +141,7 @@ class SupplierDock extends StatelessWidget {
                 );
               },
             ),
-            ],
-          ),
+          ],
         );
       },
     );
