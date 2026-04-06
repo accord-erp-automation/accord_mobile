@@ -139,9 +139,9 @@ class _ArchiveModuleRow extends StatelessWidget {
           customBorder: shape,
           onTap: onTap,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 80),
+            constraints: const BoxConstraints(minHeight: 74),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 17),
               child: Row(
                 children: [
                   SizedBox(
