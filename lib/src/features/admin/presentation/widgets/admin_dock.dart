@@ -1,4 +1,5 @@
 import '../../../../app/app_router.dart';
+import '../../../../core/native_back_button_bridge.dart';
 import '../../../../core/widgets/common_widgets.dart';
 import '../../../../core/widgets/logout_prompt.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +26,9 @@ class AdminDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final navigator = NativeBackButtonBridge.instance.navigatorKey.currentState;
+    final navigatorContext =
+        NativeBackButtonBridge.instance.navigatorKey.currentContext;
     return ActionDock(
       compact: compact,
       tightToEdges: tightToEdges,
@@ -41,8 +45,11 @@ class AdminDock extends StatelessWidget {
           compact: compact,
           onTap: () {
             if (activeTab == AdminDockTab.home) return;
-            Navigator.of(context)
-                .pushNamedAndRemoveUntil(AppRoutes.adminHome, (route) => false);
+            if (navigator == null) return;
+            navigator.pushNamedAndRemoveUntil(
+              AppRoutes.adminHome,
+              (route) => false,
+            );
           },
         ),
         DockButton(
@@ -57,7 +64,7 @@ class AdminDock extends StatelessWidget {
           compact: compact,
           onTap: () {
             if (activeTab == AdminDockTab.suppliers) return;
-            Navigator.of(context).pushNamedAndRemoveUntil(
+            navigator?.pushNamedAndRemoveUntil(
               AppRoutes.adminSuppliers,
               (route) => false,
             );
@@ -76,7 +83,7 @@ class AdminDock extends StatelessWidget {
         compact: compact,
         onTap: () {
           if (activeTab == AdminDockTab.settings) return;
-          Navigator.of(context).pushNamedAndRemoveUntil(
+          navigator?.pushNamedAndRemoveUntil(
             AppRoutes.adminCreateHub,
             (route) => false,
           );
@@ -95,7 +102,7 @@ class AdminDock extends StatelessWidget {
           compact: compact,
           onTap: () {
             if (activeTab == AdminDockTab.activity) return;
-            Navigator.of(context).pushNamedAndRemoveUntil(
+            navigator?.pushNamedAndRemoveUntil(
               AppRoutes.adminActivity,
               (route) => false,
             );
@@ -112,14 +119,19 @@ class AdminDock extends StatelessWidget {
           active: activeTab == AdminDockTab.profile,
           compact: compact,
           onHoldComplete: activeTab == AdminDockTab.profile
-              ? () => showLogoutPrompt(context)
+              ? navigatorContext == null
+                  ? null
+                  : () => showLogoutPrompt(navigatorContext)
               : null,
           onTap: () {
             if (activeTab == AdminDockTab.profile) {
               return;
             }
-            Navigator.of(context)
-                .pushNamedAndRemoveUntil(AppRoutes.profile, (route) => false);
+            if (navigator == null) return;
+            navigator.pushNamedAndRemoveUntil(
+              AppRoutes.profile,
+              (route) => false,
+            );
           },
         ),
       ],
