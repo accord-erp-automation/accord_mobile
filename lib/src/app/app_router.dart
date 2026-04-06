@@ -142,7 +142,6 @@ class AppRouter {
     AppRoutes.supplierSubmittedCategoryDetail,
     AppRoutes.supplierStatusDetail,
     AppRoutes.supplierQty,
-    AppRoutes.werkaCreateHub,
     AppRoutes.werkaArchiveSentHub,
     AppRoutes.werkaArchiveDailyCalendar,
     AppRoutes.werkaArchiveMonthlyCalendar,
