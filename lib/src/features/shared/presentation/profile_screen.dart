@@ -354,10 +354,12 @@ class _ProfileScreenState extends State<ProfileScreen>
               physics: const TopRefreshScrollPhysics(),
               padding: EdgeInsets.fromLTRB(0, 0, 0, bottomPadding),
               children: [
-                SmoothAppear(
-                  delay: const Duration(milliseconds: 20),
-                  child: _ProfilePanel(
-                    child: Column(
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 10, 4, 0),
+                  child: SmoothAppear(
+                    delay: const Duration(milliseconds: 20),
+                    child: _ProfilePanel(
+                      child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
@@ -575,6 +577,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                           onChanged: (value) => _toggleBiometric(value),
                         ),
                       ],
+                      ),
                     ),
                   ),
                 ),
