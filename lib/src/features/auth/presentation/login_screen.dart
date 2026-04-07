@@ -268,6 +268,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         backgroundColor: ThemeController.instance.isDark
                             ? const Color(0xFF000000)
                             : scheme.surface,
+                        isDarkBackground: ThemeController.instance.isDark,
                       ),
                     ),
                   ),

@@ -152,6 +152,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         outlineColor: scheme.outlineVariant,
                         accentColor: scheme.primary,
                         backgroundColor: authBackgroundColor,
+                        isDarkBackground: ThemeController.instance.isDark,
                       ),
                     ),
                   ),
@@ -485,11 +486,13 @@ class AuthAmbientOutlineBackground extends StatefulWidget {
     required this.outlineColor,
     required this.accentColor,
     required this.backgroundColor,
+    required this.isDarkBackground,
   });
 
   final Color outlineColor;
   final Color accentColor;
   final Color backgroundColor;
+  final bool isDarkBackground;
 
   @override
   State<AuthAmbientOutlineBackground> createState() =>
@@ -826,6 +829,7 @@ class _AmbientOutlineBackgroundState extends State<AuthAmbientOutlineBackground>
             outlineColor: widget.outlineColor,
             accentColor: widget.accentColor,
             backgroundColor: widget.backgroundColor,
+            isDarkBackground: widget.isDarkBackground,
           ),
         );
       },
@@ -842,6 +846,7 @@ class _AmbientOutlinePainter extends CustomPainter {
     required this.outlineColor,
     required this.accentColor,
     required this.backgroundColor,
+    required this.isDarkBackground,
   });
 
   final double phase;
@@ -851,20 +856,25 @@ class _AmbientOutlinePainter extends CustomPainter {
   final Color outlineColor;
   final Color accentColor;
   final Color backgroundColor;
+  final bool isDarkBackground;
 
   @override
   void paint(Canvas canvas, Size size) {
     final _AmbientSceneMetrics metrics = _AmbientSceneMetrics.fromSize(size);
     final double impact =
         Curves.easeOut.transform(impactEnergy.clamp(0.0, 1.0).toDouble());
+    final double ovalStrokeWidth = isDarkBackground ? 2.0 : 2.35;
+    final double ovalAlpha = isDarkBackground ? 0.28 : 0.46;
+    final double accentStrokeWidth = isDarkBackground ? 1.45 : 1.7;
+    final double accentAlpha = isDarkBackground ? 0.36 : 0.48;
     final ovalPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0
-      ..color = outlineColor.withValues(alpha: 0.28);
+      ..strokeWidth = ovalStrokeWidth
+      ..color = outlineColor.withValues(alpha: ovalAlpha);
     final accentPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.45 + (impact * 0.75)
-      ..color = accentColor.withValues(alpha: 0.36 + (impact * 0.12));
+      ..strokeWidth = accentStrokeWidth + (impact * 0.75)
+      ..color = accentColor.withValues(alpha: accentAlpha + (impact * 0.12));
     final cookieMaskPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 5.2 + (impact * 1.9)

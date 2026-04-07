@@ -132,6 +132,8 @@ class _AppEntryScreenState extends State<AppEntryScreen> {
                 outlineColor: scheme.outlineVariant,
                 accentColor: scheme.primary,
                 backgroundColor: authBackgroundColor,
+                isDarkBackground:
+                    Theme.of(context).brightness == Brightness.dark,
               ),
             ),
           ),
