@@ -136,23 +136,37 @@ class _LoginScreenState extends State<LoginScreen> {
           inputDecorationTheme: theme.inputDecorationTheme.copyWith(
             filled: true,
             fillColor: const Color(0xFF000000),
+            labelStyle: theme.inputDecorationTheme.labelStyle?.copyWith(
+              color: scheme.onSurface.withValues(alpha: 0.82),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+            hintStyle: theme.inputDecorationTheme.hintStyle?.copyWith(
+              color: scheme.onSurface.withValues(alpha: 0.44),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 18,
+              vertical: 17,
+            ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(18),
               borderSide: BorderSide(
-                color: scheme.outlineVariant.withValues(alpha: 0.72),
+                color: scheme.outlineVariant.withValues(alpha: 0.94),
+                width: 1.0,
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(18),
               borderSide: BorderSide(
-                color: scheme.primary.withValues(alpha: 0.92),
-                width: 1.2,
+                color: scheme.primary.withValues(alpha: 0.96),
+                width: 1.35,
               ),
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(18),
               borderSide: BorderSide(
-                color: scheme.outlineVariant.withValues(alpha: 0.72),
+                color: scheme.outlineVariant.withValues(alpha: 0.94),
+                width: 1.0,
               ),
             ),
           ),
