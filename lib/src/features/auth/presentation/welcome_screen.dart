@@ -376,7 +376,9 @@ class _CyclingWelcomeHeadlineState extends State<_CyclingWelcomeHeadline>
             progress: _controller.value,
             child: Text(
               headline,
-              key: ValueKey<String>('${locale.languageCode}-${_phase.name}'),
+              key: ValueKey<String>(
+                '${locale.languageCode}-${_headlinePhaseKey(_phase)}',
+              ),
               maxLines: 3,
               softWrap: true,
               style: widget.textStyle,
@@ -440,6 +442,17 @@ enum _HeadlineMotionPhase {
   idle,
   exiting,
   entering,
+}
+
+String _headlinePhaseKey(_HeadlineMotionPhase phase) {
+  switch (phase) {
+    case _HeadlineMotionPhase.idle:
+      return 'idle';
+    case _HeadlineMotionPhase.exiting:
+      return 'exiting';
+    case _HeadlineMotionPhase.entering:
+      return 'entering';
+  }
 }
 
 class _AmbientOutlineBackground extends StatefulWidget {
