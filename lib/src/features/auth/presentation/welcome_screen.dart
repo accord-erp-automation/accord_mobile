@@ -129,7 +129,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       builder: (context, _) {
         final currentLocale = LocaleController.instance.locale;
         final currentVariant = ThemeController.instance.variant;
-        final Color authBackgroundColor = scheme.surface;
+        final Color authBackgroundColor = ThemeController.instance.isDark
+            ? const Color(0xFF000000)
+            : scheme.surface;
 
         return Scaffold(
           backgroundColor: widget.useSharedBackground

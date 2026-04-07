@@ -265,7 +265,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: AuthAmbientOutlineBackground(
                         outlineColor: scheme.outlineVariant,
                         accentColor: scheme.primary,
-                        backgroundColor: scheme.surface,
+                        backgroundColor: ThemeController.instance.isDark
+                            ? const Color(0xFF000000)
+                            : scheme.surface,
                       ),
                     ),
                   ),

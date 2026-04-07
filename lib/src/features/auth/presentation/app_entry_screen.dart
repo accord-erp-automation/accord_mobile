@@ -89,7 +89,10 @@ class _AppEntryScreenState extends State<AppEntryScreen> {
   Widget build(BuildContext context) {
     if (_showWelcome || _showLogin) {
       final scheme = Theme.of(context).colorScheme;
-      final Color authBackgroundColor = scheme.surface;
+      final Color authBackgroundColor =
+          Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF000000)
+              : scheme.surface;
       final Widget currentScreen = _showWelcome
           ? WelcomeScreen(
               key: const ValueKey<String>('welcome-screen'),
