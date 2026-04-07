@@ -193,6 +193,8 @@ class _LoginScreenState extends State<LoginScreen> {
         final scheme = theme.colorScheme;
         final l10n = AppLocalizations.of(context);
         final bool isDark = ThemeController.instance.isDark;
+        final Color authBackgroundColor =
+            isDark ? const Color(0xFF000000) : scheme.surfaceContainerLow;
         final Color inputFillColor =
             isDark ? const Color(0xFF000000) : scheme.surface;
         final darkTheme = theme.copyWith(
@@ -252,7 +254,7 @@ class _LoginScreenState extends State<LoginScreen> {
             subtitle: '',
             backgroundColor: widget.useSharedBackground
                 ? Colors.transparent
-                : const Color(0xFF000000),
+                : authBackgroundColor,
             leading: widget.onBack == null
                 ? null
                 : IconButton(
@@ -268,9 +270,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: AuthAmbientOutlineBackground(
                         outlineColor: scheme.outlineVariant,
                         accentColor: scheme.primary,
-                        backgroundColor: ThemeController.instance.isDark
-                            ? const Color(0xFF000000)
-                            : scheme.surface,
+                        backgroundColor: authBackgroundColor,
                         isDarkBackground: ThemeController.instance.isDark,
                       ),
                     ),

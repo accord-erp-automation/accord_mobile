@@ -131,7 +131,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         final currentVariant = ThemeController.instance.variant;
         final Color authBackgroundColor = ThemeController.instance.isDark
             ? const Color(0xFF000000)
-            : scheme.surface;
+            : scheme.surfaceContainerLow;
 
         return Scaffold(
           backgroundColor: widget.useSharedBackground
