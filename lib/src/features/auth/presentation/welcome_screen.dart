@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/localization/locale_controller.dart';
@@ -340,40 +341,10 @@ class _CyclingWelcomeHeadlineState extends State<_CyclingWelcomeHeadline> {
           curve: Curves.easeOutCubic,
           reverseCurve: Curves.easeInCubic,
         );
-        final Animation<double> lift = Tween<double>(
-          begin: 8,
-          end: 0,
-        ).animate(
-          CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutQuart,
-            reverseCurve: Curves.easeInOutCubic,
-          ),
-        );
-        final Animation<double> scale = Tween<double>(
-          begin: 0.985,
-          end: 1,
-        ).animate(
-          CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutQuart,
-            reverseCurve: Curves.easeInOutCubic,
-          ),
-        );
         return FadeTransition(
           opacity: fade,
-          child: AnimatedBuilder(
+          child: _SplitBlurTransition(
             animation: animation,
-            builder: (context, childWidget) {
-              return Transform.translate(
-                offset: Offset(0, lift.value),
-                child: Transform.scale(
-                  scale: scale.value,
-                  alignment: Alignment.centerLeft,
-                  child: childWidget,
-                ),
-              );
-            },
             child: child,
           ),
         );
@@ -383,6 +354,71 @@ class _CyclingWelcomeHeadlineState extends State<_CyclingWelcomeHeadline> {
         key: ValueKey<String>(locale.languageCode),
         style: widget.textStyle,
       ),
+    );
+  }
+}
+
+class _SplitBlurTransition extends StatelessWidget {
+  const _SplitBlurTransition({
+    required this.animation,
+    required this.child,
+  });
+
+  final Animation<double> animation;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      child: child,
+      builder: (context, childWidget) {
+        final double t = Curves.easeOutQuart.transform(animation.value);
+        final double travel = 1 - t;
+        final double sigma = 0.01 + (travel * 8);
+        final double lift = travel * 10;
+        final double split = travel * 12;
+        final double scale = 0.992 + (0.008 * t);
+
+        return Transform.translate(
+          offset: Offset(0, lift),
+          child: Transform.scale(
+            scale: scale,
+            alignment: Alignment.centerLeft,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(
+                sigmaX: sigma,
+                sigmaY: sigma * 0.45,
+              ),
+              child: Stack(
+                alignment: Alignment.topLeft,
+                children: <Widget>[
+                  ClipRect(
+                    child: Align(
+                      alignment: Alignment.topLeft,
+                      heightFactor: 0.5,
+                      child: Transform.translate(
+                        offset: Offset(-split, -travel * 2),
+                        child: childWidget,
+                      ),
+                    ),
+                  ),
+                  ClipRect(
+                    child: Align(
+                      alignment: Alignment.bottomLeft,
+                      heightFactor: 0.5,
+                      child: Transform.translate(
+                        offset: Offset(split, travel * 2),
+                        child: childWidget,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
