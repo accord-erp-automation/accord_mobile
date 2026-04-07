@@ -60,7 +60,10 @@ class _LoginScreenState extends State<LoginScreen> {
     if (widget.onBack == null) {
       return;
     }
-    _trackingBackSwipe = details.globalPosition.dx <= 28;
+    final double activationZone = (MediaQuery.of(context).size.width * 0.28)
+        .clamp(72.0, 132.0)
+        .toDouble();
+    _trackingBackSwipe = details.globalPosition.dx <= activationZone;
     _backSwipeTriggered = false;
   }
 
@@ -70,14 +73,14 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     final double nextOffset =
-        (_backSwipeOffset + (details.primaryDelta ?? 0)).clamp(0.0, 160.0);
+        (_backSwipeOffset + (details.primaryDelta ?? 0)).clamp(0.0, 180.0);
     if (nextOffset != _backSwipeOffset) {
       setState(() {
         _backSwipeOffset = nextOffset;
       });
     }
 
-    if (!_backSwipeTriggered && _backSwipeOffset >= 92) {
+    if (!_backSwipeTriggered && _backSwipeOffset >= 72) {
       _backSwipeTriggered = true;
       widget.onBack?.call();
     }
