@@ -30,6 +30,8 @@ These rules are important and reflect the current production-oriented architectu
 - `Delivery Note` is the source of truth for customer delivery state
 - ERP custom fields, not comments, define business state
 - comments are discussion and audit history only
+- Werka submit sends explicit `customer_ref`, `item_code`, and `qty`; backend should create directly from that payload
+- multi-line Werka dispatch uses `/v1/mobile/werka/customer-issue/batch-create`
 - a role should read from one shared store instead of each screen owning its own copy of the same state
 - logout must clear all session-scoped runtime state, not just the token
 - release APKs must use the public domain backend, not `127.0.0.1` or `localhost`
@@ -49,6 +51,7 @@ Current `Delivery Note` state mapping:
 - `accord_ui_status`
   - `pending`
   - `confirm`
+  - `partial`
   - `rejected`
 
 Notes:
@@ -173,6 +176,7 @@ Werka flow includes:
 - supplier receipt confirmation and return flow
 - unannounced supplier flow
 - customer issue flow
+- batch customer issue flow
 - customer delivery discussion entry points
 
 Primary screens:
@@ -187,6 +191,7 @@ Primary screens:
 - `lib/src/features/werka/presentation/werka_create_hub_screen.dart`
 - `lib/src/features/werka/presentation/werka_unannounced_supplier_screen.dart`
 - `lib/src/features/werka/presentation/werka_customer_issue_customer_screen.dart`
+- `lib/src/features/werka/presentation/werka_batch_dispatch_screen.dart`
 - `lib/src/features/werka/presentation/werka_success_screen.dart`
 
 ### Customer
@@ -278,6 +283,7 @@ Main API areas:
 - auth and profile
 - supplier summary/history/status/items/dispatch
 - Werka summary/pending/history/status/confirm/create flows
+- Werka single and batch customer issue create flows
 - customer summary/history/status/detail/respond
 - notification detail and comment APIs
 - admin settings, directories, item creation, and activity
@@ -424,5 +430,7 @@ The app currently includes:
 - multi-device push token support on the backend side
 - structured customer rejection UX
 - delivery discussion entry points for Customer and Werka
+- fast Werka single-submit path
+- Werka batch dispatch support against `/v1/mobile/werka/customer-issue/batch-create`
 
 The main remaining product/architecture focus is continued cleanup of role-store consistency and history/source alignment.
