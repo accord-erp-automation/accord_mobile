@@ -371,16 +371,30 @@ class _WerkaCreateHubToggleButton extends StatelessWidget {
                   onTap: onTap,
                   child: SizedBox.square(
                     dimension: expandedSize,
-                    child: Center(
-                      child: Transform.rotate(
-                        angle: (-math.pi / 4) * iconProgress,
-                        alignment: Alignment.center,
-                        child: Icon(
-                          Icons.add_rounded,
-                          color: foregroundColor,
-                          size: 28.5,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Opacity(
+                          opacity: 1 - iconProgress,
+                          child: Transform.rotate(
+                            angle: (-math.pi / 4) * iconProgress,
+                            alignment: Alignment.center,
+                            child: Icon(
+                              Icons.add_rounded,
+                              color: foregroundColor,
+                              size: 28.5,
+                            ),
+                          ),
                         ),
-                      ),
+                        Opacity(
+                          opacity: iconProgress,
+                          child: Icon(
+                            Icons.close_rounded,
+                            color: foregroundColor,
+                            size: 28.5,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
