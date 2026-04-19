@@ -41,6 +41,7 @@ class CustomerDock extends StatelessWidget {
           liftCenter: false,
           leading: [
             DockButton(
+              label: 'Uy',
               nativeId: 'customer_home',
               nativeSymbol: 'house',
               nativeSelectedSymbol: 'house.fill',
@@ -66,6 +67,7 @@ class CustomerDock extends StatelessWidget {
             ),
           ],
           center: DockButton(
+            label: 'Bildirish',
             nativeId: 'customer_notifications',
             nativeSymbol: 'bell',
             nativeSelectedSymbol: 'bell.fill',
@@ -93,6 +95,7 @@ class CustomerDock extends StatelessWidget {
           ),
           trailing: [
             DockButton(
+              label: 'Profil',
               nativeId: 'customer_profile',
               nativeSymbol: 'person.crop.circle',
               nativeSelectedSymbol: 'person.crop.circle.fill',

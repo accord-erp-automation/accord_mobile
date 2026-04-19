@@ -39,6 +39,7 @@ class WerkaDock extends StatelessWidget {
           tightToEdges: tightToEdges,
           leading: [
             DockButton(
+              label: 'Uy',
               nativeId: 'werka_home',
               nativeSymbol: 'house',
               nativeSelectedSymbol: 'house.fill',
@@ -59,6 +60,7 @@ class WerkaDock extends StatelessWidget {
               },
             ),
             DockButton(
+              label: 'Bildirish',
               nativeId: 'werka_notifications',
               nativeSymbol: 'bell',
               nativeSelectedSymbol: 'bell.fill',
@@ -81,6 +83,7 @@ class WerkaDock extends StatelessWidget {
             ),
           ],
           center: DockButton(
+            label: 'Yangi',
             nativeId: 'werka_create',
             nativeSymbol: 'plus',
             nativeSelectedSymbol: 'plus',
@@ -95,6 +98,7 @@ class WerkaDock extends StatelessWidget {
           ),
           trailing: [
             DockButton(
+              label: 'Arxiv',
               nativeId: 'werka_archive',
               nativeSymbol: 'checklist',
               nativeSelectedSymbol: 'checklist.checked',
@@ -115,6 +119,7 @@ class WerkaDock extends StatelessWidget {
               },
             ),
             DockButton(
+              label: 'Profil',
               nativeId: 'werka_profile',
               nativeSymbol: 'person.crop.circle',
               nativeSelectedSymbol: 'person.crop.circle.fill',

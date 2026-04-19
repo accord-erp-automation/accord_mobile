@@ -30,6 +30,7 @@ class AdminDock extends StatelessWidget {
       tightToEdges: tightToEdges,
       leading: [
         DockButton(
+          label: 'Uy',
           nativeId: 'admin_home',
           nativeSymbol: 'house',
           nativeSelectedSymbol: 'house.fill',
@@ -46,6 +47,7 @@ class AdminDock extends StatelessWidget {
           },
         ),
         DockButton(
+          label: 'Yetkazuvchilar',
           nativeId: 'admin_suppliers',
           nativeSymbol: 'person.3',
           nativeSelectedSymbol: 'person.3.fill',
@@ -65,6 +67,7 @@ class AdminDock extends StatelessWidget {
         ),
       ],
       center: DockButton(
+        label: 'Yangi',
         nativeId: 'admin_create',
         nativeSymbol: 'plus',
         nativeSelectedSymbol: 'plus',
@@ -84,6 +87,7 @@ class AdminDock extends StatelessWidget {
       ),
       trailing: [
         DockButton(
+          label: 'Faoliyat',
           nativeId: 'admin_activity',
           nativeSymbol: 'clock',
           nativeSelectedSymbol: 'clock.fill',
@@ -102,6 +106,7 @@ class AdminDock extends StatelessWidget {
           },
         ),
         DockButton(
+          label: 'Profil',
           nativeId: 'admin_profile',
           nativeSymbol: 'person.crop.circle',
           nativeSelectedSymbol: 'person.crop.circle.fill',

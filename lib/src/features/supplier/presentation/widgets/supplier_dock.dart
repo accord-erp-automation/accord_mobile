@@ -40,6 +40,7 @@ class SupplierDock extends StatelessWidget {
           tightToEdges: tightToEdges,
           leading: [
             DockButton(
+              label: 'Uy',
               nativeId: 'supplier_home',
               nativeSymbol: 'house',
               nativeSelectedSymbol: 'house.fill',
@@ -60,6 +61,7 @@ class SupplierDock extends StatelessWidget {
               },
             ),
             DockButton(
+              label: 'Bildirish',
               nativeId: 'supplier_notifications',
               nativeSymbol: 'bell',
               nativeSelectedSymbol: 'bell.fill',
@@ -82,6 +84,7 @@ class SupplierDock extends StatelessWidget {
             ),
           ],
           center: DockButton(
+            label: 'Yangi',
             nativeId: 'supplier_create',
             nativeSymbol: 'plus',
             nativeSelectedSymbol: 'plus',
@@ -99,6 +102,7 @@ class SupplierDock extends StatelessWidget {
           ),
           trailing: [
             DockButton(
+              label: 'Tarix',
               nativeId: 'supplier_recent',
               nativeSymbol: 'clock',
               nativeSelectedSymbol: 'clock.fill',
@@ -119,6 +123,7 @@ class SupplierDock extends StatelessWidget {
               },
             ),
             DockButton(
+              label: 'Profil',
               nativeId: 'supplier_profile',
               nativeSymbol: 'person.crop.circle',
               nativeSelectedSymbol: 'person.crop.circle.fill',
