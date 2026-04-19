@@ -63,7 +63,9 @@ class _WerkaCreateHubOverlay extends StatefulWidget {
 
 class _WerkaCreateHubOverlayState extends State<_WerkaCreateHubOverlay>
     with TickerProviderStateMixin {
-  static const double _toggleBottom = 112.0;
+  // Keep the overlay toggle centered on the same screen coordinate as the
+  // dock's primary "+" button.
+  static const double _toggleBottom = 104.0;
   static const double _toggleCollapsedSize = 58.0;
   static const double _toggleExpandedSize = 84.0;
   static const double _menuGap = 34.0;
