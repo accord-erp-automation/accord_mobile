@@ -9,6 +9,7 @@ import '../../../core/widgets/top_refresh_scroll_physics.dart';
 import '../../shared/models/app_models.dart';
 import '../state/werka_store.dart';
 import 'widgets/werka_dock.dart';
+import 'widgets/werka_create_hub_sheet.dart';
 import 'package:flutter/material.dart';
 
 class WerkaHomeScreen extends StatefulWidget {
@@ -65,7 +66,10 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
       if (!mounted) {
         return;
       }
-      Navigator.of(context).pushNamed(route);
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        route,
+        (route) => false,
+      );
     });
   }
 
@@ -76,7 +80,7 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
       title: context.l10n.werkaRoleName,
       subtitle: '',
       nativeTopBar: true,
-      drawer: _WerkaHomeDrawer(onSelected: _openDrawerRoute),
+      drawer: _WerkaHomeDrawer(onNavigate: _openDrawerRoute),
       bottom: const WerkaDock(activeTab: WerkaDockTab.home),
       contentPadding: EdgeInsets.zero,
       child: Column(
@@ -133,34 +137,56 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
 
 class _WerkaHomeDrawer extends StatelessWidget {
   const _WerkaHomeDrawer({
-    required this.onSelected,
+    required this.onNavigate,
   });
 
-  final ValueChanged<String> onSelected;
+  final ValueChanged<String> onNavigate;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final onSurfaceVariant = scheme.onSurfaceVariant;
+    const selectedIndex = 0;
     return SizedBox(
-      width: 284,
+      width: 272,
       child: NavigationDrawer(
         backgroundColor: scheme.surfaceContainerLow,
         indicatorColor: scheme.secondaryContainer,
         surfaceTintColor: Colors.transparent,
-        selectedIndex: -1,
-        tilePadding: const EdgeInsets.symmetric(horizontal: 6),
+        selectedIndex: selectedIndex,
+        tilePadding: const EdgeInsets.symmetric(horizontal: 4),
         onDestinationSelected: (index) {
           if (index == 0) {
-            onSelected(AppRoutes.profile);
+            Navigator.of(context).pop();
             return;
           }
           if (index == 1) {
-            onSelected(AppRoutes.werkaArchive);
+            Navigator.of(context).pop();
+            onNavigate(AppRoutes.werkaNotifications);
+            return;
+          }
+          if (index == 2) {
+            Navigator.of(context).pop();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!context.mounted) {
+                return;
+              }
+              showWerkaCreateHubSheet(context);
+            });
+            return;
+          }
+          if (index == 3) {
+            Navigator.of(context).pop();
+            onNavigate(AppRoutes.werkaArchive);
+            return;
+          }
+          if (index == 4) {
+            Navigator.of(context).pop();
+            onNavigate(AppRoutes.profile);
           }
         },
         header: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 14, 18, 2),
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 2),
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
@@ -173,16 +199,30 @@ class _WerkaHomeDrawer extends StatelessWidget {
           ),
         ),
         children: [
-          NavigationDrawerDestination(
-            icon: const Icon(Icons.person_outline_rounded),
-            selectedIcon: const Icon(Icons.person_rounded),
-            label: Text(context.l10n.profileTitle),
+          const NavigationDrawerDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home_rounded),
+            label: Text('Uy'),
           ),
-          const SizedBox(height: 2),
+          const NavigationDrawerDestination(
+            icon: Icon(Icons.notifications_outlined),
+            selectedIcon: Icon(Icons.notifications_rounded),
+            label: Text('Bildirish'),
+          ),
+          const NavigationDrawerDestination(
+            icon: Icon(Icons.add_rounded),
+            selectedIcon: Icon(Icons.add_rounded),
+            label: Text('Yangi'),
+          ),
           NavigationDrawerDestination(
             icon: const Icon(Icons.archive_outlined),
             selectedIcon: const Icon(Icons.archive_rounded),
             label: Text(context.l10n.archiveTitle),
+          ),
+          NavigationDrawerDestination(
+            icon: const Icon(Icons.person_outline_rounded),
+            selectedIcon: const Icon(Icons.person_rounded),
+            label: Text(context.l10n.profileTitle),
           ),
         ],
       ),
