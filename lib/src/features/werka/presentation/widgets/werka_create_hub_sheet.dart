@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui';
 
 import '../../../../app/app_router.dart';
 import '../../../../core/localization/app_localizations.dart';
@@ -76,7 +77,8 @@ class _WerkaCreateHubOverlayState extends State<_WerkaCreateHubOverlay>
   )..forward();
   late final AnimationController _toggleController = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 180),
+    duration: const Duration(milliseconds: 100),
+    reverseDuration: const Duration(milliseconds: 80),
   )..forward();
 
   @override
@@ -84,6 +86,18 @@ class _WerkaCreateHubOverlayState extends State<_WerkaCreateHubOverlay>
     _menuController.dispose();
     _toggleController.dispose();
     super.dispose();
+  }
+
+  CurvedAnimation _actionCardAnimation({
+    required int orderFromBottom,
+  }) {
+    final start = 0.02 + (orderFromBottom * 0.10);
+    final end = (start + 0.42).clamp(0.0, 1.0);
+    return CurvedAnimation(
+      parent: _menuController,
+      curve: Interval(start, end, curve: Curves.easeOutCubic),
+      reverseCurve: const Interval(0.0, 1.0, curve: Curves.easeInCubic),
+    );
   }
 
   @override
@@ -100,38 +114,26 @@ class _WerkaCreateHubOverlayState extends State<_WerkaCreateHubOverlay>
     );
     final toggleAnimation = CurvedAnimation(
       parent: _toggleController,
-      curve: Curves.easeOutCubic,
+      curve: Curves.easeOutExpo,
       reverseCurve: Curves.easeInCubic,
     );
     final items = [
       _WerkaFloatingActionItem(
+        animation: _actionCardAnimation(orderFromBottom: 2),
         title: l10n.unannouncedTitle,
-        description: l10n.unannouncedDescription,
         icon: Icons.inventory_2_outlined,
-        animation: CurvedAnimation(
-          parent: _menuController,
-          curve: const Interval(0.00, 0.46, curve: Curves.easeOutCubic),
-        ),
         onTap: () => widget.onOpenRoute(AppRoutes.werkaUnannouncedSupplier),
       ),
       _WerkaFloatingActionItem(
+        animation: _actionCardAnimation(orderFromBottom: 1),
         title: l10n.customerIssueTitle,
-        description: l10n.customerIssueDescription,
         icon: Icons.send_outlined,
-        animation: CurvedAnimation(
-          parent: _menuController,
-          curve: const Interval(0.08, 0.54, curve: Curves.easeOutCubic),
-        ),
         onTap: () => widget.onOpenRoute(AppRoutes.werkaCustomerIssueCustomer),
       ),
       _WerkaFloatingActionItem(
+        animation: _actionCardAnimation(orderFromBottom: 0),
         title: l10n.batchDispatchTitle,
-        description: l10n.batchDispatchDescription,
         icon: Icons.playlist_add_check_rounded,
-        animation: CurvedAnimation(
-          parent: _menuController,
-          curve: const Interval(0.16, 0.62, curve: Curves.easeOutCubic),
-        ),
         onTap: () => widget.onOpenRoute(AppRoutes.werkaBatchDispatch),
       ),
     ];
@@ -147,8 +149,15 @@ class _WerkaCreateHubOverlayState extends State<_WerkaCreateHubOverlay>
               child: AnimatedBuilder(
                 animation: menuAnimation,
                 builder: (context, _) {
-                  return Container(
-                    color: Colors.black.withValues(alpha: 0.34 * menuAnimation.value),
+                  final value = menuAnimation.value;
+                  return BackdropFilter(
+                    filter: ImageFilter.blur(
+                      sigmaX: 5 * value,
+                      sigmaY: 5 * value,
+                    ),
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.38 * value),
+                    ),
                   );
                 },
               ),
@@ -160,13 +169,9 @@ class _WerkaCreateHubOverlayState extends State<_WerkaCreateHubOverlay>
             child: AnimatedBuilder(
               animation: menuAnimation,
               builder: (context, child) {
-                final value = menuAnimation.value;
                 return Opacity(
-                  opacity: value,
-                  child: Transform.translate(
-                    offset: Offset(22 * (1 - value), 18 * (1 - value)),
-                    child: child,
-                  ),
+                  opacity: menuAnimation.value,
+                  child: child,
                 );
               },
               child: Column(
@@ -207,14 +212,12 @@ class _WerkaCreateHubOverlayState extends State<_WerkaCreateHubOverlay>
 class _WerkaFloatingActionItem extends StatelessWidget {
   const _WerkaFloatingActionItem({
     required this.title,
-    required this.description,
     required this.icon,
     required this.animation,
     required this.onTap,
   });
 
   final String title;
-  final String description;
   final IconData icon;
   final Animation<double> animation;
   final VoidCallback onTap;
@@ -228,67 +231,29 @@ class _WerkaFloatingActionItem extends StatelessWidget {
       animation: animation,
       builder: (context, child) {
         final value = animation.value.clamp(0.0, 1.0);
-        final settle = Curves.easeOutCubic.transform(value);
-        final xOffset = TweenSequence<double>([
-          TweenSequenceItem(
-            tween: Tween<double>(begin: 84, end: 0).chain(
-              CurveTween(curve: Curves.easeOutCubic),
-            ),
-            weight: 74,
-          ),
-          TweenSequenceItem(
-            tween: Tween<double>(begin: 0.0, end: -8.0).chain(
-              CurveTween(curve: Curves.easeOutQuad),
-            ),
-            weight: 13,
-          ),
-          TweenSequenceItem(
-            tween: Tween<double>(begin: -8.0, end: 0.0).chain(
-              CurveTween(curve: Curves.easeOutQuad),
-            ),
-            weight: 13,
-          ),
-        ]).transform(settle);
-        final yOffset = TweenSequence<double>([
-          TweenSequenceItem(
-            tween: Tween<double>(begin: 32, end: 0).chain(
-              CurveTween(curve: Curves.easeOutCubic),
-            ),
-            weight: 74,
-          ),
-          TweenSequenceItem(
-            tween: Tween<double>(begin: 0.0, end: -4.0).chain(
-              CurveTween(curve: Curves.easeOutQuad),
-            ),
-            weight: 13,
-          ),
-          TweenSequenceItem(
-            tween: Tween<double>(begin: -4.0, end: 0.0).chain(
-              CurveTween(curve: Curves.easeOutQuad),
-            ),
-            weight: 13,
-          ),
-        ]).transform(settle);
-        final scale = TweenSequence<double>([
-          TweenSequenceItem(
-            tween: Tween<double>(begin: 0.92, end: 1.0).chain(
-              CurveTween(curve: Curves.easeOutCubic),
-            ),
-            weight: 80,
-          ),
-          TweenSequenceItem(
-            tween: Tween<double>(begin: 1.0, end: 1.015).chain(
-              CurveTween(curve: Curves.easeOutQuad),
-            ),
-            weight: 10,
-          ),
-          TweenSequenceItem(
-            tween: Tween<double>(begin: 1.015, end: 1.0).chain(
-              CurveTween(curve: Curves.easeOutQuad),
-            ),
-            weight: 10,
-          ),
-        ]).transform(settle);
+        final xOffset = _tweenSequence(
+          value,
+          const [
+            _TweenStep<double>(18, 0, Curves.easeOutCubic, 0.82),
+            _TweenStep<double>(0, 3, Curves.easeOutQuad, 0.10),
+            _TweenStep<double>(3, 0, Curves.easeOutQuad, 0.08),
+          ],
+        );
+        final yOffset = _tweenSequence(
+          value,
+          const [
+            _TweenStep<double>(26, 0, Curves.easeOutCubic, 0.82),
+            _TweenStep<double>(0, -4, Curves.easeOutQuad, 0.10),
+            _TweenStep<double>(-4, 0, Curves.easeOutQuad, 0.08),
+          ],
+        );
+        final scale = _tweenSequence(
+          value,
+          const [
+            _TweenStep<double>(0.98, 1.01, Curves.easeOutCubic, 0.84),
+            _TweenStep<double>(1.01, 1.0, Curves.easeOutQuad, 0.16),
+          ],
+        );
         return Opacity(
           opacity: value,
           child: Transform.translate(
@@ -302,7 +267,7 @@ class _WerkaFloatingActionItem extends StatelessWidget {
         );
       },
       child: Material(
-        color: scheme.primaryContainer.withValues(alpha: 0.95),
+        color: scheme.primaryContainer,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30),
         ),
@@ -310,7 +275,7 @@ class _WerkaFloatingActionItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(30),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -318,7 +283,7 @@ class _WerkaFloatingActionItem extends StatelessWidget {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: scheme.surfaceContainerLow.withValues(alpha: 0.82),
+                    color: scheme.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(
@@ -329,26 +294,11 @@ class _WerkaFloatingActionItem extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        title,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: scheme.onPrimaryContainer,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        description,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: scheme.onPrimaryContainer.withValues(
-                            alpha: 0.74,
-                          ),
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: scheme.onPrimaryContainer,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -390,16 +340,35 @@ class _WerkaCreateHubToggleButton extends StatelessWidget {
       animation: animation,
       builder: (context, child) {
         final value = animation.value.clamp(0.0, 1.0);
-        final scale =
-            _lerpDouble(1.0, collapsedSize / expandedSize, value);
-        final radius =
-            _lerpDouble(expandedBorderRadius, expandedSize / 2, value);
+        final shapeValue =
+            Curves.easeOutExpo.transform((value * 2.25).clamp(0.0, 1.0));
+        final buttonScale = _tweenSequence(
+          value,
+          const [
+            _TweenStep<double>(1.0, 0.78, Curves.easeOutCubic, 0.74),
+            _TweenStep<double>(0.78, 0.66, Curves.easeOutQuad, 0.16),
+            _TweenStep<double>(0.66, 0.67, Curves.easeOutBack, 0.10),
+          ],
+        );
+        final iconProgress = _tweenSequence(
+          value,
+          const [
+            _TweenStep<double>(0.0, 0.94, Curves.easeOutCubic, 0.76),
+            _TweenStep<double>(0.94, 1.05, Curves.easeOutQuad, 0.14),
+            _TweenStep<double>(1.05, 1.0, Curves.easeOutQuad, 0.10),
+          ],
+        );
+        final radius = _lerpDouble(
+          expandedBorderRadius,
+          expandedSize / 2,
+          shapeValue,
+        );
         return SizedBox(
           width: expandedSize,
           height: expandedSize,
           child: Center(
             child: Transform.scale(
-              scale: scale,
+              scale: buttonScale,
               child: Material(
                 color: color,
                 elevation: 8,
@@ -414,14 +383,11 @@ class _WerkaCreateHubToggleButton extends StatelessWidget {
                   onTap: onTap,
                   child: Center(
                     child: Transform.rotate(
-                      angle: (-math.pi / 4) * value,
-                      child: Transform.scale(
-                        scale: 1 - (0.06 * value),
-                        child: Icon(
-                          Icons.add_rounded,
-                          color: foregroundColor,
-                          size: 28.5 - (1.5 * value),
-                        ),
+                      angle: (-math.pi / 4) * iconProgress,
+                      child: Icon(
+                        Icons.add_rounded,
+                        color: foregroundColor,
+                        size: 28.5,
                       ),
                     ),
                   ),
@@ -433,6 +399,38 @@ class _WerkaCreateHubToggleButton extends StatelessWidget {
       },
     );
   }
+}
+
+class _TweenStep<T extends num> {
+  const _TweenStep(
+    this.begin,
+    this.end,
+    this.curve,
+    this.weight,
+  );
+
+  final T begin;
+  final T end;
+  final Curve curve;
+  final double weight;
+}
+
+double _tweenSequence(
+  double value,
+  List<_TweenStep<double>> steps,
+) {
+  return TweenSequence<double>(
+    steps
+        .map(
+          (step) => TweenSequenceItem(
+            tween: Tween<double>(begin: step.begin, end: step.end).chain(
+              CurveTween(curve: step.curve),
+            ),
+            weight: step.weight,
+          ),
+        )
+        .toList(growable: false),
+  ).transform(value);
 }
 
 double _lerpDouble(double begin, double end, double t) =>
