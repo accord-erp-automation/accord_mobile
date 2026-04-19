@@ -13,6 +13,13 @@ RUN_DEVICE ?= linux
 RUN_DART_DEFINES ?=
 endif
 
+CHROME_WEB_BROWSER_FLAGS := --web-browser-flag=--disable-web-security --web-browser-flag=--disable-site-isolation-trials --web-browser-flag=--user-data-dir=$(CURDIR)/.chrome-dev-profile
+ifeq ($(RUN_DEVICE),chrome)
+RUN_BROWSER_FLAGS := $(CHROME_WEB_BROWSER_FLAGS)
+else
+RUN_BROWSER_FLAGS :=
+endif
+
 .PHONY: run web analyze test deps backend-up backend-stop core-up core-stop remote-up remote-stop remote-url apk-remote run-remote android-sdk-setup domain-up domain-up-fast domain-url apk-domain run-domain bench-start bench-restart bench-stop bench-limit-start bench-limit-stop prepare-run run-local web-local
 
 deps:
@@ -91,10 +98,10 @@ remote-stop:
 	@./stop_remote_core.sh
 
 run: prepare-run deps
-	@flutter run -d $(RUN_DEVICE) --dart-define=MOBILE_API_BASE_URL=$(API_URL) $(RUN_DART_DEFINES)
+	@flutter run -d $(RUN_DEVICE) $(RUN_BROWSER_FLAGS) --dart-define=MOBILE_API_BASE_URL=$(API_URL) $(RUN_DART_DEFINES)
 
 web: prepare-run deps
-	@flutter run -d chrome --dart-define=MOBILE_API_BASE_URL=$(API_URL)
+	@flutter run -d chrome $(CHROME_WEB_BROWSER_FLAGS) --dart-define=MOBILE_API_BASE_URL=$(API_URL)
 
 run-local: API_URL=$(LOCAL_API_URL)
 run-local: run
