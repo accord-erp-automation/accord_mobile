@@ -191,92 +191,142 @@ class ActionDock extends StatelessWidget {
         : width <= 430
             ? _DockDeviceClass.medium
             : _DockDeviceClass.large;
-    final List<DockButton> buttons = [
-      ...leading,
-      center,
-      ...trailing,
-    ].whereType<DockButton>().toList(growable: false);
-    final double hostHeight = _hostHeightForDevice(deviceClass);
+    final DockButton? centerButton =
+        center is DockButton ? center as DockButton : null;
+    final DockButton? floatingPrimary =
+        centerButton != null && centerButton.primary ? centerButton : null;
+    final List<DockButton> navButtons = [
+      ...leading.whereType<DockButton>(),
+      if (floatingPrimary == null && centerButton != null) centerButton,
+      ...trailing.whereType<DockButton>(),
+    ];
+    final double navBarHeight = _hostHeightForDevice(deviceClass);
+    final double hostHeight =
+        floatingPrimary == null ? navBarHeight : navBarHeight + 72;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final int selectedIndex =
-        buttons.indexWhere((button) => button.active).clamp(
+        navButtons.indexWhere((button) => button.active).clamp(
               0,
-              buttons.length - 1,
+              navButtons.length - 1,
             ).toInt();
 
-    if (buttons.isEmpty) {
+    if (navButtons.isEmpty) {
       return SizedBox(height: hostHeight);
     }
 
     return SizedBox(
       height: hostHeight,
-      child: Material(
-        color: scheme.surfaceContainerLow,
-        child: NavigationBarTheme(
-          data: NavigationBarThemeData(
-            height: hostHeight,
-            backgroundColor: scheme.surfaceContainerLow,
-            surfaceTintColor: Colors.transparent,
-            indicatorColor: scheme.secondaryContainer,
-            shadowColor: Colors.transparent,
-            labelTextStyle:
-                WidgetStateProperty.resolveWith<TextStyle?>((states) {
-              final bool selected = states.contains(WidgetState.selected);
-                return theme.textTheme.labelSmall?.copyWith(
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                  color: selected
-                      ? scheme.onSecondaryContainer
-                      : scheme.onSurfaceVariant,
-                  letterSpacing: 0.1,
-                );
-            }),
-            iconTheme: WidgetStateProperty.resolveWith<IconThemeData?>(
-              (states) {
-                final bool selected = states.contains(WidgetState.selected);
-                return IconThemeData(
-                  size: switch (deviceClass) {
-                    _DockDeviceClass.small => 25,
-                    _DockDeviceClass.medium => 25,
-                    _DockDeviceClass.large => 26,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: NavigationBarTheme(
+              data: NavigationBarThemeData(
+                height: navBarHeight,
+                backgroundColor: scheme.surfaceContainerLow,
+                surfaceTintColor: Colors.transparent,
+                indicatorColor: scheme.secondaryContainer,
+                indicatorShape: const StadiumBorder(),
+                shadowColor: Colors.transparent,
+                labelTextStyle: WidgetStateProperty.resolveWith<TextStyle?>(
+                  (states) {
+                    final bool selected = states.contains(WidgetState.selected);
+                    return theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                      color: selected
+                          ? scheme.onSecondaryContainer
+                          : scheme.onSurfaceVariant,
+                      letterSpacing: 0.1,
+                    );
                   },
-                  color: selected
-                      ? scheme.onSecondaryContainer
-                      : scheme.onSurfaceVariant,
-                );
-              },
+                ),
+                iconTheme:
+                    WidgetStateProperty.resolveWith<IconThemeData?>((states) {
+                  final bool selected = states.contains(WidgetState.selected);
+                  return IconThemeData(
+                    size: 24,
+                    color: selected
+                        ? scheme.onSecondaryContainer
+                        : scheme.onSurfaceVariant,
+                  );
+                }),
+              ),
+              child: NavigationBar(
+                height: navBarHeight,
+                selectedIndex: selectedIndex,
+                onDestinationSelected: (index) {
+                  navButtons[index].onTap();
+                },
+                labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+                backgroundColor: scheme.surfaceContainerLow,
+                indicatorColor: scheme.secondaryContainer,
+                indicatorShape: const StadiumBorder(),
+                surfaceTintColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                destinations: List<NavigationDestination>.generate(
+                  navButtons.length,
+                  (index) {
+                    final button = navButtons[index];
+                    return NavigationDestination(
+                      label: button.label,
+                      icon: _DockDestinationIcon(
+                        button: button,
+                        selected: false,
+                      ),
+                      selectedIcon: _DockDestinationIcon(
+                        button: button,
+                        selected: true,
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
           ),
-          child: NavigationBar(
-            height: hostHeight,
-            selectedIndex: selectedIndex,
-            onDestinationSelected: (index) {
-              buttons[index].onTap();
-            },
-            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-            backgroundColor: scheme.surfaceContainerLow,
-            indicatorColor: scheme.secondaryContainer,
-            surfaceTintColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            destinations: List<NavigationDestination>.generate(
-              buttons.length,
-              (index) {
-                final button = buttons[index];
-                return NavigationDestination(
-                  label: button.label,
-                  icon: _DockDestinationIcon(
-                    button: button,
-                    selected: false,
-                  ),
-                  selectedIcon: _DockDestinationIcon(
-                    button: button,
-                    selected: true,
-                  ),
-                );
-              },
+          if (floatingPrimary != null)
+            PositionedDirectional(
+              end: 16,
+              bottom: navBarHeight + 8,
+              child: _DockFloatingActionButton(button: floatingPrimary),
             ),
-          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DockFloatingActionButton extends StatelessWidget {
+  const _DockFloatingActionButton({
+    required this.button,
+  });
+
+  final DockButton button;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final Widget icon = button.selectedIconWidget ??
+        button.iconWidget ??
+        Icon(button.selectedIcon ?? button.icon ?? Icons.add_rounded);
+
+    return FloatingActionButton(
+      heroTag: '${button.nativeId ?? button.label}_fab',
+      onPressed: button.onTap,
+      tooltip: button.label,
+      backgroundColor: scheme.primaryContainer,
+      foregroundColor: scheme.onPrimaryContainer,
+      elevation: 0,
+      highlightElevation: 0,
+      hoverElevation: 0,
+      focusElevation: 0,
+      child: IconTheme(
+        data: IconThemeData(
+          color: scheme.onPrimaryContainer,
+          size: 28,
         ),
+        child: icon,
       ),
     );
   }
@@ -362,59 +412,21 @@ class _DockDestinationIcon extends StatelessWidget {
 
   Widget _buildIcon(BuildContext context, bool highlighted) {
     final scheme = Theme.of(context).colorScheme;
-    final Widget? customIcon =
-        highlighted ? button.selectedIconWidget ?? button.iconWidget : button.iconWidget;
-    final IconData? iconData = highlighted ? button.selectedIcon ?? button.icon : button.icon;
+    final Widget? customIcon = highlighted
+        ? button.selectedIconWidget ?? button.iconWidget
+        : button.iconWidget;
+    final IconData? iconData =
+        highlighted ? button.selectedIcon ?? button.icon : button.icon;
 
-    if (button.primary) {
-      final Color fill = highlighted
-          ? scheme.primary
-          : AppTheme.primaryButton(context).withValues(alpha: 0.92);
-      final Color foreground = AppTheme.primaryButtonForeground(context);
-      return AnimatedContainer(
-        duration: AppMotion.medium,
-        curve: AppMotion.smooth,
-        height: 52,
-        width: 52,
-        decoration: BoxDecoration(
-          color: fill,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: scheme.primary.withValues(alpha: 0.22),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
+    return Center(
+      child: IconTheme(
+        data: IconThemeData(
+          color: highlighted
+              ? scheme.onSecondaryContainer
+              : scheme.onSurfaceVariant,
+          size: 24,
         ),
-        child: Center(
-          child: IconTheme(
-            data: IconThemeData(color: foreground, size: 26),
-            child: customIcon ?? Icon(iconData ?? Icons.add_rounded),
-          ),
-        ),
-      );
-    }
-
-    return AnimatedContainer(
-      duration: AppMotion.medium,
-      curve: AppMotion.smooth,
-      height: 44,
-      width: 44,
-      decoration: BoxDecoration(
-        color: highlighted ? scheme.secondaryContainer : Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Center(
-        child: IconTheme(
-          data: IconThemeData(
-            color: highlighted
-                ? scheme.onSecondaryContainer
-                : scheme.onSurfaceVariant,
-            size: 25,
-          ),
-          child: customIcon ?? Icon(iconData ?? Icons.circle),
-        ),
+        child: customIcon ?? Icon(iconData ?? Icons.circle),
       ),
     );
   }
