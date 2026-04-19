@@ -91,6 +91,7 @@ class _WerkaCreateHubFloatingMenuState
     final scheme = Theme.of(context).colorScheme;
     final size = MediaQuery.sizeOf(context);
     final menuWidth = math.min(320.0, size.width - 32.0);
+    const double bottomAnchor = 112.0;
     final items = [
       _WerkaFloatingActionItem(
         title: l10n.unannouncedTitle,
@@ -127,7 +128,9 @@ class _WerkaCreateHubFloatingMenuState
     return Material(
       color: Colors.transparent,
       child: SafeArea(
-        minimum: const EdgeInsets.all(16),
+        top: false,
+        bottom: false,
+        minimum: const EdgeInsets.fromLTRB(16, 16, 16, 0),
         child: Stack(
           children: [
             Positioned.fill(
@@ -137,30 +140,33 @@ class _WerkaCreateHubFloatingMenuState
                 child: const SizedBox.expand(),
               ),
             ),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  for (int index = 0; index < items.length; index++) ...[
-                    SizedBox(
-                      width: menuWidth,
-                      child: items[index],
+            Padding(
+              padding: const EdgeInsets.only(bottom: bottomAnchor),
+              child: Align(
+                alignment: Alignment.bottomRight,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    for (int index = 0; index < items.length; index++) ...[
+                      SizedBox(
+                        width: menuWidth,
+                        child: items[index],
+                      ),
+                      if (index != items.length - 1) const SizedBox(height: 10),
+                    ],
+                    const SizedBox(height: 8),
+                    _WerkaCreateHubToggleButton(
+                      animation: CurvedAnimation(
+                        parent: _controller,
+                        curve: Curves.easeOutBack,
+                      ),
+                      onTap: widget.onClose,
+                      color: scheme.primaryContainer,
+                      foregroundColor: scheme.onPrimaryContainer,
                     ),
-                    if (index != items.length - 1) const SizedBox(height: 10),
                   ],
-                  const SizedBox(height: 14),
-                  _WerkaCreateHubToggleButton(
-                    animation: CurvedAnimation(
-                      parent: _controller,
-                      curve: Curves.easeOutBack,
-                    ),
-                    onTap: widget.onClose,
-                    color: scheme.primaryContainer,
-                    foregroundColor: scheme.onPrimaryContainer,
-                  ),
-                ],
+                ),
               ),
             ),
           ],
@@ -295,9 +301,14 @@ class _WerkaCreateHubToggleButton extends StatelessWidget {
           0.0,
           1.0,
         ));
+        final size = 84.0 - (26.0 * value);
         return Transform.scale(
-          scale: 0.96 + (0.04 * value),
-          child: child,
+          scale: 0.98 + (0.02 * value),
+          child: SizedBox(
+            width: size,
+            height: size,
+            child: child,
+          ),
         );
       },
       child: Material(
@@ -308,13 +319,21 @@ class _WerkaCreateHubToggleButton extends StatelessWidget {
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onTap,
-          child: SizedBox(
-            width: 58,
-            height: 58,
-            child: Icon(
-              Icons.close_rounded,
-              color: foregroundColor,
-              size: 28,
+          child: Center(
+            child: AnimatedBuilder(
+              animation: animation,
+              builder: (context, _) {
+                final value = animation.value.clamp(0.0, 1.0);
+                final icon = value < 0.5
+                    ? Icons.add_rounded
+                    : Icons.close_rounded;
+                final iconSize = 29.0 - (3.0 * value);
+                return Icon(
+                  icon,
+                  color: foregroundColor,
+                  size: iconSize,
+                );
+              },
             ),
           ),
         ),
