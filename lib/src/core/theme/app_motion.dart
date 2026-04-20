@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// App-wide durations, curves, and M3 Expressive spring tokens (see Material blog).
 class AppMotion {
   static const Duration fast = Duration(milliseconds: 160);
   static const Duration medium = Duration(milliseconds: 260);
@@ -22,6 +23,22 @@ class AppMotion {
   static const Curve pageIn = Easing.emphasizedDecelerate;
   static const Curve pageOut = Easing.emphasizedAccelerate;
   static const Curve spring = Curves.easeOutBack;
+
+  /// M3 Expressive `fastSpatialSpec` (Compose reference values).
+  static final SpringDescription m3ExpressiveFastSpatial =
+      SpringDescription.withDampingRatio(
+    mass: 1.0,
+    stiffness: 1400.0,
+    ratio: 0.6,
+  );
+
+  /// M3 Expressive `fastEffectsSpec` (no overshoot).
+  static final SpringDescription m3ExpressiveFastEffects =
+      SpringDescription.withDampingRatio(
+    mass: 1.0,
+    stiffness: 3800.0,
+    ratio: 1.0,
+  );
 
   static const AnimationStyle sheetEaseOut = AnimationStyle(
     curve: easeOut,

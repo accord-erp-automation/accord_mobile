@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import '../../../../app/app_router.dart';
 import '../../../../core/localization/app_localizations.dart';
+import '../../../../core/theme/app_motion.dart';
 import '../../../../core/widgets/app_navigation_bar.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/material.dart';
@@ -83,29 +84,27 @@ class _WerkaCreateHubOverlayState extends State<_WerkaCreateHubOverlay>
     with TickerProviderStateMixin {
   static const double _fabClosedSize = 80.0;
   static const double _fabOpenSize = 56.0;
-  static const double _menuItemGap = 6.0;
+  static const double _menuItemGap = 12.0;
   static const double _groupButtonGap = 16.0;
   static const double _menuTrailingInset = 16.0;
   static const double _stackTrailingInset = 16.0;
   static final SpringDescription _spatialSpring =
-      SpringDescription.withDampingRatio(
-    mass: 1.0,
-    stiffness: 800.0,
-    ratio: 0.6,
-  );
+      AppMotion.m3ExpressiveFastSpatial;
   static final SpringDescription _effectsSpring =
-      SpringDescription.withDampingRatio(
-    mass: 1.0,
-    stiffness: 3800.0,
-    ratio: 1.0,
-  );
+      AppMotion.m3ExpressiveFastEffects;
   static const Duration _openDuration = Duration(milliseconds: 280);
   static const Duration _closeDuration = Duration(milliseconds: 210);
+
+  /// Wider than [0,1] so [SpringSimulation] can overshoot (M3 Expressive spatial).
+  static const double _spatialLower = -0.08;
+  static const double _spatialUpper = 1.22;
 
   late final AnimationController _spatialController = AnimationController(
     vsync: this,
     duration: _openDuration,
     reverseDuration: _closeDuration,
+    lowerBound: _spatialLower,
+    upperBound: _spatialUpper,
   );
   late final AnimationController _effectsController = AnimationController(
     vsync: this,
@@ -114,7 +113,7 @@ class _WerkaCreateHubOverlayState extends State<_WerkaCreateHubOverlay>
   );
   late final ShapeBorderTween _fabShapeTween = ShapeBorderTween(
     begin: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
     ),
     end: const CircleBorder(),
   );
@@ -271,51 +270,41 @@ class _WerkaCreateHubOverlayState extends State<_WerkaCreateHubOverlay>
               ),
             ),
           ),
-          AnimatedBuilder(
-            animation: _spatialController,
-            builder: (context, _) {
-              final double progress = _spatialController.value.clamp(0.0, 1.0);
-              final double currentButtonSize =
-                  _lerpDouble(_fabClosedSize, _fabOpenSize, progress);
-              final double groupBottom =
-                  toggleBottom + currentButtonSize + _groupButtonGap;
-              return PositionedDirectional(
-                end: _stackTrailingInset,
-                bottom: groupBottom,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    for (int index = 0; index < actions.length; index++) ...[
-                      _WerkaHubActionPill(
-                        key: actions[index].key,
-                        action: actions[index],
-                        spatialAnimation: _buildActionAnimation(
-                          actions[index],
-                          _spatialController,
-                        ),
-                        effectsAnimation: _buildActionAnimation(
-                          actions[index],
-                          _effectsController,
-                        ),
-                        motionKey:
-                            ValueKey('werka-hub-reveal-${actions[index].row}'),
-                        onTap: () =>
-                            widget.onOpenRoute(actions[index].routeName),
-                      ),
-                      if (index != actions.length - 1)
-                        const SizedBox(height: _menuItemGap),
-                    ],
-                  ],
-                ),
-              );
-            },
+          PositionedDirectional(
+            end: _stackTrailingInset,
+            bottom: toggleBottom + _fabClosedSize + _groupButtonGap,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                for (int index = 0; index < actions.length; index++) ...[
+                  _WerkaHubActionPill(
+                    key: actions[index].key,
+                    action: actions[index],
+                    spatial: _spatialController,
+                    effectsAnimation: _buildEffectsStagger(
+                      actions[index],
+                      _effectsController,
+                    ),
+                    motionKey: ValueKey('werka-hub-reveal-${actions[index].row}'),
+                    onTap: () => widget.onOpenRoute(actions[index].routeName),
+                  ),
+                  if (index != actions.length - 1)
+                    const SizedBox(height: _menuItemGap),
+                ],
+              ],
+            ),
           ),
           AnimatedBuilder(
             animation:
                 Listenable.merge([_spatialController, _effectsController]),
             builder: (context, _) {
-              final double anchoredBottom = toggleBottom;
+              final double progress =
+                  _m3SpatialLerpT(_spatialController.value);
+              final double currentButtonSize =
+                  _lerpDouble(_fabClosedSize, _fabOpenSize, progress);
+              final double anchoredBottom =
+                  toggleBottom + _fabClosedSize - currentButtonSize;
               return PositionedDirectional(
                 end: _menuTrailingInset,
                 bottom: anchoredBottom,
@@ -336,7 +325,8 @@ class _WerkaCreateHubOverlayState extends State<_WerkaCreateHubOverlay>
     );
   }
 
-  Animation<double> _buildActionAnimation(
+  /// Opacity only: no overshoot (M3 fast effects).
+  Animation<double> _buildEffectsStagger(
     _WerkaHubAction action,
     Animation<double> parent,
   ) {
@@ -371,14 +361,14 @@ class _WerkaHubActionPill extends StatelessWidget {
   const _WerkaHubActionPill({
     super.key,
     required this.action,
-    required this.spatialAnimation,
+    required this.spatial,
     required this.effectsAnimation,
     this.motionKey,
     required this.onTap,
   });
 
   final _WerkaHubAction action;
-  final Animation<double> spatialAnimation;
+  final Animation<double> spatial;
   final Animation<double> effectsAnimation;
   final Key? motionKey;
   final VoidCallback onTap;
@@ -407,9 +397,10 @@ class _WerkaHubActionPill extends StatelessWidget {
     );
 
     return AnimatedBuilder(
-      animation: Listenable.merge([spatialAnimation, effectsAnimation]),
+      animation: Listenable.merge([spatial, effectsAnimation]),
       builder: (context, _) {
-        final double widthT = spatialAnimation.value.clamp(0.0, 1.0);
+        final double widthT =
+            _hubStaggerSpatialT(spatial.value, action.row);
         final double opacity = effectsAnimation.value.clamp(0.0, 1.0);
         final double currentWidth = _lerpDouble(
           _werkaHubMenuItemHeight,
@@ -433,6 +424,7 @@ class _WerkaHubActionPill extends StatelessWidget {
                   child: Material(
                     color: scheme.primaryContainer,
                     elevation: 0,
+                    surfaceTintColor: Colors.transparent,
                     shape: const StadiumBorder(),
                     clipBehavior: Clip.antiAlias,
                     child: InkWell(
@@ -507,21 +499,23 @@ class _WerkaMorphFabButton extends StatelessWidget {
     return AnimatedBuilder(
       animation: Listenable.merge([spatialAnimation, effectsAnimation]),
       builder: (context, child) {
-        final double morphT = spatialAnimation.value.clamp(0.0, 1.0);
+        final double raw = spatialAnimation.value;
+        final double morphT = _m3SpatialLerpT(raw);
         final double iconT = effectsAnimation.value.clamp(0.0, 1.0);
+        final double shapeAndColorT = raw.clamp(0.0, 1.0);
         final double buttonSize = _lerpDouble(closedSize, openSize, morphT);
-        final ShapeBorder shape = shapeTween.lerp(morphT)!;
+        final ShapeBorder shape = shapeTween.lerp(shapeAndColorT)!;
         final Color containerColor = Color.lerp(
           scheme.primaryContainer,
           scheme.primary,
-          morphT,
+          shapeAndColorT,
         )!;
         final Color foregroundColor = Color.lerp(
           scheme.onPrimaryContainer,
           scheme.onPrimary,
-          morphT,
+          shapeAndColorT,
         )!;
-        final double iconSize = _lerpDouble(28.0, 24.0, morphT);
+        const double iconSize = 24.0;
 
         return Semantics(
           button: true,
@@ -533,8 +527,9 @@ class _WerkaMorphFabButton extends StatelessWidget {
             height: buttonSize,
             child: Material(
               color: containerColor,
-              elevation: 8,
-              shadowColor: scheme.primary.withValues(alpha: 0.28),
+              elevation: 6,
+              surfaceTintColor: Colors.transparent,
+              shadowColor: theme.shadowColor,
               shape: shape,
               clipBehavior: Clip.antiAlias,
               child: InkWell(
@@ -574,3 +569,20 @@ class _WerkaMorphFabButton extends StatelessWidget {
 
 double _lerpDouble(double begin, double end, double t) =>
     begin + ((end - begin) * t);
+
+/// Spatial spring may exceed 0–1; allow extrapolation for size (Expressive overshoot).
+double _m3SpatialLerpT(double v) => v.clamp(-0.06, 1.18);
+
+/// Same stagger windows as before [Interval], but driven by raw spatial spring value.
+double _hubStaggerSpatialT(double v, int row) {
+  final double start = (row * 0.12).clamp(0.0, 0.78);
+  final double end = (start + 0.58).clamp(0.0, 1.0);
+  if (v <= start) {
+    return 0.0;
+  }
+  final double span = end - start;
+  if (span <= 0) {
+    return 1.0;
+  }
+  return ((v - start) / span).clamp(0.0, 1.22);
+}

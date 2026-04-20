@@ -83,10 +83,10 @@ void main() {
     expect(middle, findsOneWidget);
     expect(top, findsOneWidget);
 
-    expect(
-      tester.getSize(find.byKey(const ValueKey('werka-hub-toggle-button'))),
-      const Size(56, 56),
-    );
+    final toggleSize =
+        tester.getSize(find.byKey(const ValueKey('werka-hub-toggle-button')));
+    expect(toggleSize.width, closeTo(56, 1.5));
+    expect(toggleSize.height, closeTo(56, 1.5));
     expect(find.byIcon(Icons.close_rounded), findsOneWidget);
 
     final bottomWidth = tester.getSize(bottom).width;
