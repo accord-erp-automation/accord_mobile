@@ -9,9 +9,11 @@ import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.ContextThemeWrapper
+import android.view.Display
 import android.view.Gravity
 import android.view.Menu
 import android.view.View
@@ -35,7 +37,32 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applyPreferredPeakDisplayMode()
         ensureNativeDockHost()
+    }
+
+    /**
+     * Qurilma 90/120 Hz qo'llab-quvvatlasa, [Display.Mode] orqali eng yuqori refresh ni so'raymiz.
+     * So'rov OOM / batareya cheklovi bilan ziddiyatlashishi mumkin — tizim yakuniy FPS ni hal qiladi.
+     */
+    @Suppress("DEPRECATION")
+    private fun applyPreferredPeakDisplayMode() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return
+        }
+        val display: Display = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            this.display ?: return
+        } else {
+            windowManager.defaultDisplay
+        }
+        val modes = display.supportedModes
+        if (modes.isEmpty()) {
+            return
+        }
+        val bestMode = modes.maxByOrNull { it.refreshRate } ?: return
+        val attrs = window.attributes
+        attrs.preferredDisplayModeId = bestMode.modeId
+        window.attributes = attrs
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {

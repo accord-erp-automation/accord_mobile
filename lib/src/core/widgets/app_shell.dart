@@ -6,7 +6,7 @@ import 'app_loading_indicator.dart';
 import 'shared_header_title.dart';
 import 'package:flutter/material.dart';
 
-class AppShell extends StatelessWidget {
+class AppShell extends StatefulWidget {
   const AppShell({
     super.key,
     required this.title,
@@ -41,65 +41,219 @@ class AppShell extends StatelessWidget {
   final Color? backgroundColor;
 
   @override
+  State<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends State<AppShell>
+    with SingleTickerProviderStateMixin {
+  AnimationController? _expressiveDrawerController;
+  CurvedAnimation? _expressiveDrawerCurve;
+  LocalHistoryEntry? _expressiveDrawerHistory;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.drawer != null) {
+      _expressiveDrawerController = AnimationController(
+        vsync: this,
+        duration: AppMotion.expressiveDrawerDuration,
+      );
+      _expressiveDrawerCurve = CurvedAnimation(
+        parent: _expressiveDrawerController!,
+        curve: AppMotion.expressiveSpatialDefault,
+        reverseCurve: AppMotion.expressiveSpatialDefault.flipped,
+      );
+      _expressiveDrawerController!.addStatusListener(_expressiveDrawerStatusChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    _expressiveDrawerHistory?.remove();
+    _expressiveDrawerCurve?.dispose();
+    _expressiveDrawerController?.dispose();
+    super.dispose();
+  }
+
+  void _expressiveDrawerStatusChanged(AnimationStatus status) {
+    if (status == AnimationStatus.forward) {
+      _ensureExpressiveDrawerHistory();
+    } else if (status == AnimationStatus.reverse) {
+      _expressiveDrawerHistory?.remove();
+      _expressiveDrawerHistory = null;
+    }
+  }
+
+  void _ensureExpressiveDrawerHistory() {
+    if (_expressiveDrawerHistory != null) {
+      return;
+    }
+    final ModalRoute<dynamic>? route = ModalRoute.of(context);
+    if (route != null) {
+      _expressiveDrawerHistory = LocalHistoryEntry(
+        onRemove: _handleExpressiveDrawerHistoryRemoved,
+        impliesAppBarDismissal: false,
+      );
+      route.addLocalHistoryEntry(_expressiveDrawerHistory!);
+    }
+  }
+
+  void _handleExpressiveDrawerHistoryRemoved() {
+    _expressiveDrawerHistory = null;
+    _expressiveCloseDrawer();
+  }
+
+  void _expressiveCloseDrawer() {
+    final c = _expressiveDrawerController;
+    if (c == null || c.isDismissed) {
+      return;
+    }
+    c.reverse();
+  }
+
+  void _openExpressiveDrawer() {
+    _expressiveDrawerController?.forward();
+  }
+
+  Widget? _nativeAppBarLeading(bool shouldHideLeading) {
+    if (shouldHideLeading) {
+      return null;
+    }
+    if (widget.leading != null) {
+      return widget.leading;
+    }
+    if (widget.drawer != null) {
+      return IconButton(
+        icon: const Icon(Icons.menu),
+        tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
+        onPressed: _openExpressiveDrawer,
+      );
+    }
+    return null;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final Color shellBackground =
-        backgroundColor ?? AppTheme.shellStart(context);
+        widget.backgroundColor ?? AppTheme.shellStart(context);
     final useNativeTitle =
         NativeBackButtonBridge.useNativeNavigationTitleWhenPossible(
       context,
-      title,
-      allowWithoutBackButton: preferNativeTitle,
+      widget.title,
+      allowWithoutBackButton: widget.preferNativeTitle,
     );
-    final shouldHideLeading = leading != null &&
+    final shouldHideLeading = widget.leading != null &&
         NativeBackButtonBridge.shouldUseNativeBackButton(context);
-    if (bottom == null) {
+    if (widget.bottom == null) {
       NativeDockBridge.instance.clearFromBuild();
+    }
+
+    final Widget scaffold = Scaffold(
+      backgroundColor: Colors.transparent,
+      extendBody: true,
+      appBar: widget.nativeTopBar
+          ? AppBar(
+              title: Text(
+                widget.title,
+                style: widget.nativeTitleTextStyle,
+              ),
+              leading: _nativeAppBarLeading(shouldHideLeading),
+              automaticallyImplyLeading: shouldHideLeading
+                  ? false
+                  : widget.leading == null && widget.drawer == null,
+              actions: widget.actions,
+              backgroundColor:
+                  widget.backgroundColor ?? theme.colorScheme.surfaceContainer,
+              surfaceTintColor: Colors.transparent,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              toolbarHeight: 40,
+              titleSpacing: 20,
+              centerTitle: false,
+            )
+          : null,
+      bottomNavigationBar: widget.bottom == null
+          ? null
+          : Padding(
+              padding: widget.bottomPadding,
+              child: widget.bottom!,
+            ),
+      body: SafeArea(
+        bottom: false,
+        child: _buildAnimatedContent(
+          context,
+          theme,
+          shouldHideLeading,
+          useNativeTitle,
+          showHeader: !widget.nativeTopBar,
+        ),
+      ),
+    );
+
+    if (widget.drawer != null &&
+        _expressiveDrawerController != null &&
+        _expressiveDrawerCurve != null) {
+      final controller = _expressiveDrawerController!;
+      final curved = _expressiveDrawerCurve!;
+      return DecoratedBox(
+        decoration: BoxDecoration(color: shellBackground),
+        child: AnimatedBuilder(
+          animation: controller,
+          builder: (context, _) {
+            // Scrim faqat chiziqli [0,1] progress bilan — Expressive cubic overshoot
+            // (curved.value > 1) qora fonni bir kadrlik «qoraytirish» flashini berardi.
+            final double linearT = controller.value.clamp(0.0, 1.0);
+            final bool drawerBlocking = linearT > 0.001 || controller.isAnimating;
+            return PopScope(
+              canPop: !drawerBlocking,
+              onPopInvokedWithResult: (didPop, result) {
+                if (!didPop && drawerBlocking) {
+                  _expressiveCloseDrawer();
+                }
+              },
+              child: Stack(
+                clipBehavior: Clip.none,
+                fit: StackFit.expand,
+                children: [
+                  scaffold,
+                  if (drawerBlocking) ...[
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _expressiveCloseDrawer,
+                        child: Semantics(
+                          label: MaterialLocalizations.of(context)
+                              .modalBarrierDismissLabel,
+                          child: ColoredBox(
+                            color: Colors.black
+                                .withValues(alpha: 0.54 * linearT),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(-1, 0),
+                        end: Offset.zero,
+                      ).animate(curved),
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: widget.drawer!,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          },
+        ),
+      );
     }
 
     return DecoratedBox(
       decoration: BoxDecoration(color: shellBackground),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        extendBody: true,
-        drawer: drawer,
-        appBar: nativeTopBar
-            ? AppBar(
-                title: Text(
-                  title,
-                  style: nativeTitleTextStyle,
-                ),
-                leading: shouldHideLeading ? null : leading,
-                automaticallyImplyLeading:
-                    shouldHideLeading ? false : leading == null,
-                actions: actions,
-                backgroundColor:
-                    backgroundColor ?? theme.colorScheme.surfaceContainerLow,
-                surfaceTintColor: Colors.transparent,
-                elevation: 0,
-                scrolledUnderElevation: 0,
-                toolbarHeight: 40,
-                titleSpacing: 20,
-                centerTitle: false,
-              )
-            : null,
-        bottomNavigationBar: bottom == null
-            ? null
-            : Padding(
-                padding: bottomPadding,
-                child: bottom!,
-              ),
-        body: SafeArea(
-          bottom: false,
-          child: _buildAnimatedContent(
-            context,
-            theme,
-            shouldHideLeading,
-            useNativeTitle,
-            showHeader: !nativeTopBar,
-          ),
-        ),
-      ),
+      child: scaffold,
     );
   }
 
@@ -114,9 +268,9 @@ class AppShell extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (!shouldHideLeading && leading != null) ...[
+                if (!shouldHideLeading && widget.leading != null) ...[
                   HeaderLeadingTransition(
-                    child: leading!,
+                    child: widget.leading!,
                   ),
                   const SizedBox(width: 14),
                 ],
@@ -126,12 +280,12 @@ class AppShell extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SharedHeaderTitle(
-                          title: title,
+                          title: widget.title,
                         ),
-                        if (subtitle.trim().isNotEmpty) ...[
+                        if (widget.subtitle.trim().isNotEmpty) ...[
                           const SizedBox(height: 6),
                           Text(
-                            subtitle,
+                            widget.subtitle,
                             style: theme.textTheme.bodyMedium,
                           ),
                         ],
@@ -139,14 +293,14 @@ class AppShell extends StatelessWidget {
                     ),
                   ),
                 if (useNativeTitle) const Spacer(),
-                if (actions != null) ...[
+                if (widget.actions != null) ...[
                   const SizedBox(width: 12),
                   Transform.translate(
                     offset: const Offset(0, -10),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: actions!,
+                      children: widget.actions!,
                     ),
                   ),
                 ],
@@ -156,14 +310,14 @@ class AppShell extends StatelessWidget {
         Expanded(
           child: Container(
             width: double.infinity,
-            padding: contentPadding,
-            child: child,
+            padding: widget.contentPadding,
+            child: widget.child,
           ),
         ),
       ],
     );
 
-    if (!animateOnEnter) {
+    if (!widget.animateOnEnter) {
       return content;
     }
 

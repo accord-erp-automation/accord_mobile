@@ -10,6 +10,12 @@ class AppMotion {
   static const Duration pageEnter = Duration(milliseconds: 360);
   static const Duration pageExit = Duration(milliseconds: 300);
 
+  /// M3 Expressive **default spatial** easing (overshoot-friendly control handles).
+  static const Cubic expressiveSpatialDefault = Cubic(0.38, 1.21, 0.22, 1.0);
+
+  /// Chap [NavigationDrawer] ochilish/yopilish vaqti (spatial token bilan qo‘llanadi).
+  static const Duration expressiveDrawerDuration = Duration(milliseconds: 500);
+
   static const Curve standard = Easing.standard;
   static const Curve standardAccelerate = Easing.standardAccelerate;
   static const Curve standardDecelerate = Easing.standardDecelerate;

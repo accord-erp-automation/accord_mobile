@@ -3,6 +3,7 @@ import '../../../core/localization/app_localizations.dart';
 import '../../../core/notifications/refresh_hub.dart';
 import '../../../core/widgets/app_loading_indicator.dart';
 import '../../../core/widgets/app_retry_state.dart';
+import '../../../core/widgets/m3_segmented_list.dart';
 import '../../../core/widgets/motion_widgets.dart';
 import '../../../core/widgets/app_shell.dart';
 import '../../../core/widgets/top_refresh_scroll_physics.dart';
@@ -11,11 +12,6 @@ import '../state/werka_store.dart';
 import 'widgets/werka_dock.dart';
 import 'widgets/werka_create_hub_sheet.dart';
 import 'package:flutter/material.dart';
-
-/// Status va «Jarayondagi mahsulotlar» segmented kartalar uchun umumiy o‘lchamlar.
-const double _werkaSegmentGap = 2;
-const double _werkaSegmentCornerLarge = 18;
-const double _werkaSegmentCornerMiddle = 6;
 
 class WerkaHomeScreen extends StatefulWidget {
   const WerkaHomeScreen({super.key});
@@ -116,10 +112,7 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
                   );
                 }
                 final currentSummary = store.summary;
-                final effectivePending = store.pendingItems;
-                final previewItems = effectivePending.length > 3
-                    ? effectivePending.take(3).toList()
-                    : effectivePending;
+                final pendingItems = store.pendingItems;
 
                 return AppRefreshIndicator(
                   onRefresh: _reload,
@@ -130,9 +123,9 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
                     children: [
                       const SizedBox(height: 4),
                       _WerkaSummaryList(summary: currentSummary),
-                      if (previewItems.isNotEmpty) const SizedBox(height: 16),
-                      if (previewItems.isNotEmpty)
-                        _WerkaPendingSection(items: previewItems),
+                      if (pendingItems.isNotEmpty) const SizedBox(height: 16),
+                      if (pendingItems.isNotEmpty)
+                        _WerkaPendingSection(items: pendingItems),
                     ],
                   ),
                 );
@@ -240,18 +233,6 @@ class _WerkaHomeDrawer extends StatelessWidget {
   }
 }
 
-/// Segment shakli: tepada faqat **yuqori** yumaloqlar (1‑rasm), o‘rtada **to‘rt tomon**
-/// yumaloq (2‑rasm), pastda faqat **pastki** yumaloqlar (1‑rasmni pastga qaratsa).
-enum _WerkaSegmentSlot {
-  top,
-  middle,
-  bottom,
-}
-
-/// MD3 Lists guidelines — **Gaps & dividers**:
-/// «Use gaps for contained lists» / «Use segmented gaps and filled list items to define
-/// a list group»; dividerlar ko‘pincha **uncontained** ro‘yxatlar uchun.
-/// Manba: [m3.material.io/components/lists/guidelines](https://m3.material.io/components/lists/guidelines)
 class _WerkaSummaryList extends StatelessWidget {
   const _WerkaSummaryList({
     required this.summary,
@@ -262,147 +243,44 @@ class _WerkaSummaryList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SmoothAppear(
-      child: Padding(
+      child: M3SegmentSpacedColumn(
         padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _WerkaSummarySegmentCard(
-              slot: _WerkaSegmentSlot.top,
-              cornerRadius: _werkaSegmentCornerLarge,
-              label: context.l10n.pendingStatus,
-              value: summary.pendingCount.toString(),
-              highlighted: true,
-              onTap: () => Navigator.of(context).pushNamed(
-                AppRoutes.werkaStatusBreakdown,
-                arguments: WerkaStatusKind.pending,
-              ),
+        children: [
+          _WerkaSummarySegmentCard(
+            slot: M3SegmentVerticalSlot.top,
+            cornerRadius: M3SegmentedListGeometry.cornerLarge,
+            label: context.l10n.pendingStatus,
+            value: summary.pendingCount.toString(),
+            highlighted: true,
+            onTap: () => Navigator.of(context).pushNamed(
+              AppRoutes.werkaStatusBreakdown,
+              arguments: WerkaStatusKind.pending,
             ),
-            const SizedBox(height: _werkaSegmentGap),
-            _WerkaSummarySegmentCard(
-              slot: _WerkaSegmentSlot.middle,
-              cornerRadius: _werkaSegmentCornerMiddle,
-              label: context.l10n.confirmedStatus,
-              value: summary.confirmedCount.toString(),
-              highlighted: false,
-              onTap: () => Navigator.of(context).pushNamed(
-                AppRoutes.werkaStatusBreakdown,
-                arguments: WerkaStatusKind.confirmed,
-              ),
+          ),
+          _WerkaSummarySegmentCard(
+            slot: M3SegmentVerticalSlot.middle,
+            cornerRadius: M3SegmentedListGeometry.cornerMiddle,
+            label: context.l10n.confirmedStatus,
+            value: summary.confirmedCount.toString(),
+            highlighted: false,
+            onTap: () => Navigator.of(context).pushNamed(
+              AppRoutes.werkaStatusBreakdown,
+              arguments: WerkaStatusKind.confirmed,
             ),
-            const SizedBox(height: _werkaSegmentGap),
-            _WerkaSummarySegmentCard(
-              slot: _WerkaSegmentSlot.bottom,
-              cornerRadius: _werkaSegmentCornerLarge,
-              label: context.l10n.returnedStatus,
-              value: summary.returnedCount.toString(),
-              highlighted: false,
-              onTap: () => Navigator.of(context).pushNamed(
-                AppRoutes.werkaStatusBreakdown,
-                arguments: WerkaStatusKind.returned,
-              ),
+          ),
+          _WerkaSummarySegmentCard(
+            slot: M3SegmentVerticalSlot.bottom,
+            cornerRadius: M3SegmentedListGeometry.cornerLarge,
+            label: context.l10n.returnedStatus,
+            value: summary.returnedCount.toString(),
+            highlighted: false,
+            onTap: () => Navigator.of(context).pushNamed(
+              AppRoutes.werkaStatusBreakdown,
+              arguments: WerkaStatusKind.returned,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
-}
-
-/// Segmentlar oralig‘ida bir-biriga mos mikro‑yumaloqlik (tepa kartaning pastki va
-/// past kartaning **yuqori** burchaklari — bir xil radius, teskaricha).
-const Radius _werkaSegmentJoinMicro = Radius.circular(6);
-
-BorderRadius _borderRadiusForSegmentSlot(
-  _WerkaSegmentSlot slot,
-  double r,
-) {
-  final Radius radius = Radius.circular(r);
-  switch (slot) {
-    case _WerkaSegmentSlot.top:
-      return BorderRadius.only(
-        topLeft: radius,
-        topRight: radius,
-        bottomLeft: _werkaSegmentJoinMicro,
-        bottomRight: _werkaSegmentJoinMicro,
-      );
-    case _WerkaSegmentSlot.middle:
-      return BorderRadius.all(radius);
-    case _WerkaSegmentSlot.bottom:
-      return BorderRadius.only(
-        topLeft: _werkaSegmentJoinMicro,
-        topRight: _werkaSegmentJoinMicro,
-        bottomLeft: radius,
-        bottomRight: radius,
-      );
-  }
-}
-
-/// «Jarayondagi mahsulotlar» ichidagi qatorlar: `[top]` title, keyin mahsulot kartalari —
-/// bir nechta bo‘lsa birinchi `middle`, oxirgisi `bottom`; bitta bo‘lsa faqat `bottom`.
-_WerkaSegmentSlot _pendingDispatchSlot(int index, int count) {
-  assert(count >= 1);
-  if (count == 1) return _WerkaSegmentSlot.bottom;
-  if (index == 0) return _WerkaSegmentSlot.middle;
-  if (index == count - 1) return _WerkaSegmentSlot.bottom;
-  return _WerkaSegmentSlot.middle;
-}
-
-double _cornerRadiusForSlotKind(_WerkaSegmentSlot slot) {
-  switch (slot) {
-    case _WerkaSegmentSlot.middle:
-      return _werkaSegmentCornerMiddle;
-    case _WerkaSegmentSlot.top:
-    case _WerkaSegmentSlot.bottom:
-      return _werkaSegmentCornerLarge;
-  }
-}
-
-/// Outline + to‘ldirilgan fon — summary va jarayondagi mahsulotlar segmentlari uchun.
-class _WerkaSegmentSurface extends StatelessWidget {
-  const _WerkaSegmentSurface({
-    required this.slot,
-    required this.cornerRadius,
-    required this.child,
-    this.onTap,
-  });
-
-  final _WerkaSegmentSlot slot;
-  final double cornerRadius;
-  final Widget child;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final BorderRadius radius =
-        _borderRadiusForSegmentSlot(slot, cornerRadius);
-    final Color bg = scheme.surfaceContainerHighest;
-
-    final Widget ink = Ink(
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: radius,
-      ),
-      child: child,
-    );
-
-    return Material(
-      color: Colors.transparent,
-      elevation: 0,
-      shadowColor: Colors.transparent,
-      surfaceTintColor: Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: radius,
-        side: BorderSide(
-          color: scheme.outlineVariant.withValues(alpha: 0.38),
-          width: 1,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: onTap != null
-          ? InkWell(onTap: onTap, borderRadius: radius, child: ink)
-          : ink,
     );
   }
 }
@@ -418,7 +296,7 @@ class _WerkaSummarySegmentCard extends StatelessWidget {
     this.highlighted = false,
   });
 
-  final _WerkaSegmentSlot slot;
+  final M3SegmentVerticalSlot slot;
   final double cornerRadius;
   final String label;
   final String value;
@@ -430,7 +308,7 @@ class _WerkaSummarySegmentCard extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final BorderRadius radius =
-        _borderRadiusForSegmentSlot(slot, cornerRadius);
+        M3SegmentedListGeometry.borderRadius(slot, cornerRadius);
     final Color bg = highlighted
         ? scheme.secondaryContainer
         : scheme.surfaceContainerHighest;
@@ -525,33 +403,29 @@ class _WerkaPendingSection extends StatelessWidget {
     return SmoothAppear(
       delay: const Duration(milliseconds: 90),
       offset: const Offset(0, 18),
-      child: Padding(
+      child: M3SegmentSpacedColumn(
         padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _WerkaSegmentSurface(
-              slot: _WerkaSegmentSlot.top,
-              cornerRadius: _cornerRadiusForSlotKind(_WerkaSegmentSlot.top),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                child: Text(
-                  context.l10n.inProgressItemsTitle,
-                  style: theme.textTheme.titleLarge,
-                ),
+        children: [
+          M3SegmentOutlineSurface(
+            slot: M3SegmentVerticalSlot.top,
+            cornerRadius: M3SegmentedListGeometry.cornerRadiusForSlot(
+              M3SegmentVerticalSlot.top,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              child: Text(
+                context.l10n.inProgressItemsTitle,
+                style: theme.textTheme.titleLarge,
               ),
             ),
-            const SizedBox(height: _werkaSegmentGap),
-            for (int index = 0; index < n; index++) ...[
-              if (index > 0) const SizedBox(height: _werkaSegmentGap),
-              _WerkaPendingItemTile(
-                record: items[index],
-                index: index,
-                itemCount: n,
-              ),
-            ],
-          ],
-        ),
+          ),
+          for (int index = 0; index < n; index++)
+            _WerkaPendingItemTile(
+              record: items[index],
+              index: index,
+              itemCount: n,
+            ),
+        ],
       ),
     );
   }
@@ -572,8 +446,9 @@ class _WerkaPendingItemTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final slot = _pendingDispatchSlot(index, itemCount);
-    final r = _cornerRadiusForSlotKind(slot);
+    final slot =
+        M3SegmentedListGeometry.bodySlotForIndex(index, itemCount);
+    final r = M3SegmentedListGeometry.cornerRadiusForSlot(slot);
 
     void navigate() => Navigator.of(context).pushNamed(
           record.isDeliveryNote
@@ -582,7 +457,7 @@ class _WerkaPendingItemTile extends StatelessWidget {
           arguments: record,
         );
 
-    return _WerkaSegmentSurface(
+    return M3SegmentOutlineSurface(
       slot: slot,
       cornerRadius: r,
       onTap: navigate,

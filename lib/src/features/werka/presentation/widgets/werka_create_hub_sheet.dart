@@ -294,9 +294,10 @@ class _WerkaCreateHubOverlayState extends State<_WerkaCreateHubOverlay>
   @override
   Widget build(BuildContext context) {
     final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    // Qorong‘i temada kuchliroq qora scrim; yorug‘ temada orqani «oqartirib» yuvish (oqboshli scrim).
     final Color targetBackdropColor = isDarkMode
-        ? Colors.black.withValues(alpha: 0.50)
-        : Colors.black.withValues(alpha: 0.34);
+        ? Colors.black.withValues(alpha: 0.78)
+        : Colors.white.withValues(alpha: 0.68);
 
     final viewMetrics = MediaQueryData.fromView(View.of(context));
     final double systemBottomInset = dockLayoutBottomInset(
@@ -323,7 +324,7 @@ class _WerkaCreateHubOverlayState extends State<_WerkaCreateHubOverlay>
                 builder: (context, _) {
                   final double progress =
                       _effectsController.value.clamp(0.0, 1.0);
-                  final double backdropOpacity = progress * 0.96;
+                  final double backdropOpacity = progress;
                   return Container(
                     color: Color.lerp(
                       Colors.transparent,

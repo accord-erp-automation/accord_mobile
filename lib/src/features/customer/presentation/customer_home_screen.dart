@@ -94,7 +94,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
         }
 
         final summary = store.summary;
-        final previewItems = store.historyItems.take(3).toList();
+        final shipmentItems = store.historyItems;
 
         return AppRefreshIndicator(
           onRefresh: _reload,
@@ -114,7 +114,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               SmoothAppear(
                 delay: const Duration(milliseconds: 60),
                 child: _CustomerShipmentsPanel(
-                  items: previewItems,
+                  items: shipmentItems,
                   onTapRecord: _openDetail,
                 ),
               ),

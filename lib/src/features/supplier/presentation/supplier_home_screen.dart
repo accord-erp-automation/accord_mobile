@@ -128,13 +128,12 @@ class _SupplierHomeScreenState extends State<SupplierHomeScreen>
             );
           }
           final current = store.summary;
-          final previewItems = store.historyItems
+          final pendingItems = store.historyItems
               .where(
                 (item) =>
                     item.status == DispatchStatus.pending ||
                     item.status == DispatchStatus.draft,
               )
-              .take(3)
               .toList();
 
           return AppRefreshIndicator(
@@ -148,11 +147,11 @@ class _SupplierHomeScreenState extends State<SupplierHomeScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: _SupplierSummaryCard(summary: current),
                 ),
-                if (previewItems.isNotEmpty) const SizedBox(height: 16),
-                if (previewItems.isNotEmpty)
+                if (pendingItems.isNotEmpty) const SizedBox(height: 16),
+                if (pendingItems.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: _SupplierPendingSection(items: previewItems),
+                    child: _SupplierPendingSection(items: pendingItems),
                   ),
               ],
             ),
