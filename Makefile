@@ -20,7 +20,10 @@ else
 RUN_BROWSER_FLAGS :=
 endif
 
-.PHONY: run web analyze test deps backend-up backend-stop core-up core-stop remote-up remote-stop remote-url apk-remote run-remote android-sdk-setup domain-up domain-up-fast domain-url apk-domain run-domain bench-start bench-restart bench-stop bench-limit-start bench-limit-stop prepare-run run-local web-local
+# Release APKs: arm64-v8a only (typical phones); no universal/fat APK.
+FLUTTER_APK_RELEASE_FLAGS := --release --target-platform android-arm64
+
+.PHONY: run web analyze test deps backend-up backend-stop core-up core-stop remote-up remote-stop remote-url apk apk-remote run-remote android-sdk-setup domain-up domain-up-fast domain-url apk-domain run-domain bench-start bench-restart bench-stop bench-limit-start bench-limit-stop prepare-run run-local web-local
 
 deps:
 	@flutter pub get
@@ -117,18 +120,24 @@ run-domain: deps domain-up
 	@DOMAIN_URL="$$(cat .core_domain_url)" && \
 	flutter run -d linux --dart-define=MOBILE_API_BASE_URL="$$DOMAIN_URL"
 
+apk: deps android-sdk-setup
+	@JAVA_HOME="$(JDK_HOME)" PATH="$(JDK_HOME)/bin:$$PATH" flutter build apk $(FLUTTER_APK_RELEASE_FLAGS) --dart-define=MOBILE_API_BASE_URL=$(API_URL) && \
+	cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/$(APK_NAME) && \
+	echo "APK (arm64-v8a): build/app/outputs/flutter-apk/$(APK_NAME)" && \
+	echo "API: $(API_URL)"
+
 apk-remote: deps remote-up android-sdk-setup
 	@REMOTE_URL="$$(cat .core_tunnel_url)" && \
-	JAVA_HOME="$(JDK_HOME)" PATH="$(JDK_HOME)/bin:$$PATH" flutter build apk --release --dart-define=MOBILE_API_BASE_URL="$$REMOTE_URL" && \
+	JAVA_HOME="$(JDK_HOME)" PATH="$(JDK_HOME)/bin:$$PATH" flutter build apk $(FLUTTER_APK_RELEASE_FLAGS) --dart-define=MOBILE_API_BASE_URL="$$REMOTE_URL" && \
 	cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/$(APK_NAME) && \
-	echo "APK tayyor: build/app/outputs/flutter-apk/$(APK_NAME)" && \
+	echo "APK (arm64-v8a) tayyor: build/app/outputs/flutter-apk/$(APK_NAME)" && \
 	echo "Core URL: $$REMOTE_URL"
 
 apk-domain: deps domain-up android-sdk-setup
 	@DOMAIN_URL="$$(cat .core_domain_url)" && \
-	JAVA_HOME="$(JDK_HOME)" PATH="$(JDK_HOME)/bin:$$PATH" flutter build apk --release --dart-define=MOBILE_API_BASE_URL="$$DOMAIN_URL" && \
+	JAVA_HOME="$(JDK_HOME)" PATH="$(JDK_HOME)/bin:$$PATH" flutter build apk $(FLUTTER_APK_RELEASE_FLAGS) --dart-define=MOBILE_API_BASE_URL="$$DOMAIN_URL" && \
 	cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/$(APK_NAME) && \
-	echo "APK tayyor: build/app/outputs/flutter-apk/$(APK_NAME)" && \
+	echo "APK (arm64-v8a) tayyor: build/app/outputs/flutter-apk/$(APK_NAME)" && \
 	echo "Core URL: $$DOMAIN_URL"
 
 analyze:
