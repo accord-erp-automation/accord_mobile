@@ -1010,7 +1010,7 @@ class _ProfileSelectionSheet extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
         borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(28),
+          top: Radius.circular(20),
         ),
       ),
       child: ConstrainedBox(
