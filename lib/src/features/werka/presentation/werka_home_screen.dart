@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../../../app/app_router.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
@@ -26,6 +28,8 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
     with WidgetsBindingObserver {
   int _refreshVersion = 0;
   final ValueNotifier<double> _bottomDockFadeStrength = ValueNotifier(0);
+  double _listStretch = 0.0;
+  double _listPull = 0.0;
 
   @override
   void initState() {
@@ -56,6 +60,29 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
     final next = dockFadeStrengthFromScrollMetrics(metrics);
     if ((next - _bottomDockFadeStrength.value).abs() > 0.008) {
       _bottomDockFadeStrength.value = next;
+    }
+
+    if (notification is OverscrollNotification) {
+      final isAtBottom = notification.metrics.extentAfter <= 0.0;
+      if (isAtBottom &&
+          notification.dragDetails != null &&
+          notification.overscroll > 0) {
+        _listPull = (_listPull + notification.overscroll).clamp(0.0, 280.0);
+        final easedPull = 1.0 - math.exp(-_listPull / 110.0);
+        final nextStretch = (easedPull * 0.075).clamp(0.0, 0.075).toDouble();
+        if (nextStretch != _listStretch) {
+          setState(() => _listStretch = nextStretch);
+        }
+      }
+    }
+
+    if (notification is ScrollEndNotification) {
+      if (_listStretch != 0.0 || _listPull != 0.0) {
+        setState(() {
+          _listStretch = 0.0;
+          _listPull = 0.0;
+        });
+      }
     }
     return false;
   }
@@ -144,11 +171,31 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
                       physics: const TopRefreshScrollPhysics(),
                       padding: EdgeInsets.only(bottom: bottomPadding),
                       children: [
-                        const SizedBox(height: 4),
-                        _WerkaSummaryList(summary: currentSummary),
-                        if (pendingItems.isNotEmpty) const SizedBox(height: 16),
-                        if (pendingItems.isNotEmpty)
-                          _WerkaPendingSection(items: pendingItems),
+                        TweenAnimationBuilder<double>(
+                          tween: Tween<double>(
+                            begin: 1.0,
+                            end: 1.0 + _listStretch,
+                          ),
+                          duration: const Duration(milliseconds: 110),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, scaleY, child) {
+                            return Transform.scale(
+                              scaleY: scaleY,
+                              alignment: Alignment.bottomCenter,
+                              child: child,
+                            );
+                          },
+                          child: Column(
+                            children: [
+                              const SizedBox(height: 4),
+                              _WerkaSummaryList(summary: currentSummary),
+                              if (pendingItems.isNotEmpty)
+                                const SizedBox(height: 16),
+                              if (pendingItems.isNotEmpty)
+                                _WerkaPendingSection(items: pendingItems),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   );

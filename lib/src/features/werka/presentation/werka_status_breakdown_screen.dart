@@ -210,9 +210,11 @@ class _WerkaBreakdownSegmentTile extends StatelessWidget {
       slot: slot,
       cornerRadius: r,
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-        child: Row(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 66),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 12, 16),
+          child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
@@ -225,9 +227,10 @@ class _WerkaBreakdownSegmentTile extends StatelessWidget {
                     entry.supplierName,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      height: 1.2,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      height: 1.22,
+                      color: scheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 5),
@@ -265,6 +268,7 @@ class _WerkaBreakdownSegmentTile extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
