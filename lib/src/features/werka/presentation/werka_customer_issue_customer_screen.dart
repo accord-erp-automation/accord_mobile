@@ -10,6 +10,7 @@ import '../../../core/widgets/app_shell.dart';
 import '../../../core/widgets/m3_segmented_list.dart';
 import '../../../core/widgets/native_back_button.dart';
 import '../../shared/models/app_models.dart';
+import 'werka_success_screen.dart';
 import 'widgets/m3_picker_sheet.dart';
 import 'widgets/werka_dock.dart';
 
@@ -260,8 +261,9 @@ class _WerkaCustomerIssueCustomerScreenState
       context: context,
       builder: (context) {
         final theme = Theme.of(context);
+        final scheme = theme.colorScheme;
         return Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
           ),
@@ -294,16 +296,52 @@ class _WerkaCustomerIssueCustomerScreenState
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: Text(l10n.no),
+                      child: M3SegmentFilledSurface(
+                        slot: M3SegmentVerticalSlot.middle,
+                        cornerRadius: 22,
+                        borderRadiusOverride: const BorderRadius.horizontal(
+                          left: Radius.circular(22),
+                          right: Radius.circular(22),
+                        ),
+                        backgroundColor: scheme.surface,
+                        onTap: () => Navigator.of(context).pop(false),
+                        child: SizedBox(
+                          height: 56,
+                          child: Center(
+                            child: Text(
+                              l10n.no,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: scheme.onSurface,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: FilledButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        child: Text(l10n.yes),
+                      child: M3SegmentFilledSurface(
+                        slot: M3SegmentVerticalSlot.middle,
+                        cornerRadius: 22,
+                        borderRadiusOverride: const BorderRadius.horizontal(
+                          left: Radius.circular(22),
+                          right: Radius.circular(22),
+                        ),
+                        backgroundColor: scheme.primary,
+                        onTap: () => Navigator.of(context).pop(true),
+                        child: SizedBox(
+                          height: 56,
+                          child: Center(
+                            child: Text(
+                              l10n.yes,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: scheme.onPrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -351,7 +389,11 @@ class _WerkaCustomerIssueCustomerScreenState
       Navigator.of(context).pushNamedAndRemoveUntil(
         AppRoutes.werkaSuccess,
         (route) => route.isFirst,
-        arguments: record,
+        arguments: WerkaSuccessArgs(
+          record: record,
+          returnRouteName: AppRoutes.werkaCustomerIssueCustomer,
+          returnLabel: l10n.backToFlow(l10n.customerIssueTitle),
+        ),
       );
     } catch (error) {
       if (!mounted) {
@@ -379,9 +421,9 @@ class _WerkaCustomerIssueCustomerScreenState
     final canSubmit =
         _selectedCustomer != null && _selectedItem != null && !_submitting;
     final pickerButtonStyle = FilledButton.styleFrom(
-      backgroundColor: scheme.surfaceContainerHigh,
+      backgroundColor: scheme.surface,
       foregroundColor: scheme.onSurface,
-      disabledBackgroundColor: scheme.surfaceContainer,
+      disabledBackgroundColor: scheme.surfaceContainerLow,
       disabledForegroundColor: scheme.onSurfaceVariant,
       elevation: 0,
       minimumSize: const Size.fromHeight(58),
@@ -390,6 +432,26 @@ class _WerkaCustomerIssueCustomerScreenState
         borderRadius: BorderRadius.circular(22),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16),
+    );
+    final qtyInputDecoration = InputDecoration(
+      hintText: '0',
+      suffixText: _selectedItem?.uom,
+      filled: true,
+      fillColor: scheme.surface,
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
+      ),
     );
 
     return AppShell(
@@ -512,10 +574,7 @@ class _WerkaCustomerIssueCustomerScreenState
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      decoration: InputDecoration(
-                        hintText: '0',
-                        suffixText: _selectedItem!.uom,
-                      ),
+                      decoration: qtyInputDecoration,
                     ),
                   ],
                   const SizedBox(height: 18),

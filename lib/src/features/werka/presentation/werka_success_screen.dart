@@ -9,9 +9,21 @@ class WerkaSuccessScreen extends StatelessWidget {
   const WerkaSuccessScreen({
     super.key,
     required this.record,
+    this.returnRouteName,
+    this.returnLabel,
   });
 
   final DispatchRecord record;
+  final String? returnRouteName;
+  final String? returnLabel;
+
+  static WerkaSuccessScreen fromArgs(WerkaSuccessArgs args) {
+    return WerkaSuccessScreen(
+      record: args.record,
+      returnRouteName: args.returnRouteName,
+      returnLabel: args.returnLabel,
+    );
+  }
 
   String _title(AppLocalizations l10n) {
     if (record.eventType == 'customer_issue_pending') {
@@ -39,11 +51,13 @@ class WerkaSuccessScreen extends StatelessWidget {
   }
 
   String _ctaLabel(AppLocalizations l10n) {
-    return _returnsToCreateHub ? l10n.createFlowBack : l10n.pendingListBack;
+    return returnLabel ??
+        (_returnsToCreateHub ? l10n.createFlowBack : l10n.pendingListBack);
   }
 
   String get _targetRoute {
-    return _returnsToCreateHub ? AppRoutes.werkaCreateHub : AppRoutes.werkaHome;
+    return returnRouteName ??
+        (_returnsToCreateHub ? AppRoutes.werkaCreateHub : AppRoutes.werkaHome);
   }
 
   @override
@@ -120,4 +134,16 @@ class WerkaSuccessScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+class WerkaSuccessArgs {
+  const WerkaSuccessArgs({
+    required this.record,
+    this.returnRouteName,
+    this.returnLabel,
+  });
+
+  final DispatchRecord record;
+  final String? returnRouteName;
+  final String? returnLabel;
 }

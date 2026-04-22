@@ -323,7 +323,11 @@ class AppRouter {
           WerkaCustomerDeliveryDetailScreen(record: record),
         );
       case AppRoutes.werkaSuccess:
-        final DispatchRecord record = settings.arguments as DispatchRecord;
+        final args = settings.arguments;
+        if (args is WerkaSuccessArgs) {
+          return _buildRoute(settings, WerkaSuccessScreen.fromArgs(args));
+        }
+        final DispatchRecord record = args as DispatchRecord;
         return _buildRoute(settings, WerkaSuccessScreen(record: record));
       case AppRoutes.profile:
         return _buildRoute(settings, const ProfileScreen());

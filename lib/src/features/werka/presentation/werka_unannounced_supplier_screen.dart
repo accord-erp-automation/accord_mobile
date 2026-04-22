@@ -9,6 +9,7 @@ import '../../../core/widgets/app_shell.dart';
 import '../../../core/widgets/m3_segmented_list.dart';
 import '../../../core/widgets/native_back_button.dart';
 import '../../shared/models/app_models.dart';
+import 'werka_success_screen.dart';
 import 'widgets/m3_picker_sheet.dart';
 import 'widgets/werka_dock.dart';
 
@@ -234,7 +235,11 @@ class _WerkaUnannouncedSupplierScreenState
       Navigator.of(context).pushNamedAndRemoveUntil(
         AppRoutes.werkaSuccess,
         (route) => route.isFirst,
-        arguments: record,
+        arguments: WerkaSuccessArgs(
+          record: record,
+          returnRouteName: AppRoutes.werkaUnannouncedSupplier,
+          returnLabel: context.l10n.backToFlow(context.l10n.unannouncedTitle),
+        ),
       );
     } finally {
       if (mounted) {

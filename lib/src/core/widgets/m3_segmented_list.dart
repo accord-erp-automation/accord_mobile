@@ -123,6 +123,7 @@ class M3SegmentFilledSurface extends StatelessWidget {
     required this.child,
     this.onTap,
     this.backgroundColor,
+    this.borderRadiusOverride,
   });
 
   final M3SegmentVerticalSlot slot;
@@ -132,12 +133,13 @@ class M3SegmentFilledSurface extends StatelessWidget {
 
   /// `null` — standart [surfaceContainerLow] / [surfaceContainerHighest].
   final Color? backgroundColor;
+  final BorderRadius? borderRadiusOverride;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final brightness = Theme.of(context).brightness;
-    final BorderRadius radius =
+    final BorderRadius radius = borderRadiusOverride ??
         M3SegmentedListGeometry.borderRadius(slot, cornerRadius);
     final Color bg = backgroundColor ??
         switch (brightness) {

@@ -11,7 +11,6 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_shell.dart';
 import '../../../core/widgets/m3_segmented_list.dart';
 import '../../../core/widgets/native_back_button.dart';
-import '../../../core/widgets/shared_header_title.dart';
 import '../../shared/models/app_models.dart';
 import 'dart:math';
 import 'widgets/m3_picker_sheet.dart';
@@ -499,9 +498,9 @@ class _WerkaBatchDispatchScreenState extends State<WerkaBatchDispatchScreen> {
     final scheme = theme.colorScheme;
     final hasSavedLines = _drafts.isNotEmpty;
     final pickerButtonStyle = FilledButton.styleFrom(
-      backgroundColor: scheme.surfaceContainerHigh,
+      backgroundColor: scheme.surface,
       foregroundColor: scheme.onSurface,
-      disabledBackgroundColor: scheme.surfaceContainer,
+      disabledBackgroundColor: scheme.surfaceContainerLow,
       disabledForegroundColor: scheme.onSurfaceVariant,
       elevation: 0,
       minimumSize: const Size.fromHeight(58),
@@ -510,6 +509,26 @@ class _WerkaBatchDispatchScreenState extends State<WerkaBatchDispatchScreen> {
         borderRadius: BorderRadius.circular(22),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16),
+    );
+    final qtyInputDecoration = InputDecoration(
+      hintText: '0',
+      suffixText: _selectedItem?.uom,
+      filled: true,
+      fillColor: scheme.surface,
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
+      ),
     );
 
     return AppShell(
@@ -689,10 +708,7 @@ class _WerkaBatchDispatchScreenState extends State<WerkaBatchDispatchScreen> {
                         decimal: true,
                       ),
                       onChanged: (_) => setState(() {}),
-                      decoration: InputDecoration(
-                        hintText: '0',
-                        suffixText: _selectedItem!.uom,
-                      ),
+                      decoration: qtyInputDecoration,
                     ),
                   ],
                   const SizedBox(height: 18),
@@ -812,6 +828,8 @@ class _WerkaBatchDispatchReviewScreenState
           builder: (context) => _WerkaBatchSuccessScreen(
             createdCount: _lines.length,
             failedCount: 0,
+            returnRouteName: AppRoutes.werkaBatchDispatch,
+            returnLabel: context.l10n.backToFlow(context.l10n.batchDispatchTitle),
           ),
         ),
       );
@@ -872,6 +890,8 @@ class _WerkaBatchDispatchReviewScreenState
           builder: (context) => _WerkaBatchSuccessScreen(
             createdCount: createdCount,
             failedCount: 0,
+            returnRouteName: AppRoutes.werkaBatchDispatch,
+            returnLabel: context.l10n.backToFlow(context.l10n.batchDispatchTitle),
           ),
         ),
       );
@@ -924,159 +944,148 @@ class _WerkaBatchDispatchReviewScreenState
         }
         Navigator.of(context).pop(_lines);
       },
-      child: Scaffold(
-        backgroundColor: AppTheme.shellStart(context),
-        body: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-                child: _BatchDispatchHeader(
-                  title: l10n.batchReviewTitle,
-                  onBackPressed: () => Navigator.of(context).pop(_lines),
-                ),
-              ),
-              Expanded(
-                child: ListView(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-                  children: [
-                    Card.filled(
-                      margin: EdgeInsets.zero,
-                      color: scheme.surfaceContainerLow,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                        side: BorderSide(
-                          color: scheme.outlineVariant.withValues(alpha: 0.7),
+      child: AppShell(
+        title: l10n.batchReviewTitle,
+        subtitle: '',
+        nativeTopBar: true,
+        nativeTitleTextStyle: AppTheme.werkaNativeAppBarTitleStyle(context),
+        leading: NativeBackButtonSlot(
+          onPressed: () => Navigator.of(context).pop(_lines),
+        ),
+        contentPadding: EdgeInsets.zero,
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView(
+                controller: _scrollController,
+                padding: const EdgeInsets.fromLTRB(4, 4, 4, 20),
+                children: [
+                  M3SegmentFilledSurface(
+                    slot: M3SegmentVerticalSlot.top,
+                    cornerRadius: M3SegmentedListGeometry.cornerLarge,
+                    child: Padding(
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.batchReviewTitle,
+                            style: theme.textTheme.headlineMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _SummaryChip(
+                                label: l10n.batchCustomerCountLabel(
+                                  _customerCount,
+                                ),
+                              ),
+                              _SummaryChip(
+                                label: l10n.batchDraftCountLabel(_lines.length),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: M3SegmentedListGeometry.gap),
+                  for (var index = 0; index < _lines.length; index++) ...[
+                    M3SegmentFilledSurface(
+                      slot: M3SegmentedListGeometry.standaloneListSlotForIndex(
+                        index,
+                        _lines.length,
+                      ),
+                      cornerRadius: M3SegmentedListGeometry.cornerRadiusForSlot(
+                        M3SegmentedListGeometry.standaloneListSlotForIndex(
+                          index,
+                          _lines.length,
                         ),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(18),
-                        child: Column(
+                        padding: const EdgeInsets.fromLTRB(18, 16, 12, 16),
+                        child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              l10n.batchReviewTitle,
-                              style: theme.textTheme.headlineMedium,
-                            ),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                _SummaryChip(
-                                  label: l10n.batchCustomerCountLabel(
-                                    _customerCount,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _lines[index].customer.name,
+                                    style: theme.textTheme.titleMedium,
                                   ),
-                                ),
-                                _SummaryChip(
-                                  label:
-                                      l10n.batchDraftCountLabel(_lines.length),
-                                ),
-                              ],
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    _lines[index].item.name,
+                                    style: theme.textTheme.bodyLarge,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${_lines[index].qty.toStringAsFixed(0)} ${_lines[index].item.uom} • ${_lines[index].item.code}',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              tooltip:
+                                  MaterialLocalizations.of(context).deleteButtonTooltip,
+                              onPressed: _submitting
+                                  ? null
+                                  : () {
+                                      final localID = _lines[index].localID;
+                                      setState(() {
+                                        _lines = _lines
+                                            .where((item) => item.localID != localID)
+                                            .toList();
+                                      });
+                                    },
+                              icon: const Icon(Icons.delete_outline_rounded),
                             ),
                           ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    for (final line in _lines) ...[
-                      Card.filled(
-                        margin: EdgeInsets.zero,
-                        color: scheme.surfaceContainerLow,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          side: BorderSide(
-                            color:
-                                scheme.outlineVariant.withValues(alpha: 0.65),
-                          ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(18, 16, 12, 16),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      line.customer.name,
-                                      style: theme.textTheme.titleMedium,
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      line.item.name,
-                                      style: theme.textTheme.bodyLarge,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${line.qty.toStringAsFixed(0)} ${line.item.uom} • ${line.item.code}',
-                                      style:
-                                          theme.textTheme.bodySmall?.copyWith(
-                                        color: scheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                tooltip: MaterialLocalizations.of(context)
-                                    .deleteButtonTooltip,
-                                onPressed: _submitting
-                                    ? null
-                                    : () {
-                                        setState(() {
-                                          _lines = _lines
-                                              .where(
-                                                (item) =>
-                                                    item.localID !=
-                                                    line.localID,
-                                              )
-                                              .toList();
-                                        });
-                                      },
-                                icon: const Icon(Icons.delete_outline_rounded),
-                              ),
-                            ],
-                          ),
+                    if (index != _lines.length - 1)
+                      const SizedBox(height: M3SegmentedListGeometry.gap),
+                  ],
+                  const SizedBox(height: 28),
+                ],
+              ),
+            ),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (_lines.length < 2) ...[
+                      Text(
+                        l10n.batchNeedAtLeastTwoItems,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                     ],
-                    const SizedBox(height: 40),
+                    FilledButton(
+                      onPressed: canSubmit ? _submit : null,
+                      child: Text(
+                        _submitting ? l10n.sending : l10n.confirmTitle,
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-        bottomNavigationBar: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (_lines.length < 2) ...[
-                  Text(
-                    l10n.batchNeedAtLeastTwoItems,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                ],
-                FilledButton(
-                  onPressed: canSubmit ? _submit : null,
-                  child: Text(
-                    _submitting ? l10n.sending : l10n.confirmTitle,
-                  ),
-                ),
-              ],
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -1095,34 +1104,6 @@ class _WerkaBatchDraftLine {
   final CustomerDirectoryEntry customer;
   final SupplierItem item;
   final double qty;
-}
-
-class _BatchDispatchHeader extends StatelessWidget {
-  const _BatchDispatchHeader({
-    required this.title,
-    this.onBackPressed,
-  });
-
-  final String title;
-  final VoidCallback? onBackPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        HeaderLeadingTransition(
-          child: NativeBackButtonSlot(
-            onPressed: onBackPressed ?? () => Navigator.of(context).maybePop(),
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: SharedHeaderTitle(title: title),
-        ),
-      ],
-    );
-  }
 }
 
 class _SummaryChip extends StatelessWidget {
@@ -1154,10 +1135,14 @@ class _WerkaBatchSuccessScreen extends StatelessWidget {
   const _WerkaBatchSuccessScreen({
     required this.createdCount,
     required this.failedCount,
+    required this.returnRouteName,
+    required this.returnLabel,
   });
 
   final int createdCount;
   final int failedCount;
+  final String returnRouteName;
+  final String returnLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -1226,10 +1211,10 @@ class _WerkaBatchSuccessScreen extends StatelessWidget {
             width: double.infinity,
             child: FilledButton(
               onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
-                AppRoutes.werkaCreateHub,
+                returnRouteName,
                 (route) => route.isFirst,
               ),
-              child: Text(l10n.createFlowBack),
+              child: Text(returnLabel),
             ),
           ),
         ],
