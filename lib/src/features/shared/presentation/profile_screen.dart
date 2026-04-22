@@ -623,15 +623,11 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   void _openWerkaDrawerRoute(String route) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        route,
-        (route) => false,
-      );
-    });
+    final current = ModalRoute.of(context)?.settings.name;
+    if (current == route) {
+      return;
+    }
+    Navigator.of(context).pushReplacementNamed(route);
   }
 }
 

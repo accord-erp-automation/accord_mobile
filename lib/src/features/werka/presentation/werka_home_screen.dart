@@ -110,16 +110,11 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
   }
 
   void _openDrawerRoute(String route) {
-    Navigator.of(context).pop();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        route,
-        (route) => false,
-      );
-    });
+    final current = ModalRoute.of(context)?.settings.name;
+    if (current == route) {
+      return;
+    }
+    Navigator.of(context).pushReplacementNamed(route);
   }
 
   @override

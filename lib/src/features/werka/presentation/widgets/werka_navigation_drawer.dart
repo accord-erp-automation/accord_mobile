@@ -28,17 +28,14 @@ class WerkaNavigationDrawer extends StatelessWidget {
             Navigator.of(context).pop();
             return;
           }
+          final route = switch (index) {
+            0 => AppRoutes.werkaHome,
+            1 => AppRoutes.werkaNotifications,
+            2 => AppRoutes.werkaArchive,
+            _ => AppRoutes.profile,
+          };
           Navigator.of(context).pop();
-          switch (index) {
-            case 0:
-              onNavigate(AppRoutes.werkaHome);
-            case 1:
-              onNavigate(AppRoutes.werkaNotifications);
-            case 2:
-              onNavigate(AppRoutes.werkaArchive);
-            case 3:
-              onNavigate(AppRoutes.profile);
-          }
+          onNavigate(route);
         },
         header: Padding(
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 2),
