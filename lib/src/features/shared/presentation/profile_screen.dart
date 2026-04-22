@@ -1018,7 +1018,7 @@ class _ProfileSelectionSheet extends StatelessWidget {
           maxHeight: maxHeight ?? double.infinity,
         ),
         child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPadding),
+          padding: EdgeInsets.fromLTRB(12, 12, 12, bottomPadding),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
