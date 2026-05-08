@@ -2,10 +2,16 @@ import 'dart:async';
 
 import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
+import '../../../core/customer/customer_priority.dart';
+import '../../../core/localization/app_localizations.dart';
+import '../../../core/notifications/hub/refresh_hub.dart';
+import '../../../core/notifications/store/werka_runtime_store.dart';
+import '../../../core/search/search_activity_store.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/shell/app_shell.dart';
+import '../../shared/models/app_models.dart';
 import '../../shared/models/stock_entry_lookup.dart';
-import 'werka_customer_issue_prefill.dart';
+import 'werka_success_screen.dart';
 import 'package:flutter/material.dart';
 
 class WerkaStockEntryLookupArgs {
@@ -35,6 +41,7 @@ class _WerkaStockEntryLookupScreenState
     extends State<WerkaStockEntryLookupScreen> {
   late Future<StockEntryBarcodeLookup> _future;
   String? _errorText;
+  String? _submittingEntryKey;
 
   @override
   void initState() {
@@ -100,6 +107,100 @@ class _WerkaStockEntryLookupScreenState
     return '$left → $right';
   }
 
+  String _entryKey(StockEntryBarcodeEntry entry) {
+    return '${entry.stockEntryName}|${entry.lineIndex}|${entry.barcode}';
+  }
+
+  Future<void> _createCustomerIssueFromEntry(
+    StockEntryBarcodeEntry entry,
+  ) async {
+    final l10n = context.l10n;
+    final itemCode = entry.itemCode.trim();
+    if (itemCode.isEmpty || entry.qty <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.qtyRequired)),
+      );
+      return;
+    }
+
+    final key = _entryKey(entry);
+    setState(() => _submittingEntryKey = key);
+    try {
+      final customers = await MobileApi.instance.werkaCustomersForItem(
+        itemCode: itemCode,
+        itemName: entry.itemName,
+        limit: 200,
+        offset: 0,
+      );
+      final customer = preferPrimaryCustomer<CustomerDirectoryEntry>(
+        customers,
+        customerName: (item) => item.name,
+      );
+      if (customer == null) {
+        throw const MobileApiException(
+          code: 'customer_not_found',
+          message: 'Customer not found',
+        );
+      }
+
+      final created = await MobileApi.instance.createWerkaCustomerIssue(
+        customerRef: customer.ref,
+        itemCode: itemCode,
+        qty: entry.qty,
+      );
+      await SearchActivityStore.instance.recordItemSelection(created.itemCode);
+      if (!mounted) {
+        return;
+      }
+
+      final record = DispatchRecord(
+        id: created.entryID,
+        supplierRef: created.customerRef,
+        supplierName: created.customerName,
+        itemCode: created.itemCode,
+        itemName: created.itemName,
+        uom: created.uom,
+        sentQty: created.qty,
+        acceptedQty: 0,
+        amount: 0,
+        currency: '',
+        note: '',
+        eventType: 'customer_issue_pending',
+        highlight: '',
+        status: DispatchStatus.pending,
+        createdLabel: created.createdLabel,
+      );
+      WerkaRuntimeStore.instance.recordCreatedPending(record);
+      RefreshHub.instance.emit('werka');
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.werkaSuccess,
+        (route) => route.isFirst,
+        arguments: WerkaSuccessArgs(
+          record: record,
+          returnRouteName: AppRoutes.werkaStockEntryQrScan,
+          returnLabel: 'QR scan ga qaytish',
+        ),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      final message = error is MobileApiException &&
+              error.code == 'insufficient_stock'
+          ? l10n.insufficientStockMessage
+          : error is MobileApiException && error.code == 'customer_not_found'
+              ? 'Bu mahsulot uchun customer topilmadi.'
+              : l10n.customerIssueFailed(error);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } finally {
+      if (mounted && _submittingEntryKey == key) {
+        setState(() => _submittingEntryKey = null);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -150,22 +251,9 @@ class _WerkaStockEntryLookupScreenState
             formatQty: _formatQty,
             docStatusLabel: _docStatusLabel,
             warehouseText: _warehouseText,
-            onCreateCustomerIssue: (entry) {
-              Navigator.of(context).pushNamed(
-                AppRoutes.werkaCustomerIssueCustomer,
-                arguments: WerkaCustomerIssuePrefillArgs(
-                  itemCode: entry.itemCode,
-                  itemName: entry.itemName,
-                  qty: entry.qty,
-                  uom: entry.uom.trim().isEmpty ? entry.stockUOM : entry.uom,
-                  warehouse: entry.targetWarehouse,
-                  sourceStockEntryName: entry.stockEntryName,
-                  sourceBarcode: entry.barcode.trim().isEmpty
-                      ? lookup.barcode
-                      : entry.barcode,
-                ),
-              );
-            },
+            submittingEntryKey: _submittingEntryKey,
+            entryKey: _entryKey,
+            onCreateCustomerIssue: _createCustomerIssueFromEntry,
           );
         },
       ),
@@ -367,6 +455,8 @@ class _ResultView extends StatelessWidget {
     required this.formatQty,
     required this.docStatusLabel,
     required this.warehouseText,
+    required this.submittingEntryKey,
+    required this.entryKey,
     required this.onCreateCustomerIssue,
   });
 
@@ -375,102 +465,36 @@ class _ResultView extends StatelessWidget {
   final String Function(double value) formatQty;
   final String Function(int value) docStatusLabel;
   final String Function(String source, String target) warehouseText;
-  final void Function(StockEntryBarcodeEntry entry) onCreateCustomerIssue;
+  final String Function(StockEntryBarcodeEntry entry) entryKey;
+  final String? submittingEntryKey;
+  final Future<void> Function(StockEntryBarcodeEntry entry)
+      onCreateCustomerIssue;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 112),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 112),
       children: [
-        Card.filled(
-          margin: EdgeInsets.zero,
-          color: scheme.surfaceContainerLow,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      height: 46,
-                      width: 46,
-                      decoration: BoxDecoration(
-                        color: scheme.primaryContainer,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.qr_code_rounded,
-                        color: scheme.onPrimaryContainer,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            lookup.barcode,
-                            style: theme.textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            lookup.hasMultipleEntries
-                                ? '${lookup.count} ta line topildi'
-                                : '1 ta line topildi',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Chip(
-                      label: const Text('Barcode'),
-                      side: BorderSide(
-                        color: scheme.outlineVariant.withValues(alpha: 0.35),
-                      ),
-                      backgroundColor: scheme.surfaceContainerHighest,
-                    ),
-                  ],
-                ),
-                if (args.rawValue.trim().isNotEmpty &&
-                    args.rawValue.trim() != args.scannedBarcode) ...[
-                  const SizedBox(height: 14),
-                  Text(
-                    'Raw QR',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  SelectableText(
-                    args.rawValue,
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ],
-              ],
-            ),
-          ),
+        _LookupSummary(
+          barcode: lookup.barcode,
+          rawValue: args.rawValue,
+          scannedBarcode: args.scannedBarcode,
+          lineCount: lookup.count,
+          hasMultipleEntries: lookup.hasMultipleEntries,
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
         for (int index = 0; index < lookup.entries.length; index++) ...[
-          _LookupEntryCard(
+          _LookupEntryPanel(
             entry: lookup.entries[index],
             formatQty: formatQty,
             docStatusLabel: docStatusLabel,
             warehouseText: warehouseText,
+            isSubmitting: submittingEntryKey == entryKey(lookup.entries[index]),
             onCreateCustomerIssue: onCreateCustomerIssue,
           ),
           if (index != lookup.entries.length - 1) const SizedBox(height: 12),
         ],
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         Row(
           children: [
             Expanded(
@@ -497,12 +521,87 @@ class _ResultView extends StatelessWidget {
   }
 }
 
-class _LookupEntryCard extends StatelessWidget {
-  const _LookupEntryCard({
+class _LookupSummary extends StatelessWidget {
+  const _LookupSummary({
+    required this.barcode,
+    required this.rawValue,
+    required this.scannedBarcode,
+    required this.lineCount,
+    required this.hasMultipleEntries,
+  });
+
+  final String barcode;
+  final String rawValue;
+  final String scannedBarcode;
+  final int lineCount;
+  final bool hasMultipleEntries;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final showRaw =
+        rawValue.trim().isNotEmpty && rawValue.trim() != scannedBarcode;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: scheme.outlineVariant.withValues(alpha: 0.45),
+          ),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(0, 4, 0, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.qr_code_2_rounded,
+                  size: 22,
+                  color: scheme.primary,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: SelectableText(
+                    barcode,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                _StatusBadge(
+                  label: hasMultipleEntries ? '$lineCount line' : '1 line',
+                ),
+              ],
+            ),
+            if (showRaw) ...[
+              const SizedBox(height: 8),
+              SelectableText(
+                rawValue,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  height: 1.25,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LookupEntryPanel extends StatelessWidget {
+  const _LookupEntryPanel({
     required this.entry,
     required this.formatQty,
     required this.docStatusLabel,
     required this.warehouseText,
+    required this.isSubmitting,
     required this.onCreateCustomerIssue,
   });
 
@@ -510,7 +609,9 @@ class _LookupEntryCard extends StatelessWidget {
   final String Function(double value) formatQty;
   final String Function(int value) docStatusLabel;
   final String Function(String source, String target) warehouseText;
-  final void Function(StockEntryBarcodeEntry entry) onCreateCustomerIssue;
+  final bool isSubmitting;
+  final Future<void> Function(StockEntryBarcodeEntry entry)
+      onCreateCustomerIssue;
 
   bool get _canCreateCustomerIssue {
     return entry.itemCode.trim().isNotEmpty && entry.qty > 0;
@@ -520,14 +621,17 @@ class _LookupEntryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    return Card.filled(
-      margin: EdgeInsets.zero,
-      color: scheme.surfaceContainerLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(28),
+    final itemTitle = entry.itemName.isEmpty ? entry.itemCode : entry.itemName;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.35),
+        ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.fromLTRB(14, 13, 14, 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -540,7 +644,9 @@ class _LookupEntryCard extends StatelessWidget {
                     children: [
                       Text(
                         entry.stockEntryName,
-                        style: theme.textTheme.titleLarge,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -554,98 +660,94 @@ class _LookupEntryCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Chip(
-                  label: Text(docStatusLabel(entry.docStatus)),
-                  side: BorderSide(
-                    color: scheme.outlineVariant.withValues(alpha: 0.35),
-                  ),
-                  backgroundColor: scheme.surfaceContainerHighest,
+                _StatusBadge(
+                  label: docStatusLabel(entry.docStatus),
                 ),
               ],
             ),
-            const SizedBox(height: 14),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            const SizedBox(height: 12),
+            Row(
               children: [
-                _MetaChip(
-                  label: 'Item',
-                  value:
-                      entry.itemName.isEmpty ? entry.itemCode : entry.itemName,
-                ),
-                _MetaChip(
-                  label: 'Code',
-                  value: entry.itemCode,
-                ),
-                _MetaChip(
-                  label: 'Qty',
-                  value: '${formatQty(entry.qty)} ${entry.uom}',
-                ),
-                if (entry.status.trim().isNotEmpty)
-                  _MetaChip(
-                    label: 'Status',
-                    value: entry.status,
+                Expanded(
+                  child: _MetricTile(
+                    label: 'Miqdor',
+                    value: '${formatQty(entry.qty)} ${entry.uom}',
                   ),
-                if (entry.company.trim().isNotEmpty)
-                  _MetaChip(
-                    label: 'Company',
-                    value: entry.company,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _MetricTile(
+                    label: 'Holat',
+                    value: entry.status.trim().isEmpty
+                        ? docStatusLabel(entry.docStatus)
+                        : entry.status,
                   ),
-                if (entry.barcode.trim().isNotEmpty)
-                  _MetaChip(
-                    label: 'Barcode',
-                    value: entry.barcode,
-                  ),
+                ),
               ],
             ),
+            const SizedBox(height: 12),
+            _InfoRow(
+              label: 'Mahsulot',
+              value: itemTitle,
+            ),
+            _InfoRow(
+              label: 'Kod',
+              value: entry.itemCode,
+            ),
+            if (entry.company.trim().isNotEmpty)
+              _InfoRow(
+                label: 'Kompaniya',
+                value: entry.company,
+              ),
+            if (entry.barcode.trim().isNotEmpty)
+              _InfoRow(
+                label: 'Barcode',
+                value: entry.barcode,
+                selectable: true,
+              ),
             if (entry.sourceWarehouse.trim().isNotEmpty ||
-                entry.targetWarehouse.trim().isNotEmpty) ...[
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Icon(
-                    Icons.warehouse_outlined,
-                    size: 18,
+                entry.targetWarehouse.trim().isNotEmpty)
+              _InfoRow(
+                label: 'Ombor',
+                value: warehouseText(
+                  entry.sourceWarehouse,
+                  entry.targetWarehouse,
+                ),
+                icon: Icons.warehouse_outlined,
+              ),
+            if (entry.remarks.trim().isNotEmpty)
+              _InfoRow(
+                label: 'Izoh',
+                value: entry.remarks,
+              ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Text(
+                  'Line ${entry.lineIndex}',
+                  style: theme.textTheme.labelMedium?.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      warehouseText(
-                        entry.sourceWarehouse,
-                        entry.targetWarehouse,
-                      ),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            if (entry.remarks.trim().isNotEmpty) ...[
-              const SizedBox(height: 14),
-              Text(
-                entry.remarks,
-                style: theme.textTheme.bodyMedium,
-              ),
-            ],
-            const SizedBox(height: 14),
-            Text(
-              'Line ${entry.lineIndex}',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+                ),
+                const Spacer(),
+              ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: _canCreateCustomerIssue
-                    ? () => onCreateCustomerIssue(entry)
+                onPressed: _canCreateCustomerIssue && !isSubmitting
+                    ? () => unawaited(onCreateCustomerIssue(entry))
                     : null,
-                icon: const Icon(Icons.local_shipping_outlined),
-                label: const Text('Customerga jo‘natish'),
+                icon: isSubmitting
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2.4),
+                      )
+                    : const Icon(Icons.local_shipping_outlined),
+                label: Text(
+                  isSubmitting ? 'Jo‘natilmoqda...' : 'Customerga jo‘natish',
+                ),
               ),
             ),
           ],
@@ -655,8 +757,40 @@ class _LookupEntryCard extends StatelessWidget {
   }
 }
 
-class _MetaChip extends StatelessWidget {
-  const _MetaChip({
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({
+    required this.label,
+  });
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        child: Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  const _MetricTile({
     required this.label,
     required this.value,
   });
@@ -668,40 +802,99 @@ class _MetaChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    return Container(
-      constraints: const BoxConstraints(minHeight: 38),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: scheme.outlineVariant.withValues(alpha: 0.24),
         ),
       ),
-      child: RichText(
-        text: TextSpan(
-          style: theme.textTheme.labelLarge?.copyWith(
-            color: scheme.onSurfaceVariant,
-          ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextSpan(
-              text: '$label: ',
-              style: theme.textTheme.labelLarge?.copyWith(
+            Text(
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(
                 color: scheme.onSurfaceVariant,
-                fontWeight: FontWeight.w700,
               ),
             ),
-            TextSpan(
-              text: value.isEmpty ? '—' : value,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: scheme.onSurface,
+            const SizedBox(height: 3),
+            Text(
+              value.isEmpty ? '—' : value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
           ],
         ),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.label,
+    required this.value,
+    this.icon,
+    this.selectable = false,
+  });
+
+  final String label;
+  final String value;
+  final IconData? icon;
+  final bool selectable;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final displayValue = value.trim().isEmpty ? '—' : value.trim();
+    final valueStyle = theme.textTheme.bodyMedium?.copyWith(
+      fontWeight: FontWeight.w700,
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 104,
+            child: Row(
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 16, color: scheme.onSurfaceVariant),
+                  const SizedBox(width: 6),
+                ],
+                Expanded(
+                  child: Text(
+                    label,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: selectable
+                ? SelectableText(
+                    displayValue,
+                    style: valueStyle,
+                  )
+                : Text(
+                    displayValue,
+                    style: valueStyle,
+                  ),
+          ),
+        ],
       ),
     );
   }

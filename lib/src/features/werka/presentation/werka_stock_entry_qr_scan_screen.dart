@@ -7,7 +7,6 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
 import '../../../core/widgets/shell/app_shell.dart';
-import '../../shared/models/stock_entry_lookup.dart';
 import 'werka_archive_batch_qr.dart';
 import 'werka_archive_batch_qr_lookup_screen.dart';
 import 'werka_stock_entry_lookup_screen.dart';
@@ -114,6 +113,9 @@ class _WerkaStockEntryQrScanScreenState
         _statusText = 'Batch QR o‘qildi...';
       });
       await _stopScanner();
+      if (!mounted) {
+        return;
+      }
       await Navigator.of(context).pushReplacementNamed(
         AppRoutes.werkaArchiveBatchQrLookup,
         arguments: WerkaArchiveBatchQrLookupArgs(payload: archivePayload),
@@ -346,17 +348,28 @@ class _WerkaStockEntryQrScanScreenState
                                       color:
                                           Colors.white.withValues(alpha: 0.04),
                                     ),
-                                    child: Center(
-                                      child: Container(
-                                        width: 18,
-                                        height: 18,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: Colors.white.withValues(
-                                            alpha: 0.78,
+                                    child: Stack(
+                                      children: [
+                                        Center(
+                                          child: Container(
+                                            width: 18,
+                                            height: 18,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: Colors.white.withValues(
+                                                alpha: 0.78,
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                      ),
+                                        PositionedDirectional(
+                                          top: 12,
+                                          end: 12,
+                                          child: _TorchButton(
+                                            controller: _controller!,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 );
@@ -378,6 +391,64 @@ class _WerkaStockEntryQrScanScreenState
                 onBack: () => Navigator.of(context).maybePop(),
               ),
       ),
+    );
+  }
+}
+
+class _TorchButton extends StatelessWidget {
+  const _TorchButton({
+    required this.controller,
+  });
+
+  final MobileScannerController controller;
+
+  Future<void> _toggleTorch() async {
+    try {
+      await controller.toggleTorch();
+    } catch (_) {
+      // Torch availability is device-specific; the button is best-effort.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<MobileScannerState>(
+      valueListenable: controller,
+      builder: (context, state, child) {
+        if (!state.isInitialized ||
+            !state.isRunning ||
+            state.torchState == TorchState.unavailable) {
+          return const SizedBox.shrink();
+        }
+
+        final bool enabled = state.torchState == TorchState.on;
+        return Tooltip(
+          message: enabled ? 'Flash o‘chirish' : 'Flash yoqish',
+          child: Material(
+            color: enabled
+                ? Colors.white.withValues(alpha: 0.92)
+                : Colors.black.withValues(alpha: 0.42),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: Colors.white.withValues(alpha: 0.28),
+              ),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: _toggleTorch,
+              child: SizedBox.square(
+                dimension: 46,
+                child: Icon(
+                  enabled ? Icons.flash_on_rounded : Icons.flash_off_rounded,
+                  color: enabled ? Colors.black : Colors.white,
+                  size: 22,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
