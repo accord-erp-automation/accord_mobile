@@ -55,6 +55,73 @@ CustomerDirectoryEntry resolveArchiveBatchDefaultCustomer(
       archiveBatchCustomerFromOption(option);
 }
 
+abstract class WerkaArchiveBatchQrLookupApi {
+  Future<List<CustomerItemOption>> customerItemOptions({
+    required String query,
+    required int limit,
+  });
+
+  Future<List<CustomerDirectoryEntry>> customersForItem({
+    required String itemCode,
+    required String itemName,
+    String query = '',
+    required int limit,
+    int offset = 0,
+  });
+
+  Future<WerkaCustomerIssueRecord> createCustomerIssue({
+    required String customerRef,
+    required String itemCode,
+    required double qty,
+  });
+}
+
+class MobileWerkaArchiveBatchQrLookupApi
+    implements WerkaArchiveBatchQrLookupApi {
+  const MobileWerkaArchiveBatchQrLookupApi();
+
+  @override
+  Future<List<CustomerItemOption>> customerItemOptions({
+    required String query,
+    required int limit,
+  }) {
+    return MobileApi.instance.werkaCustomerItemOptions(
+      query: query,
+      limit: limit,
+    );
+  }
+
+  @override
+  Future<List<CustomerDirectoryEntry>> customersForItem({
+    required String itemCode,
+    required String itemName,
+    String query = '',
+    required int limit,
+    int offset = 0,
+  }) {
+    return MobileApi.instance.werkaCustomersForItem(
+      itemCode: itemCode,
+      itemName: itemName,
+      query: query,
+      limit: limit,
+      offset: offset,
+    );
+  }
+
+  @override
+  Future<WerkaCustomerIssueRecord> createCustomerIssue({
+    required String customerRef,
+    required String itemCode,
+    required double qty,
+  }) {
+    return MobileApi.instance.createWerkaCustomerIssue(
+      customerRef: customerRef,
+      itemCode: itemCode,
+      qty: qty,
+    );
+  }
+}
+
 class WerkaArchiveBatchQrLookupArgs {
   const WerkaArchiveBatchQrLookupArgs({
     required this.payload,
@@ -67,9 +134,11 @@ class WerkaArchiveBatchQrLookupScreen extends StatefulWidget {
   const WerkaArchiveBatchQrLookupScreen({
     super.key,
     required this.args,
+    this.api = const MobileWerkaArchiveBatchQrLookupApi(),
   });
 
   final WerkaArchiveBatchQrLookupArgs args;
+  final WerkaArchiveBatchQrLookupApi api;
 
   @override
   State<WerkaArchiveBatchQrLookupScreen> createState() =>
@@ -90,7 +159,7 @@ class _WerkaArchiveBatchQrLookupScreenState
 
   Future<_ArchiveBatchQrResolution> _resolveItem() async {
     final payload = widget.args.payload;
-    final options = await MobileApi.instance.werkaCustomerItemOptions(
+    final options = await widget.api.customerItemOptions(
       query: payload.itemName,
       limit: 200,
     );
@@ -103,7 +172,7 @@ class _WerkaArchiveBatchQrLookupScreenState
     }
     var customers = <CustomerDirectoryEntry>[];
     try {
-      customers = await MobileApi.instance.werkaCustomersForItem(
+      customers = await widget.api.customersForItem(
         itemCode: option.itemCode,
         itemName: option.itemName,
         limit: 200,
@@ -147,8 +216,7 @@ class _WerkaArchiveBatchQrLookupScreenState
           title: context.l10n.selectCustomer,
           supportingText: option.itemName,
           hintText: context.l10n.searchCustomer,
-          loadPage: (query, offset, limit) =>
-              MobileApi.instance.werkaCustomersForItem(
+          loadPage: (query, offset, limit) => widget.api.customersForItem(
             itemCode: option.itemCode,
             itemName: option.itemName,
             query: query,
@@ -181,7 +249,7 @@ class _WerkaArchiveBatchQrLookupScreenState
 
     setState(() => _submitting = true);
     try {
-      final created = await MobileApi.instance.createWerkaCustomerIssue(
+      final created = await widget.api.createCustomerIssue(
         customerRef: customer.ref,
         itemCode: option.itemCode,
         qty: payload.qty,

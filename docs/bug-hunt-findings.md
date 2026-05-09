@@ -165,8 +165,10 @@ Move to `WidgetStateProperty`, `WidgetState`, and `onPopInvokedWithResult`.
 
 Severity: Low to Medium
 
-Current behavior:
-Batch QR parser tests exist, but the dispatch resolution and submit flow are not covered.
+Status: Fixed in working tree. Batch QR now has a widget test proving exact item resolution, preferred customer selection, and direct submit payload.
+
+Previous behavior:
+Batch QR parser tests existed, but the dispatch resolution and submit flow were not covered.
 
 Risk:
 Future UI or API changes can break Batch QR dispatch without test signal.
