@@ -161,8 +161,10 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final scheme = theme.colorScheme;
+    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom + 168.0;
     useNativeNavigationTitle(context, 'Qabul qilish');
     final detailRows = <({String label, String value})>[
       (label: 'Supplier', value: widget.record.supplierName),
@@ -186,7 +188,7 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
             const NativeNavigationTitleHeader(title: 'Qabul qilish'),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 4, 24, 132),
+                padding: EdgeInsets.fromLTRB(24, 4, 24, bottomPadding),
                 children: [
                   Text(
                     widget.record.itemName,
@@ -222,9 +224,10 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    style: textTheme.displaySmall,
+                    style: _quantityTextStyle(textTheme),
                     readOnly: fullReturnMode,
-                    decoration: InputDecoration(
+                    decoration: _quantityInputDecoration(
+                      scheme: scheme,
                       hintText: '0',
                       suffixText: widget.record.uom,
                     ),
@@ -233,6 +236,7 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
+                      style: _outlinedActionStyle(scheme),
                       onPressed: () {
                         setState(() {
                           fullReturnMode = !fullReturnMode;
@@ -295,7 +299,8 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
                       controller: returnCommentController,
                       minLines: 3,
                       maxLines: 5,
-                      decoration: const InputDecoration(
+                      decoration: _detailInputDecoration(
+                        scheme: scheme,
                         labelText: 'Izoh',
                         hintText: 'Ixtiyoriy izoh',
                       ),
@@ -306,8 +311,9 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
                       controller: returnedController,
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
-                      style: textTheme.displaySmall,
-                      decoration: InputDecoration(
+                      style: _quantityTextStyle(textTheme),
+                      decoration: _quantityInputDecoration(
+                        scheme: scheme,
                         labelText: 'Qaytarilayotgan',
                         hintText: '0',
                         suffixText: widget.record.uom,
@@ -352,6 +358,7 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
+                      style: _filledActionStyle(scheme),
                       onPressed: submitting ? null : _submit,
                       child: Text(
                         submitting ? 'Saqlanmoqda...' : 'Yakunlash',
@@ -364,10 +371,72 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: const WerkaDock(
-        activeTab: null,
-        showPrimaryFab: false,
+      bottomNavigationBar: const WerkaDock(activeTab: WerkaDockTab.home),
+    );
+  }
+
+  TextStyle? _quantityTextStyle(TextTheme textTheme) {
+    return textTheme.headlineMedium?.copyWith(
+      fontSize: 30,
+      height: 1.1,
+      fontWeight: FontWeight.w800,
+    );
+  }
+
+  InputDecoration _quantityInputDecoration({
+    required ColorScheme scheme,
+    String? labelText,
+    required String hintText,
+    String? suffixText,
+  }) {
+    return _detailInputDecoration(
+      scheme: scheme,
+      labelText: labelText,
+      hintText: hintText,
+      suffixText: suffixText,
+      contentPadding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+    );
+  }
+
+  InputDecoration _detailInputDecoration({
+    required ColorScheme scheme,
+    String? labelText,
+    required String hintText,
+    String? suffixText,
+    EdgeInsetsGeometry contentPadding =
+        const EdgeInsets.fromLTRB(18, 14, 18, 14),
+  }) {
+    final borderRadius = BorderRadius.circular(14);
+    final enabledBorder = OutlineInputBorder(
+      borderRadius: borderRadius,
+      borderSide: BorderSide(color: scheme.outlineVariant),
+    );
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      suffixText: suffixText,
+      contentPadding: contentPadding,
+      border: enabledBorder,
+      enabledBorder: enabledBorder,
+      focusedBorder: OutlineInputBorder(
+        borderRadius: borderRadius,
+        borderSide: BorderSide(color: scheme.primary, width: 1.6),
       ),
+    );
+  }
+
+  ButtonStyle _outlinedActionStyle(ColorScheme scheme) {
+    return OutlinedButton.styleFrom(
+      minimumSize: const Size.fromHeight(56),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      side: BorderSide(color: scheme.outline),
+    );
+  }
+
+  ButtonStyle _filledActionStyle(ColorScheme scheme) {
+    return FilledButton.styleFrom(
+      minimumSize: const Size.fromHeight(58),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     );
   }
 }
