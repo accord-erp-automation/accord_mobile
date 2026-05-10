@@ -8,6 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../shared/models/app_models.dart';
 import 'widgets/werka_dock.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class WerkaDetailScreen extends StatefulWidget {
   const WerkaDetailScreen({
@@ -219,18 +220,13 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
             ),
           ),
           const SizedBox(height: 14),
-          TextField(
+          _QuantityFieldRow(
             controller: controller,
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-            ),
-            style: _quantityTextStyle(textTheme),
             readOnly: fullReturnMode,
-            decoration: _quantityInputDecoration(
-              scheme: scheme,
-              hintText: '0',
-              suffixText: widget.record.uom,
-            ),
+            unit: widget.record.uom,
+            textTheme: textTheme,
+            scheme: scheme,
+            hintText: '0',
           ),
           const SizedBox(height: 24),
           SizedBox(
@@ -307,17 +303,14 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
             ),
           ] else if (showReturnFields) ...[
             const SizedBox(height: 28),
-            TextField(
+            _QuantityFieldRow(
               controller: returnedController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              style: _quantityTextStyle(textTheme),
-              decoration: _quantityInputDecoration(
-                scheme: scheme,
-                labelText: 'Qaytarilayotgan',
-                hintText: '0',
-                suffixText: widget.record.uom,
-              ),
+              readOnly: false,
+              unit: widget.record.uom,
+              textTheme: textTheme,
+              scheme: scheme,
+              hintText: '0',
+              labelText: 'Qaytarilayotgan',
             ),
             const SizedBox(height: 18),
             Text(
@@ -370,34 +363,10 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
     );
   }
 
-  TextStyle? _quantityTextStyle(TextTheme textTheme) {
-    return textTheme.headlineMedium?.copyWith(
-      fontSize: 30,
-      height: 1.1,
-      fontWeight: FontWeight.w800,
-    );
-  }
-
-  InputDecoration _quantityInputDecoration({
-    required ColorScheme scheme,
-    String? labelText,
-    required String hintText,
-    String? suffixText,
-  }) {
-    return _detailInputDecoration(
-      scheme: scheme,
-      labelText: labelText,
-      hintText: hintText,
-      suffixText: suffixText,
-      contentPadding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
-    );
-  }
-
   InputDecoration _detailInputDecoration({
     required ColorScheme scheme,
     String? labelText,
     required String hintText,
-    String? suffixText,
     EdgeInsetsGeometry contentPadding =
         const EdgeInsets.fromLTRB(18, 14, 18, 14),
   }) {
@@ -409,7 +378,6 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
     return InputDecoration(
       labelText: labelText,
       hintText: hintText,
-      suffixText: suffixText,
       contentPadding: contentPadding,
       border: enabledBorder,
       enabledBorder: enabledBorder,
@@ -432,6 +400,76 @@ class _WerkaDetailScreenState extends State<WerkaDetailScreen> {
     return FilledButton.styleFrom(
       minimumSize: const Size.fromHeight(58),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    );
+  }
+}
+
+class _QuantityFieldRow extends StatelessWidget {
+  const _QuantityFieldRow({
+    required this.controller,
+    required this.unit,
+    required this.textTheme,
+    required this.scheme,
+    required this.hintText,
+    this.readOnly = false,
+    this.labelText,
+  });
+
+  final TextEditingController controller;
+  final String unit;
+  final TextTheme textTheme;
+  final ColorScheme scheme;
+  final String hintText;
+  final bool readOnly;
+  final String? labelText;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderRadius = BorderRadius.circular(14);
+    final fieldBorder = OutlineInputBorder(
+      borderRadius: borderRadius,
+      borderSide: BorderSide(color: scheme.outlineVariant),
+    );
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            textAlign: TextAlign.right,
+            style: textTheme.headlineMedium?.copyWith(
+              fontSize: 30,
+              height: 1.1,
+              fontWeight: FontWeight.w800,
+            ),
+            readOnly: readOnly,
+            decoration: InputDecoration(
+              labelText: labelText,
+              hintText: hintText,
+              contentPadding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+              border: fieldBorder,
+              enabledBorder: fieldBorder,
+              focusedBorder: OutlineInputBorder(
+                borderRadius: borderRadius,
+                borderSide: BorderSide(color: scheme.primary, width: 1.6),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Text(
+            unit,
+            style: textTheme.titleMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
