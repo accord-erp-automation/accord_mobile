@@ -366,33 +366,33 @@ class _WerkaNotificationsScreenState extends State<WerkaNotificationsScreen>
                   return AppRefreshIndicator(
                     onRefresh: _reload,
                     allowRefreshOnShortContent: true,
-                    child: ListView(
-                      physics: const TopRefreshScrollPhysics(),
-                      padding: EdgeInsets.fromLTRB(0, 4, 0, bottomPadding),
-                      children: [
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 9),
-                            child: M3SegmentFilledSurface(
-                              slot: M3SegmentVerticalSlot.top,
-                              cornerRadius: M3SegmentedListGeometry.cornerLarge,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 14,
-                                ),
-                                child: Text(
-                                  context.l10n.noNotifications,
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final emptyHeight = math.max(
+                            0.0, constraints.maxHeight - bottomPadding);
+                        return ListView(
+                          physics: const TopRefreshScrollPhysics(),
+                          padding: EdgeInsets.only(bottom: bottomPadding),
+                          children: [
+                            SizedBox(
+                              height: emptyHeight,
+                              child: Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 24),
+                                  child: Text(
+                                    context.l10n.noNotifications,
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                    textAlign: TextAlign.center,
                                   ),
-                                  textAlign: TextAlign.center,
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                      ],
+                          ],
+                        );
+                      },
                     ),
                   );
                 }
