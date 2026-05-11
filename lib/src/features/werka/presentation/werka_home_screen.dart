@@ -121,7 +121,7 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
   @override
   Widget build(BuildContext context) {
     final bottomPadding = defaultTargetPlatform == TargetPlatform.iOS
-        ? 148.0
+        ? MediaQuery.viewPaddingOf(context).bottom + 148.0
         : MediaQuery.viewPaddingOf(context).bottom + 136.0;
     return AppShell(
       title: context.l10n.werkaRoleName,
