@@ -15,6 +15,7 @@ import '../../shared/models/app_models.dart';
 import '../state/werka_store.dart';
 import 'widgets/werka_dock.dart';
 import 'widgets/werka_navigation_drawer.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class WerkaHomeScreen extends StatefulWidget {
@@ -119,7 +120,9 @@ class _WerkaHomeScreenState extends State<WerkaHomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom + 136.0;
+    final bottomPadding = defaultTargetPlatform == TargetPlatform.iOS
+        ? 148.0
+        : MediaQuery.viewPaddingOf(context).bottom + 136.0;
     return AppShell(
       title: context.l10n.werkaRoleName,
       subtitle: '',
