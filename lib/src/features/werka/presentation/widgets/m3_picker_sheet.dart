@@ -204,7 +204,9 @@ class _M3PickerSheetState<T> extends State<M3PickerSheet<T>> {
     final keyboardInset = media.viewInsets.bottom;
     final l10n = context.l10n;
     final itemBackgroundColor =
-        scheme.surfaceContainerHighest.withValues(alpha: 0.42);
+        scheme.surfaceContainerHighest.withValues(alpha: 0.28);
+    final searchBackgroundColor =
+        scheme.surfaceContainerHighest.withValues(alpha: 0.38);
 
     return AnimatedPadding(
       duration: AppMotion.medium,
@@ -269,7 +271,7 @@ class _M3PickerSheetState<T> extends State<M3PickerSheet<T>> {
                       trailing: _scanTrailing(scheme),
                       elevation: const WidgetStatePropertyAll<double>(0),
                       backgroundColor: WidgetStatePropertyAll<Color>(
-                        scheme.surfaceContainerHighest,
+                        searchBackgroundColor,
                       ),
                       side: WidgetStatePropertyAll<BorderSide>(
                         BorderSide(
@@ -812,7 +814,9 @@ class _M3AsyncPickerSheetState<T> extends State<M3AsyncPickerSheet<T>> {
     final keyboardInset = media.viewInsets.bottom;
     final l10n = context.l10n;
     final itemBackgroundColor =
-        scheme.surfaceContainerHighest.withValues(alpha: 0.42);
+        scheme.surfaceContainerHighest.withValues(alpha: 0.28);
+    final searchBackgroundColor =
+        scheme.surfaceContainerHighest.withValues(alpha: 0.38);
 
     Widget body;
     if (_loading) {
@@ -975,7 +979,7 @@ class _M3AsyncPickerSheetState<T> extends State<M3AsyncPickerSheet<T>> {
                       trailing: _scanTrailing(scheme),
                       elevation: const WidgetStatePropertyAll<double>(0),
                       backgroundColor: WidgetStatePropertyAll<Color>(
-                        scheme.surfaceContainerHighest,
+                        searchBackgroundColor,
                       ),
                       side: WidgetStatePropertyAll<BorderSide>(
                         BorderSide(
@@ -1018,11 +1022,11 @@ class _M3BlurredPickerSurface extends StatelessWidget {
     return ClipRRect(
       borderRadius: _pickerSheetBorderRadius,
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
         child: Container(
           constraints: constraints,
           decoration: BoxDecoration(
-            color: scheme.surfaceContainerLow.withValues(alpha: 0.9),
+            color: scheme.surfaceContainerLow.withValues(alpha: 0.56),
             borderRadius: _pickerSheetBorderRadius,
             border: Border.all(
               color: scheme.outlineVariant.withValues(alpha: 0.28),

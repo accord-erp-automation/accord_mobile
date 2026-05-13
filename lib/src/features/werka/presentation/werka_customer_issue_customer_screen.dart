@@ -185,6 +185,7 @@ class _WerkaCustomerIssueCustomerScreenState
       useSafeArea: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.16),
       sheetAnimationStyle: kM3PickerSheetAnimation,
       builder: (context) {
         return M3AsyncPickerSheet<CustomerDirectoryEntry>(
@@ -232,6 +233,7 @@ class _WerkaCustomerIssueCustomerScreenState
         useSafeArea: true,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
+        barrierColor: Colors.black.withValues(alpha: 0.16),
         sheetAnimationStyle: kM3PickerSheetAnimation,
         builder: (context) {
           return M3AsyncPickerSheet<SupplierItem>(
@@ -272,6 +274,7 @@ class _WerkaCustomerIssueCustomerScreenState
       useSafeArea: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.16),
       sheetAnimationStyle: kM3PickerSheetAnimation,
       builder: (context) {
         return M3AsyncPickerSheet<CustomerItemOption>(
