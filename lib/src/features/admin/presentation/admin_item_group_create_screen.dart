@@ -7,6 +7,8 @@ import 'widgets/admin_item_group_parent_move_panel.dart';
 import 'widgets/admin_top_notice.dart';
 import 'package:flutter/material.dart';
 
+const double _itemGroupCornerRadius = 8;
+
 class AdminItemGroupCreateScreen extends StatefulWidget {
   const AdminItemGroupCreateScreen({super.key});
 
@@ -147,7 +149,7 @@ class _AdminItemGroupCreateScreenState
         children: [
           TextField(
             controller: name,
-            decoration: const InputDecoration(labelText: 'Group nomi'),
+            decoration: _itemGroupInputDecoration('Group nomi'),
           ),
           const SizedBox(height: 12),
           FutureBuilder<List<String>>(
@@ -177,7 +179,7 @@ class _AdminItemGroupCreateScreenState
                             !saving
                         ? () => _toggleParentMenu(!parentMenuOpen)
                         : null,
-                    borderRadius: 14,
+                    borderRadius: _itemGroupCornerRadius,
                     child: _SelectionBox(
                       label: selectedParent ?? 'Parent tanlang',
                       selected: selectedParent != null,
@@ -260,7 +262,7 @@ class _SelectionBox extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(_itemGroupCornerRadius),
         border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Row(
@@ -287,6 +289,18 @@ class _SelectionBox extends StatelessWidget {
       ),
     );
   }
+}
+
+InputDecoration _itemGroupInputDecoration(String label) {
+  const border = OutlineInputBorder(
+    borderRadius: BorderRadius.all(Radius.circular(_itemGroupCornerRadius)),
+  );
+  return const InputDecoration(
+    labelText: '',
+    border: border,
+    enabledBorder: border,
+    focusedBorder: border,
+  ).copyWith(labelText: label);
 }
 
 class _ParentMenu extends StatelessWidget {

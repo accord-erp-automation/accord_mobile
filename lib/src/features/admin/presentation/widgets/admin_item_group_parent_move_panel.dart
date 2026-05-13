@@ -4,6 +4,8 @@ import '../../../shared/models/app_models.dart';
 import 'admin_top_notice.dart';
 import 'package:flutter/material.dart';
 
+const double _itemGroupPanelCornerRadius = 8;
+
 class AdminItemGroupParentMovePanel extends StatefulWidget {
   const AdminItemGroupParentMovePanel({
     super.key,
@@ -95,6 +97,7 @@ class _AdminItemGroupParentMovePanelState
         (groupName?.isNotEmpty ?? false) &&
         (parentName?.isNotEmpty ?? false);
     return SoftCard(
+      borderRadius: _itemGroupPanelCornerRadius,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -127,8 +130,7 @@ class _AdminItemGroupParentMovePanelState
                       }
                     });
                   },
-            decoration:
-                const InputDecoration(labelText: 'Ko‘chiriladigan group'),
+            decoration: _moveInputDecoration('Ko‘chiriladigan group'),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
@@ -141,7 +143,7 @@ class _AdminItemGroupParentMovePanelState
             onChanged: submitting
                 ? null
                 : (value) => setState(() => parentName = value),
-            decoration: const InputDecoration(labelText: 'Yangi parent'),
+            decoration: _moveInputDecoration('Yangi parent'),
           ),
           const SizedBox(height: 16),
           FilledButton(
@@ -153,4 +155,18 @@ class _AdminItemGroupParentMovePanelState
       ),
     );
   }
+}
+
+InputDecoration _moveInputDecoration(String label) {
+  const border = OutlineInputBorder(
+    borderRadius: BorderRadius.all(
+      Radius.circular(_itemGroupPanelCornerRadius),
+    ),
+  );
+  return const InputDecoration(
+    labelText: '',
+    border: border,
+    enabledBorder: border,
+    focusedBorder: border,
+  ).copyWith(labelText: label);
 }
