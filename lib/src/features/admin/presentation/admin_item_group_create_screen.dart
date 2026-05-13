@@ -18,18 +18,46 @@ class _AdminItemGroupCreateScreenState
     extends State<AdminItemGroupCreateScreen> {
   final TextEditingController name = TextEditingController();
   final TextEditingController parent = TextEditingController();
-  final Future<List<String>> itemGroupsFuture =
-      MobileApi.instance.adminItemGroups();
+  late Future<List<String>> itemGroupsFuture;
+  final List<String> optimisticParentGroups = [];
   bool saving = false;
   bool isGroup = true;
   bool parentMenuOpen = false;
   AdminItemGroup? createdGroup;
 
   @override
+  void initState() {
+    super.initState();
+    itemGroupsFuture = _loadParentGroups();
+  }
+
+  @override
   void dispose() {
     name.dispose();
     parent.dispose();
     super.dispose();
+  }
+
+  Future<List<String>> _loadParentGroups() async {
+    final groups = await MobileApi.instance.adminItemGroups();
+    return _mergeParentGroups(groups);
+  }
+
+  List<String> _mergeParentGroups(List<String> groups) {
+    final seen = <String>{};
+    final merged = <String>[];
+    for (final group in [...groups, ...optimisticParentGroups]) {
+      final trimmed = group.trim();
+      if (trimmed.isEmpty || !seen.add(trimmed)) {
+        continue;
+      }
+      merged.add(trimmed);
+    }
+    return merged;
+  }
+
+  void _refreshParentGroups() {
+    itemGroupsFuture = _loadParentGroups();
   }
 
   void _toggleParentMenu(bool open) {
@@ -72,6 +100,13 @@ class _AdminItemGroupCreateScreenState
       }
       setState(() {
         createdGroup = group;
+        if (group.isGroup) {
+          optimisticParentGroups.add(group.name);
+          if (group.itemGroupName != group.name) {
+            optimisticParentGroups.add(group.itemGroupName);
+          }
+        }
+        _refreshParentGroups();
       });
       name.clear();
       ScaffoldMessenger.of(context).showSnackBar(
