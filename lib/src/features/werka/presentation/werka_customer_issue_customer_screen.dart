@@ -489,7 +489,7 @@ class _WerkaCustomerIssueCustomerScreenState
             : l10n.selectCustomer);
     final source = widget.prefill;
     final pickerButtonStyle = FilledButton.styleFrom(
-      backgroundColor: scheme.surface,
+      backgroundColor: scheme.surfaceContainerHighest,
       foregroundColor: scheme.onSurface,
       disabledBackgroundColor: scheme.surfaceContainerLow,
       disabledForegroundColor: scheme.onSurfaceVariant,
@@ -497,27 +497,27 @@ class _WerkaCustomerIssueCustomerScreenState
       minimumSize: const Size.fromHeight(58),
       alignment: Alignment.centerLeft,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(999),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 18),
     );
     final qtyInputDecoration = InputDecoration(
       hintText: '0',
       suffixText: _selectedItem?.uom,
       filled: true,
-      fillColor: scheme.surface,
+      fillColor: scheme.surfaceContainerHighest,
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(999),
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(999),
         borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(999),
         borderSide: BorderSide.none,
       ),
     );

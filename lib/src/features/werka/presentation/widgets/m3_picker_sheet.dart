@@ -5,6 +5,7 @@ import '../../../../core/widgets/shell/app_loading_indicator.dart';
 import '../../../../core/widgets/lists/m3_segmented_list.dart';
 import 'werka_ai_search_service.dart';
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 const AnimationStyle kM3PickerSheetAnimation = AnimationStyle(
@@ -12,6 +13,10 @@ const AnimationStyle kM3PickerSheetAnimation = AnimationStyle(
   reverseCurve: AppMotion.standardAccelerate,
   duration: Duration(milliseconds: 360),
   reverseDuration: Duration(milliseconds: 240),
+);
+
+const _pickerSheetBorderRadius = BorderRadius.vertical(
+  top: Radius.circular(32),
 );
 
 class M3PickerSheet<T> extends StatefulWidget {
@@ -210,15 +215,9 @@ class _M3PickerSheetState<T> extends State<M3PickerSheet<T>> {
           alignment: Alignment.bottomCenter,
           child: GestureDetector(
             onTap: () {},
-            child: Container(
+            child: _M3BlurredPickerSurface(
               constraints: BoxConstraints(
                 maxHeight: media.size.height * 0.66,
-              ),
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerLow,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(32),
-                ),
               ),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
@@ -918,15 +917,9 @@ class _M3AsyncPickerSheetState<T> extends State<M3AsyncPickerSheet<T>> {
           alignment: Alignment.bottomCenter,
           child: GestureDetector(
             onTap: () {},
-            child: Container(
+            child: _M3BlurredPickerSurface(
               constraints: BoxConstraints(
                 maxHeight: media.size.height * 0.66,
-              ),
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerLow,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(32),
-                ),
               ),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
@@ -997,6 +990,39 @@ class _M3AsyncPickerSheetState<T> extends State<M3AsyncPickerSheet<T>> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _M3BlurredPickerSurface extends StatelessWidget {
+  const _M3BlurredPickerSurface({
+    required this.constraints,
+    required this.child,
+  });
+
+  final BoxConstraints constraints;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return ClipRRect(
+      borderRadius: _pickerSheetBorderRadius,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Container(
+          constraints: constraints,
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerLow.withValues(alpha: 0.9),
+            borderRadius: _pickerSheetBorderRadius,
+            border: Border.all(
+              color: scheme.outlineVariant.withValues(alpha: 0.28),
+            ),
+          ),
+          child: child,
         ),
       ),
     );
