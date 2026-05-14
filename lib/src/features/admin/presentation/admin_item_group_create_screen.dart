@@ -1,9 +1,11 @@
 import '../../../core/api/mobile_api.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/shell/app_shell.dart';
+import '../models/admin_item_group_tree_entry.dart';
 import '../../shared/models/app_models.dart';
 import 'widgets/admin_dock.dart';
-import 'widgets/admin_item_group_parent_move_panel.dart';
+import 'widgets/admin_item_group_parent_move_tab.dart';
+import 'widgets/admin_item_group_tree_tab.dart';
 import 'widgets/admin_top_notice.dart';
 import 'package:flutter/material.dart';
 
@@ -22,6 +24,7 @@ class _AdminItemGroupCreateScreenState
   final TextEditingController name = TextEditingController();
   final TextEditingController parent = TextEditingController();
   late Future<List<String>> itemGroupsFuture;
+  late Future<List<AdminItemGroupTreeEntry>> itemGroupTreeFuture;
   final List<String> optimisticParentGroups = [];
   bool saving = false;
   bool isGroup = true;
@@ -31,6 +34,7 @@ class _AdminItemGroupCreateScreenState
   void initState() {
     super.initState();
     itemGroupsFuture = _loadParentGroups();
+    itemGroupTreeFuture = _loadItemGroupTree();
   }
 
   @override
@@ -43,6 +47,10 @@ class _AdminItemGroupCreateScreenState
   Future<List<String>> _loadParentGroups() async {
     final groups = await MobileApi.instance.adminItemGroups();
     return _mergeParentGroups(groups);
+  }
+
+  Future<List<AdminItemGroupTreeEntry>> _loadItemGroupTree() {
+    return MobileApi.instance.adminItemGroupTree();
   }
 
   List<String> _mergeParentGroups(List<String> groups) {
@@ -60,6 +68,7 @@ class _AdminItemGroupCreateScreenState
 
   void _refreshParentGroups() {
     itemGroupsFuture = _loadParentGroups();
+    itemGroupTreeFuture = _loadItemGroupTree();
   }
 
   void _addOptimisticParentGroup(AdminItemGroup group) {
@@ -146,13 +155,14 @@ class _AdminItemGroupCreateScreenState
       bottom: const AdminDock(activeTab: AdminDockTab.settings),
       contentPadding: EdgeInsets.zero,
       child: DefaultTabController(
-        length: 2,
+        length: 3,
         child: Column(
           children: [
             const TabBar(
               tabs: [
                 Tab(text: 'Group yaratish'),
                 Tab(text: 'Parent ko‘chirish'),
+                Tab(text: 'Tree'),
               ],
             ),
             Expanded(
@@ -173,9 +183,12 @@ class _AdminItemGroupCreateScreenState
                         : (value) => setState(() => isGroup = value),
                     onSave: saving ? null : _save,
                   ),
-                  _MoveParentTab(
+                  AdminItemGroupParentMoveTab(
                     itemGroupsFuture: itemGroupsFuture,
                     onMoved: _handleMoved,
+                  ),
+                  AdminItemGroupTreeTab(
+                    itemGroupTreeFuture: itemGroupTreeFuture,
                   ),
                 ],
               ),
@@ -294,50 +307,6 @@ class _CreateGroupTab extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _MoveParentTab extends StatelessWidget {
-  const _MoveParentTab({
-    required this.itemGroupsFuture,
-    required this.onMoved,
-  });
-
-  final Future<List<String>> itemGroupsFuture;
-  final ValueChanged<AdminItemGroup> onMoved;
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<List<String>>(
-      future: itemGroupsFuture,
-      builder: (context, snapshot) {
-        final groups = snapshot.data ?? const <String>[];
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError || groups.isEmpty) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                'Item grouplar yuklanmadi',
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-            ),
-          );
-        }
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(12, 16, 12, 0),
-          children: [
-            AdminItemGroupParentMovePanel(
-              groups: groups,
-              onMoved: onMoved,
-            ),
-          ],
-        );
-      },
     );
   }
 }

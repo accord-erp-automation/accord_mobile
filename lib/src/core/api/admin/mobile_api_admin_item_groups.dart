@@ -15,6 +15,25 @@ extension MobileApiAdminItemGroups on MobileApi {
     return json.map((item) => item.toString()).toList();
   }
 
+  Future<List<AdminItemGroupTreeEntry>> adminItemGroupTree() async {
+    final response = await _sendAuthorized(
+      () => http.get(
+        Uri.parse('${MobileApi.baseUrl}/v1/mobile/admin/item-groups/tree'),
+        headers: _headers(requireToken()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Admin item group tree failed');
+    }
+    final List<dynamic> json = jsonDecode(response.body) as List<dynamic>;
+    return json
+        .map(
+          (item) =>
+              AdminItemGroupTreeEntry.fromJson(item as Map<String, dynamic>),
+        )
+        .toList();
+  }
+
   Future<AdminItemGroup> adminCreateItemGroup({
     required String name,
     required String parent,

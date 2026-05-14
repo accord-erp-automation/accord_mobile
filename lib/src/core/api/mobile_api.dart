@@ -1,4 +1,5 @@
 import '../../features/shared/models/app_models.dart';
+import '../../features/admin/models/admin_item_group_tree_entry.dart';
 import '../../features/shared/models/stock_entry_lookup.dart';
 import '../customer/customer_priority.dart';
 import '../notifications/service/push_messaging_service.dart';
