@@ -30,8 +30,9 @@ class AdminItemGroupTreeTab extends StatelessWidget {
             ),
           );
         }
+        final bottomPadding = MediaQuery.paddingOf(context).bottom + 240;
         return ListView(
-          padding: const EdgeInsets.fromLTRB(12, 16, 12, 132),
+          padding: EdgeInsets.fromLTRB(12, 16, 12, bottomPadding),
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
             AdminItemGroupTreePanel(entries: snapshot.data ?? const []),
