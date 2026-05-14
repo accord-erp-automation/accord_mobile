@@ -823,6 +823,7 @@ class _AppRefreshIndicatorState extends State<AppRefreshIndicator> {
     final contentTranslateY = _refreshing
         ? 0.0
         : _pullExtent.clamp(0.0, widget.displacement + 12.0).toDouble();
+    final indicatorTranslateY = _refreshing ? 0.0 : contentTranslateY;
     final motionDuration = _userPulling
         ? Duration.zero
         : _refreshing
@@ -847,7 +848,7 @@ class _AppRefreshIndicatorState extends State<AppRefreshIndicator> {
             ),
             if (visible)
               Positioned(
-                top: widget.edgeOffset,
+                top: widget.edgeOffset + indicatorTranslateY,
                 left: 0,
                 right: 0,
                 child: IgnorePointer(
