@@ -18,9 +18,9 @@ import 'network_candidates_stub.dart'
 // Keep in sync with gscale-zebra mobileapi approved ports.
 const _defaultApiPort = 39117;
 const _discoveryPort = 18081;
-const _fastProbeTimeout = Duration(milliseconds: 180);
+const _fastProbeTimeout = Duration(milliseconds: 350);
 const _manualProbeTimeout = Duration(seconds: 2);
-const _udpDiscoveryTimeout = Duration(milliseconds: 450);
+const _udpDiscoveryTimeout = Duration(milliseconds: 900);
 const _fallbackProbeTimeout = Duration(milliseconds: 240);
 const _fallbackProbeConcurrency = 24;
 const _directProbePorts = <int>[39117, 41257, 43391, 45533, 47681];
@@ -29,7 +29,8 @@ const _lastServerKey = 'last_server_base_url';
 const _cachedServersKey = 'cached_servers_v1';
 const _controlDraftKey = 'operator_control_draft_v1';
 const _defaultWifiServerAddress = 'http://gscale.local:39117';
-const _bonjourDiscoveryTimeout = Duration(milliseconds: 350);
+const _bonjourDiscoveryTimeout = Duration(milliseconds: 900);
+const _emptyDiscoveryScansBeforeClear = 3;
 const _bonjourDiscoveryChannel = MethodChannel('gscale/bonjour');
 const _minManualPrintKg = 0.100;
 const _configuredApiBaseUrl = String.fromEnvironment(
@@ -151,10 +152,12 @@ class _ServerPickerPageState extends State<ServerPickerPage> {
   bool _scanning = false;
   DiscoveryResult? _result;
   Timer? _refreshTimer;
+  int _emptyBackgroundScanCount = 0;
 
   @override
   void initState() {
     super.initState();
+    unawaited(_seedCachedServers());
     unawaited(_scan());
     _refreshTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       unawaited(_scan());
@@ -166,6 +169,19 @@ class _ServerPickerPageState extends State<ServerPickerPage> {
     _refreshTimer?.cancel();
     _client.close();
     super.dispose();
+  }
+
+  Future<void> _seedCachedServers() async {
+    final cachedServers = await loadCachedDiscoveredServers();
+    if (!mounted || cachedServers.isEmpty) {
+      return;
+    }
+    setState(() {
+      _result = DiscoveryResult(
+        servers: cachedServers,
+        candidateCount: cachedServers.length,
+      );
+    });
   }
 
   Future<void> _scan() async {
@@ -188,24 +204,30 @@ class _ServerPickerPageState extends State<ServerPickerPage> {
         return;
       }
       setState(() {
-        _result = fastResult;
+        _result = mergeDiscoveryResults(
+          current: _result,
+          next: fastResult,
+          keepCurrentWhenNextEmpty: true,
+        );
         _scanning = false;
       });
       if (fastResult.servers.isNotEmpty) {
+        _emptyBackgroundScanCount = 0;
         unawaited(saveCachedDiscoveredServers(fastResult.servers));
-      } else {
-        unawaited(clearCachedDiscoveredServers());
       }
       unawaited(_finishBackgroundScan(preferredEndpoint));
     } catch (_) {
       if (!mounted) {
         return;
       }
-      unawaited(clearCachedDiscoveredServers());
       setState(() {
-        _result = const DiscoveryResult(
-          servers: <DiscoveredServer>[],
-          candidateCount: 0,
+        _result = mergeDiscoveryResults(
+          current: _result,
+          next: const DiscoveryResult(
+            servers: <DiscoveredServer>[],
+            candidateCount: 0,
+          ),
+          keepCurrentWhenNextEmpty: true,
         );
         _scanning = false;
       });
@@ -221,13 +243,24 @@ class _ServerPickerPageState extends State<ServerPickerPage> {
       if (!mounted) {
         return;
       }
-      setState(() {
-        _result = result;
-      });
       if (result.servers.isNotEmpty) {
+        _emptyBackgroundScanCount = 0;
+        setState(() {
+          _result = mergeDiscoveryResults(
+            current: _result,
+            next: result,
+            keepCurrentWhenNextEmpty: false,
+          );
+        });
         await saveCachedDiscoveredServers(result.servers);
       } else {
-        await clearCachedDiscoveredServers();
+        _emptyBackgroundScanCount += 1;
+        if (_emptyBackgroundScanCount >= _emptyDiscoveryScansBeforeClear) {
+          setState(() {
+            _result = result;
+          });
+          await clearCachedDiscoveredServers();
+        }
       }
     } catch (_) {}
   }
@@ -1653,7 +1686,7 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
           ),
         ],
         const SizedBox(height: 22),
-        _SectionLabel(title: 'ERP sozlamalari', subtitle: ''),
+        const _SectionLabel(title: 'ERP sozlamalari', subtitle: ''),
         const SizedBox(height: 12),
         _MiniIconRow(
           icon: Icons.key_outlined,
@@ -1810,7 +1843,7 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
           ),
         ],
         const SizedBox(height: 28),
-        _SectionLabel(title: 'Ombor sozlamalari', subtitle: ''),
+        const _SectionLabel(title: 'Ombor sozlamalari', subtitle: ''),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
@@ -2503,7 +2536,7 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
             ),
             if (selectedPrinter == 'godex') ...[
               const SizedBox(height: 8),
-              _MiniIconRow(
+              const _MiniIconRow(
                 icon: Icons.info_outline_rounded,
                 text: 'GoDEX faqat yorliq chop etadi, RFID kodlamaydi.',
               ),
@@ -4268,6 +4301,36 @@ class DiscoveryResult {
   final int candidateCount;
 }
 
+DiscoveryResult mergeDiscoveryResults({
+  required DiscoveryResult? current,
+  required DiscoveryResult next,
+  required bool keepCurrentWhenNextEmpty,
+}) {
+  if (next.servers.isEmpty) {
+    if (keepCurrentWhenNextEmpty &&
+        current != null &&
+        current.servers.isNotEmpty) {
+      return current;
+    }
+    return next;
+  }
+
+  final merged = <String, DiscoveredServer>{};
+  if (current != null) {
+    for (final server in current.servers) {
+      merged[server.discoveryKey] = server;
+    }
+  }
+  for (final server in next.servers) {
+    merged[server.discoveryKey] = server;
+  }
+
+  return DiscoveryResult(
+    servers: merged.values.toList(growable: false),
+    candidateCount: next.candidateCount,
+  );
+}
+
 class DiscoveredServer {
   const DiscoveredServer({
     required this.endpoint,
@@ -4439,10 +4502,8 @@ Future<DiscoveryResult> discoverServers(
     _mergeDiscoveredServer(resultsByKey, server);
   }
 
-  if (resultsByKey.isEmpty) {
-    final bonjourServers = await bonjourServersFuture;
-    _mergeDiscoveredServers(resultsByKey, bonjourServers);
-  }
+  final bonjourServers = await bonjourServersFuture;
+  _mergeDiscoveredServers(resultsByKey, bonjourServers);
 
   if (_enableAutomaticSubnetSweep && resultsByKey.isEmpty) {
     final subnetHosts = await _loadSubnetCandidateHosts();
