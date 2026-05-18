@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/api/mobile_api.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_controller.dart';
 import '../../core/widgets/navigation/native_back_button.dart';
@@ -369,9 +370,6 @@ class OperatorDashboardPage extends StatefulWidget {
 
 class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
   final http.Client _client = http.Client();
-  final TextEditingController _erpUrlController = TextEditingController();
-  final TextEditingController _erpApiKeyController = TextEditingController();
-  final TextEditingController _erpApiSecretController = TextEditingController();
   final TextEditingController _defaultWarehouseController =
       TextEditingController();
   final TextEditingController _babinaWeightController = TextEditingController();
@@ -384,19 +382,13 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
   bool _manualPrintLoading = false;
   bool _requestInFlight = false;
   bool _batchActionLoading = false;
-  bool _erpSetupLoading = false;
   bool _warehouseSetupLoading = false;
   bool _archiveLoading = false;
   String _archivePrintLoadingSessionId = '';
-  bool _erpSetupExpanded = false;
   String _errorText = '';
   String _warehousesError = '';
-  String _erpSetupError = '';
   String _warehouseSetupError = '';
   String _archiveError = '';
-  bool _erpWriteConfigured = false;
-  bool _erpReadConfigured = false;
-  String _erpConfiguredUrl = '';
   String _warehouseMode = 'manual';
   String _defaultWarehouse = '';
   String _batchPrintMode = 'rfid';
@@ -424,7 +416,6 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
     _loadControlDraftPreferences();
     _startLiveStream();
     _startPingLoop();
-    unawaited(_refreshSetupStatus());
   }
 
   @override
@@ -432,9 +423,6 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
     _pingTimer?.cancel();
     _printerStatusTimer?.cancel();
     _controlPrefsDebounce?.cancel();
-    _erpUrlController.dispose();
-    _erpApiKeyController.dispose();
-    _erpApiSecretController.dispose();
     _defaultWarehouseController.dispose();
     _babinaWeightController.dispose();
     _manualQtyController.dispose();
@@ -517,7 +505,7 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
 
   Future<void> _loadControlDraftPreferences() async {
     final draft = await loadOperatorControlDraft();
-    if (!mounted || _snapshot.batchActive) {
+    if (!mounted) {
       return;
     }
 
@@ -546,6 +534,10 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
         _babinaEnabled = draft.babinaEnabled;
         _manualQtyController.text = draft.manualQtyText;
         _babinaWeightController.text = draft.babinaText;
+        _warehouseMode =
+            draft.warehouseMode == 'default' ? 'default' : 'manual';
+        _defaultWarehouse = draft.defaultWarehouse;
+        _defaultWarehouseController.text = draft.defaultWarehouse;
       });
     });
 
@@ -567,6 +559,8 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
       manualQtyText: _manualQtyController.text.trim(),
       babinaEnabled: _babinaEnabled,
       babinaText: _babinaWeightController.text.trim(),
+      warehouseMode: _warehouseMode == 'default' ? 'default' : 'manual',
+      defaultWarehouse: _currentDefaultWarehouse,
     );
     await saveOperatorControlDraft(draft);
   }
@@ -659,7 +653,6 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
             _applySnapshot(MonitorSnapshot.fromJson(payload));
             _errorText = '';
           });
-          unawaited(_refreshSetupStatus());
           return;
         }
         if (line.startsWith(':')) {
@@ -724,7 +717,6 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
           _errorText = '';
         });
       }
-      await _refreshSetupStatus();
     } catch (error) {
       if (mounted) {
         setState(() {
@@ -741,55 +733,6 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
     }
   }
 
-  Future<void> _refreshSetupStatus() async {
-    try {
-      final response = await _client
-          .get(
-            Uri.parse(
-              '${widget.server.endpoint.baseUrl}/v1/mobile/setup/status',
-            ),
-          )
-          .timeout(const Duration(seconds: 4));
-      if (response.statusCode < 200 || response.statusCode > 299) {
-        return;
-      }
-      final payload = jsonDecode(response.body) as Map<String, dynamic>;
-      if (!mounted) {
-        return;
-      }
-      final previousDefaultWarehouse = _defaultWarehouse;
-      setState(() {
-        final writeConfigured = payload['erp_write_configured'] == true;
-        final readConfigured = payload['erp_read_configured'] == true;
-        _erpWriteConfigured = writeConfigured;
-        _erpReadConfigured = readConfigured;
-        _erpConfiguredUrl = _text(payload['erp_url']);
-        if (!writeConfigured && !readConfigured) {
-          _erpSetupExpanded = true;
-        }
-        final nextWarehouseMode = _text(
-          payload['warehouse_mode'],
-          fallback: 'manual',
-        );
-        _warehouseMode = nextWarehouseMode == 'default' ? 'default' : 'manual';
-        _defaultWarehouse = _text(payload['default_warehouse']);
-        if (_defaultWarehouseController.text.trim().isEmpty ||
-            _defaultWarehouseController.text.trim() ==
-                previousDefaultWarehouse) {
-          _defaultWarehouseController.text = _defaultWarehouse;
-        }
-      });
-    } catch (_) {
-      return;
-    }
-  }
-
-  void _resetERPSetupEditors() {
-    _erpUrlController.text = _erpConfiguredUrl;
-    _erpApiKeyController.clear();
-    _erpApiSecretController.clear();
-  }
-
   String get _currentDefaultWarehouse {
     final controllerValue = _defaultWarehouseController.text.trim();
     if (controllerValue.isNotEmpty) {
@@ -801,42 +744,13 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
   void _applySnapshot(MonitorSnapshot snapshot) {
     final previous = _snapshot;
     _snapshot = snapshot.copyWithLatency(_snapshot.latencyMs);
-    if (snapshot.batchActive) {
-      if (snapshot.batchItemCode.isNotEmpty) {
-        _selectedItem = MobileItem(
-          itemCode: snapshot.batchItemCode,
-          itemName: snapshot.batchItemName.isEmpty
-              ? snapshot.batchItemCode
-              : snapshot.batchItemName,
-        );
+    final livePrinter = snapshot.livePrinterChoice;
+    if (livePrinter.isNotEmpty && livePrinter != _batchPrinter) {
+      _batchPrinter = livePrinter;
+      if (livePrinter == 'godex') {
+        _batchPrintMode = 'label';
       }
-      if (snapshot.batchWarehouse.isNotEmpty) {
-        _selectedWarehouse = MobileWarehouse(
-          warehouse: snapshot.batchWarehouse,
-        );
-      }
-      if (snapshot.batchPrintMode.isNotEmpty) {
-        _batchPrintMode = snapshot.batchPrintMode;
-      }
-      if (snapshot.batchPrinter.isNotEmpty) {
-        _batchPrinter = snapshot.batchPrinter;
-      }
-      if (snapshot.batchActive) {
-        _quantitySource = snapshot.batchQuantitySource;
-        _babinaEnabled = snapshot.batchTareEnabled;
-        if (snapshot.batchTareKg > 0) {
-          _babinaWeightController.text = formatCompactKg(snapshot.batchTareKg);
-        }
-      }
-    } else {
-      final livePrinter = snapshot.livePrinterChoice;
-      if (livePrinter.isNotEmpty && livePrinter != _batchPrinter) {
-        _batchPrinter = livePrinter;
-        if (livePrinter == 'godex') {
-          _batchPrintMode = 'label';
-        }
-        _scheduleSaveControlPrefs();
-      }
+      _scheduleSaveControlPrefs();
     }
     if (!mounted) {
       return;
@@ -951,10 +865,9 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
       if (!mounted) {
         return;
       }
-      if (!_snapshot.batchActive &&
-          warehouses.every(
-            (warehouse) => warehouse.warehouse != selectedWarehouse.warehouse,
-          )) {
+      if (warehouses.every(
+        (warehouse) => warehouse.warehouse != selectedWarehouse.warehouse,
+      )) {
         setState(() {
           _selectedWarehouse = null;
         });
@@ -1016,41 +929,17 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
     });
 
     try {
-      final response = await _client
-          .post(
-            _apiUri('/v1/mobile/setup/warehouse'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'warehouse_mode': mode,
-              'default_warehouse': defaultWarehouse.trim(),
-            }),
-          )
-          .timeout(const Duration(seconds: 6));
-      final payload = jsonDecode(response.body) as Map<String, dynamic>;
-      if (response.statusCode < 200 || response.statusCode > 299) {
-        throw Exception(
-          _text(
-            payload['message'],
-            fallback: _text(
-              payload['error'],
-              fallback: 'Ombor sozlamalari muvaffaqiyatsiz',
-            ),
-          ),
-        );
-      }
       if (!mounted) {
         return;
       }
       setState(() {
-        _warehouseMode =
-            _text(payload['warehouse_mode'], fallback: 'manual') == 'default'
-                ? 'default'
-                : 'manual';
-        _defaultWarehouse = _text(payload['default_warehouse']);
+        _warehouseMode = mode == 'default' ? 'default' : 'manual';
+        _defaultWarehouse = defaultWarehouse.trim();
         _defaultWarehouseController.text = _defaultWarehouse;
         _selectedWarehouse = null;
         _warehouseSetupLoading = false;
       });
+      _scheduleSaveControlPrefs();
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
         const SnackBar(content: Text('Ombor sozlamalari saqlandi')),
       );
@@ -1125,83 +1014,64 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
     _scheduleSaveControlPrefs();
   }
 
-  Future<void> _startBatch() async {
+  String? _selectedPrintWarehouse() {
+    if (_warehouseMode == 'default') {
+      final warehouse = _currentDefaultWarehouse;
+      return warehouse.isEmpty ? null : warehouse;
+    }
+    return _selectedWarehouse?.warehouse;
+  }
+
+  Future<GScaleMaterialReceiptPrintResponse> _submitMaterialReceiptPrint({
+    required double grossQtyKg,
+  }) async {
     final item = _selectedItem;
-    final warehouse = _warehouseMode == 'default'
-        ? _currentDefaultWarehouse
-        : _selectedWarehouse?.warehouse;
-    if (item == null || warehouse == null || _batchActionLoading) {
-      return;
+    if (item == null) {
+      throw Exception('Mahsulot tanlang');
     }
-    setState(() {
-      _batchActionLoading = true;
-      _warehousesError = '';
-    });
-    try {
-      final printer = normalizePrinterChoice(_batchPrinter);
-      final printMode = printer == 'godex' ? 'label' : _batchPrintMode;
-      final quantitySource = normalizeQuantitySource(_quantitySource);
-      final manualQtyKg = quantitySource == 'manual'
-          ? parsePositiveKg(_manualQtyController.text)
-          : null;
-      final tareKg =
-          _babinaEnabled ? parsePositiveKg(_babinaWeightController.text) : null;
-      if (_babinaEnabled && tareKg == null) {
-        throw Exception("Babina og'irligini kg da to'g'ri kiriting");
-      }
-      final response = await _client
-          .post(
-            _apiUri('/v1/mobile/batch/start'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'item_code': item.itemCode,
-              'item_name': item.itemName,
-              'warehouse': warehouse,
-              'print_mode': printMode,
-              'printer': printer,
-              'quantity_source': quantitySource,
-              'manual_qty_kg': manualQtyKg ?? 0,
-              'tare_enabled': _babinaEnabled,
-              'tare_kg': tareKg ?? 0,
-            }),
-          )
-          .timeout(const Duration(seconds: 4));
-      if (response.statusCode < 200 || response.statusCode > 299) {
-        throw Exception('batch start ${response.statusCode}');
-      }
-      final payload = jsonDecode(response.body) as Map<String, dynamic>;
-      final batch =
-          (payload['batch'] as Map?)?.cast<String, dynamic>() ?? const {};
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        final startedBatch = MobileBatchState.fromJson(batch);
-        _snapshot = _snapshot.copyWithBatch(startedBatch);
-        if (startedBatch.printMode.isNotEmpty) {
-          _batchPrintMode = startedBatch.printMode;
-        }
-        if (startedBatch.printer.isNotEmpty) {
-          _batchPrinter = startedBatch.printer;
-        }
-        _quantitySource = startedBatch.quantitySource;
-        _babinaEnabled = startedBatch.tareEnabled;
-        if (startedBatch.tareKg > 0) {
-          _babinaWeightController.text = formatCompactKg(startedBatch.tareKg);
-        }
-        _batchActionLoading = false;
-      });
-      _scheduleSaveControlPrefs();
-      unawaited(_refreshArchive());
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _batchActionLoading = false;
-        _warehousesError = error.toString();
-      });
+    final warehouse = _selectedPrintWarehouse();
+    if (warehouse == null || warehouse.trim().isEmpty) {
+      throw Exception('Warehouse tanlang');
     }
+    final tareKg =
+        _babinaEnabled ? parsePositiveKg(_babinaWeightController.text) : 0.0;
+    if (_babinaEnabled && tareKg == null) {
+      throw Exception("Babina og'irligini kg da to'g'ri kiriting");
+    }
+    final netQty = grossQtyKg - (tareKg ?? 0);
+    if (grossQtyKg <= 0 || netQty < _minManualPrintKg) {
+      throw Exception('Netto kg juda kichik');
+    }
+    final printer = normalizePrinterChoice(_batchPrinter);
+    final printMode = printer == 'godex'
+        ? 'label'
+        : (_batchPrintMode == 'label' ? 'label' : 'rfid');
+    return MobileApi.instance
+        .gscaleMaterialReceiptPrint(
+          GScaleMaterialReceiptPrintRequest(
+            driverUrl: widget.server.endpoint.baseUrl,
+            itemCode: item.itemCode,
+            itemName: item.itemName,
+            warehouse: warehouse,
+            printer: printer,
+            printMode: printMode,
+            grossQty: grossQtyKg,
+            unit: 'kg',
+            tareEnabled: _babinaEnabled,
+            tareKg: tareKg ?? 0,
+          ),
+        )
+        .timeout(const Duration(seconds: 15));
+  }
+
+  void _showPrintSuccess(GScaleMaterialReceiptPrintResponse response) {
+    final qty =
+        formatCompactKg(response.netQty > 0 ? response.netQty : response.qty);
+    final draft = response.draftName.isEmpty ? 'draft' : response.draftName;
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      SnackBar(
+          content: Text('$draft submit qilindi • netto $qty ${response.unit}')),
+    );
   }
 
   Future<void> _printManualBatch() async {
@@ -1219,42 +1089,24 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
       });
       return;
     }
-    if (!_snapshot.batchActive || _snapshot.batchQuantitySource != 'manual') {
-      setState(() {
-        _errorText = 'Avval manual batch start qiling';
-      });
-      return;
-    }
 
     setState(() {
       _manualPrintLoading = true;
       _errorText = '';
     });
     try {
-      final response = await _client
-          .post(
-            _apiUri('/v1/mobile/batch/manual-print'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'manual_qty_kg': manualQtyKg}),
-          )
-          .timeout(const Duration(seconds: 4));
-      if (response.statusCode < 200 || response.statusCode > 299) {
-        throw Exception('manual print ${response.statusCode}');
-      }
-      final payload = jsonDecode(response.body) as Map<String, dynamic>;
-      final batch =
-          (payload['batch'] as Map?)?.cast<String, dynamic>() ?? const {};
+      final response = await _submitMaterialReceiptPrint(
+        grossQtyKg: manualQtyKg ?? 0,
+      );
       if (!mounted) {
         return;
       }
       setState(() {
-        final updatedBatch = MobileBatchState.fromJson(batch);
-        _snapshot = _snapshot.copyWithBatch(updatedBatch);
-        _quantitySource = updatedBatch.quantitySource;
         _manualPrintLoading = false;
       });
+      _showPrintSuccess(response);
       _scheduleSaveControlPrefs();
-      unawaited(_refreshArchive());
+      unawaited(_refresh());
     } catch (error) {
       if (!mounted) {
         return;
@@ -1266,36 +1118,39 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
     }
   }
 
-  Future<void> _stopBatch() async {
-    if (_batchActionLoading) {
+  Future<void> _printScaleReading() async {
+    if (_manualPrintLoading || _batchActionLoading || _requestInFlight) {
       return;
     }
+    final grossQtyKg = parseScaleDisplayKg(_snapshot.scaleValue);
+    if (!canTriggerGrossPrint(
+      grossKg: grossQtyKg,
+      babinaEnabled: _babinaEnabled,
+      babinaText: _babinaWeightController.text,
+    )) {
+      setState(() {
+        _errorText = "Scale kg ni to'g'ri kuting";
+      });
+      return;
+    }
+
     setState(() {
       _batchActionLoading = true;
-      _warehousesError = '';
+      _errorText = '';
     });
     try {
-      final response = await _client
-          .post(_apiUri('/v1/mobile/batch/stop'))
-          .timeout(const Duration(seconds: 4));
-      if (response.statusCode < 200 || response.statusCode > 299) {
-        throw Exception('batch stop ${response.statusCode}');
-      }
-      final payload = jsonDecode(response.body) as Map<String, dynamic>;
-      final batch =
-          (payload['batch'] as Map?)?.cast<String, dynamic>() ?? const {};
-      final message = _text(payload['message'], fallback: 'Batch to\'xtadi');
+      final response = await _submitMaterialReceiptPrint(
+        grossQtyKg: grossQtyKg ?? 0,
+      );
       if (!mounted) {
         return;
       }
       setState(() {
-        _snapshot = _snapshot.copyWithBatch(MobileBatchState.fromJson(batch));
         _batchActionLoading = false;
       });
-      unawaited(_refreshArchive());
-      ScaffoldMessenger.maybeOf(
-        context,
-      )?.showSnackBar(SnackBar(content: Text(message)));
+      _showPrintSuccess(response);
+      _scheduleSaveControlPrefs();
+      unawaited(_refresh());
     } catch (error) {
       if (!mounted) {
         return;
@@ -1463,110 +1318,6 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
     }
   }
 
-  Future<void> _submitERPSetup() async {
-    if (_erpSetupLoading) {
-      return;
-    }
-    setState(() {
-      _erpSetupLoading = true;
-      _erpSetupError = '';
-    });
-    try {
-      final response = await _client
-          .post(
-            _apiUri('/v1/mobile/setup/erp'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'erp_url': _erpUrlController.text.trim(),
-              'erp_api_key': _erpApiKeyController.text.trim(),
-              'erp_api_secret': _erpApiSecretController.text.trim(),
-            }),
-          )
-          .timeout(const Duration(seconds: 6));
-      final payload = jsonDecode(response.body) as Map<String, dynamic>;
-      if (response.statusCode < 200 || response.statusCode > 299) {
-        throw Exception(
-          _text(
-            payload['message'],
-            fallback: _text(payload['error'],
-                fallback: 'ERP sozlamalari muvaffaqiyatsiz'),
-          ),
-        );
-      }
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _erpWriteConfigured = payload['erp_write_configured'] == true;
-        _erpReadConfigured = payload['erp_read_configured'] == true;
-        _erpConfiguredUrl = _text(payload['erp_url']);
-        _erpSetupExpanded = false;
-        _erpUrlController.clear();
-        _erpApiKeyController.clear();
-        _erpApiSecretController.clear();
-        _erpSetupLoading = false;
-      });
-      ScaffoldMessenger.maybeOf(
-        context,
-      )?.showSnackBar(
-        const SnackBar(content: Text('ERP sozlamalari saqlandi')),
-      );
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _erpSetupLoading = false;
-        _erpSetupError = error.toString();
-      });
-    }
-  }
-
-  Future<void> _clearERPSetup() async {
-    if (_erpSetupLoading) {
-      return;
-    }
-    setState(() {
-      _erpSetupLoading = true;
-      _erpSetupError = '';
-    });
-    try {
-      final response = await _client
-          .delete(_apiUri('/v1/mobile/setup/erp'))
-          .timeout(const Duration(seconds: 6));
-      if (response.statusCode < 200 || response.statusCode > 299) {
-        final payload = jsonDecode(response.body) as Map<String, dynamic>;
-        throw Exception(_text(payload['error'], fallback: 'ERP clear failed'));
-      }
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _erpWriteConfigured = false;
-        _erpReadConfigured = false;
-        _erpConfiguredUrl = '';
-        _erpSetupExpanded = true;
-        _erpUrlController.clear();
-        _erpApiKeyController.clear();
-        _erpApiSecretController.clear();
-        _erpSetupLoading = false;
-      });
-      ScaffoldMessenger.maybeOf(
-        context,
-      )?.showSnackBar(
-        const SnackBar(content: Text('ERP sozlamalari tozalandi')),
-      );
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _erpSetupLoading = false;
-        _erpSetupError = error.toString();
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -1664,9 +1415,6 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
     ColorScheme scheme,
     DiscoveredServer server,
   ) {
-    final hasConfiguredERP = _erpWriteConfigured ||
-        _erpReadConfigured ||
-        _erpConfiguredUrl.isNotEmpty;
     final defaultWarehouse = _currentDefaultWarehouse;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1687,164 +1435,44 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
           ),
         ],
         const SizedBox(height: 22),
-        const _SectionLabel(title: 'ERP sozlamalari', subtitle: ''),
+        const _SectionLabel(title: 'RPS driver', subtitle: ''),
         const SizedBox(height: 12),
         _MiniIconRow(
-          icon: Icons.key_outlined,
-          text: _erpWriteConfigured
-              ? 'ERP yozuvi ulangan'
-              : 'ERP yozuvi ulanmagan',
+          icon: Icons.link_rounded,
+          text: server.endpoint.baseUrl,
         ),
         const SizedBox(height: 12),
         _MiniIconRow(
-          icon: Icons.storage_outlined,
-          text: _erpReadConfigured
-              ? 'Katalog xizmati ulangan'
-              : 'Katalog xizmati topilmadi',
+          icon: Icons.scale_outlined,
+          text: _snapshot.scaleConnectionLabel,
         ),
-        if (_erpConfiguredUrl.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _MiniIconRow(icon: Icons.link_rounded, text: _erpConfiguredUrl),
-        ],
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: _erpSetupLoading
-                    ? null
-                    : () {
-                        setState(() {
-                          if (!_erpSetupExpanded) {
-                            _resetERPSetupEditors();
-                          }
-                          _erpSetupExpanded = !_erpSetupExpanded;
-                        });
-                      },
-                icon: Icon(
-                  _erpSetupExpanded
-                      ? Icons.expand_less_rounded
-                      : Icons.expand_more_rounded,
-                ),
-                label: Text(
-                  hasConfiguredERP
-                      ? (_erpSetupExpanded
-                          ? 'Sozlamani yashirish'
-                          : 'Sozlamalar')
-                      : 'ERP sozlamalari',
-                ),
-              ),
-            ),
-            if (hasConfiguredERP) ...[
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: _erpSetupLoading ? null : _clearERPSetup,
-                  icon: const Icon(Icons.delete_outline_rounded),
-                  label: const Text('Tozalash'),
-                ),
-              ),
-            ],
-          ],
-        ),
-        if (_erpSetupExpanded || !hasConfiguredERP) ...[
-          const SizedBox(height: 16),
-          TextField(
-            controller: _erpUrlController,
-            keyboardType: TextInputType.url,
-            decoration: InputDecoration(
-              labelText: 'ERP manzili',
-              hintText: 'http://localhost:8000',
-              prefixIcon: const Icon(Icons.link_rounded),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: scheme.outlineVariant,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: scheme.primary,
-                  width: 1.4,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _erpApiKeyController,
-            decoration: InputDecoration(
-              labelText: 'ERP API kaliti',
-              hintText: 'API key',
-              prefixIcon: const Icon(Icons.vpn_key_outlined),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: scheme.outlineVariant,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: scheme.primary,
-                  width: 1.4,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _erpApiSecretController,
-            obscureText: true,
-            decoration: InputDecoration(
-              labelText: 'ERP API siri',
-              hintText: 'API secret',
-              prefixIcon: const Icon(Icons.password_rounded),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: scheme.outlineVariant,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: scheme.primary,
-                  width: 1.4,
-                ),
-              ),
-            ),
-          ),
-        ],
-        if (_erpSetupError.isNotEmpty) ...[
-          const SizedBox(height: 10),
-          Text(
-            _erpSetupError,
-            style: theme.textTheme.bodySmall?.copyWith(color: scheme.error),
-          ),
-        ],
+        const SizedBox(height: 12),
+        _MiniIconRow(icon: Icons.print_outlined, text: _snapshot.printerLabel),
         const SizedBox(height: 28),
-        const _SectionLabel(title: 'Ombor sozlamalari', subtitle: ''),
+        const _SectionLabel(title: 'RS / ERP boshqaruvi', subtitle: ''),
+        const SizedBox(height: 12),
+        const _MiniIconRow(
+          icon: Icons.cloud_outlined,
+          text: MobileApi.baseUrl,
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'ERP URL, API key, Stock Entry draft/submit va delete flow RS serverda '
+          'bajariladi. RPS faqat scale/printer driver sifatida ishlaydi.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 28),
+        const _SectionLabel(title: 'Ombor tanlash', subtitle: ''),
+        const SizedBox(height: 8),
+        Text(
+          'Ombor ro‘yxati RS katalogidan olinadi. Standart tanlov faqat shu '
+          'telefon draft sozlamasida saqlanadi.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: scheme.onSurfaceVariant,
+          ),
+        ),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
@@ -1928,21 +1556,6 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
                 ),
                 onPressed: _manualLoading ? null : () => _refresh(manual: true),
                 child: const Icon(Icons.refresh_rounded),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: (_erpSetupLoading ||
-                        (!_erpSetupExpanded && hasConfiguredERP))
-                    ? null
-                    : _submitERPSetup,
-                child: const Icon(Icons.save_outlined),
               ),
             ),
             const SizedBox(width: 10),
@@ -2204,15 +1817,14 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
     BuildContext context,
     ThemeData theme,
     ColorScheme scheme,
-    DiscoveredServer server,
+    DiscoveredServer _,
   ) {
     final selectedProduct = _selectedItem;
     final selectedWarehouse = _selectedWarehouse;
-    final batchRunning = _snapshot.batchActive;
     final defaultWarehouse = _currentDefaultWarehouse;
     final defaultMode = _warehouseMode == 'default';
-    final modeLocked = batchRunning || _batchActionLoading;
-    final printerLocked = batchRunning || _batchActionLoading;
+    final modeLocked = _batchActionLoading || _manualPrintLoading;
+    final printerLocked = modeLocked;
     final selectedPrinter = normalizePrinterChoice(_batchPrinter);
     final selectedQuantitySource = normalizeQuantitySource(_quantitySource);
     final manualQtyKg = selectedQuantitySource == 'manual'
@@ -2231,6 +1843,14 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
     final babinaInvalid = _babinaEnabled &&
         _babinaWeightController.text.trim().isNotEmpty &&
         babinaKg == null;
+    final scaleQtyKg = parseScaleDisplayKg(_snapshot.scaleValue);
+    final hasPrintSelection = selectedProduct != null &&
+        (defaultMode ? defaultWarehouse.isNotEmpty : selectedWarehouse != null);
+    final scalePrintReady = canTriggerGrossPrint(
+      grossKg: scaleQtyKg,
+      babinaEnabled: _babinaEnabled,
+      babinaText: _babinaWeightController.text,
+    );
     final printerStatusText = _printerStatusOverride.isNotEmpty
         ? _printerStatusOverride
         : _snapshot.printerLabel;
@@ -2277,7 +1897,7 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
           label: 'Mahsulot tanlang',
           value: selectedProduct?.itemCode,
           subtitle: null,
-          onTap: batchRunning ? null : _openItemPicker,
+          onTap: modeLocked ? null : _openItemPicker,
         ),
         const SizedBox(height: 14),
         if (defaultMode) ...[
@@ -2305,7 +1925,7 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
             label: 'Warehouse tanlang',
             value: selectedWarehouse?.warehouse,
             subtitle: null,
-            onTap: batchRunning ? null : _openWarehousePicker,
+            onTap: modeLocked ? null : _openWarehousePicker,
           ),
           if (_warehousesError.isNotEmpty) ...[
             const SizedBox(height: 10),
@@ -2454,7 +2074,7 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
                   width: 56,
                   child: IconButton.filled(
                     tooltip: 'Chop etish',
-                    onPressed: batchRunning &&
+                    onPressed: hasPrintSelection &&
                             selectedQuantitySource == 'manual' &&
                             manualPrintReady &&
                             !_manualPrintLoading &&
@@ -2484,6 +2104,45 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
           ],
           const SizedBox(height: 14),
         ],
+        if (selectedQuantitySource == 'scale') ...[
+          const SizedBox(height: 10),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(54),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: hasPrintSelection &&
+                    scalePrintReady &&
+                    !_manualPrintLoading &&
+                    !_batchActionLoading
+                ? _printScaleReading
+                : null,
+            icon: _batchActionLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.print_rounded),
+            label: Text(
+              _batchActionLoading
+                  ? 'Chop etish yuborilmoqda...'
+                  : 'Joriy kg bilan chop etish',
+            ),
+          ),
+          if (scaleQtyKg == null) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Scale ulangan va kg kelganda tugma aktiv bo‘ladi.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+          const SizedBox(height: 14),
+        ],
         ExpansionTile(
           key: const PageStorageKey<String>('batch_actions_tile'),
           initiallyExpanded: false,
@@ -2491,7 +2150,7 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
           tilePadding: EdgeInsets.zero,
           childrenPadding: EdgeInsets.zero,
           title: Text(
-            'Partiya amallari',
+            'Printer sozlamalari',
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
             ),
@@ -2578,47 +2237,10 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
                 ),
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed:
-                    batchRunning && !_batchActionLoading ? _stopBatch : null,
-                icon: const Icon(Icons.stop_rounded),
-                label: Text(
-                    _batchActionLoading ? 'To‘xtatilmoqda...' : 'To‘xtatish'),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: selectedProduct == null ||
-                        (defaultMode
-                            ? defaultWarehouse.isEmpty
-                            : selectedWarehouse == null) ||
-                        (_babinaEnabled && babinaKg == null) ||
-                        batchRunning ||
-                        _batchActionLoading
-                    ? null
-                    : _startBatch,
-                icon: const Icon(Icons.play_arrow_rounded),
-                label: Text(
-                  _batchActionLoading ? 'Boshlanmoqda...' : 'Boshlash',
-                ),
-              ),
+            const SizedBox(height: 8),
+            const _MiniIconRow(
+              icon: Icons.hub_outlined,
+              text: 'ERP batch/submit RS serverda, RPS faqat chop etadi.',
             ),
           ],
         ),
@@ -3983,21 +3605,41 @@ double? parsePositiveKg(String value) {
   return parsed;
 }
 
-bool canTriggerManualPrint({
-  required String qtyText,
+double? parseScaleDisplayKg(String value) {
+  final match = RegExp(r'\d+(?:[,.]\d+)?').firstMatch(value.trim());
+  if (match == null) {
+    return null;
+  }
+  return parsePositiveKg(match.group(0) ?? '');
+}
+
+bool canTriggerGrossPrint({
+  required double? grossKg,
   required bool babinaEnabled,
   required String babinaText,
 }) {
-  final manualQtyKg = parsePositiveKg(qtyText);
-  if (manualQtyKg == null) {
+  if (grossKg == null || grossKg <= 0) {
     return false;
   }
   final double? babinaKg = babinaEnabled ? parsePositiveKg(babinaText) : null;
   if (babinaEnabled && babinaKg == null) {
     return false;
   }
-  final netQty = manualQtyKg - (babinaKg ?? 0);
-  return manualQtyKg > (babinaKg ?? 0) && netQty >= _minManualPrintKg;
+  final netQty = grossKg - (babinaKg ?? 0);
+  return grossKg > (babinaKg ?? 0) && netQty >= _minManualPrintKg;
+}
+
+bool canTriggerManualPrint({
+  required String qtyText,
+  required bool babinaEnabled,
+  required String babinaText,
+}) {
+  final manualQtyKg = parsePositiveKg(qtyText);
+  return canTriggerGrossPrint(
+    grossKg: manualQtyKg,
+    babinaEnabled: babinaEnabled,
+    babinaText: babinaText,
+  );
 }
 
 String formatCompactKg(double value) {
@@ -4841,6 +4483,8 @@ class OperatorControlDraft {
     required this.manualQtyText,
     required this.babinaEnabled,
     required this.babinaText,
+    required this.warehouseMode,
+    required this.defaultWarehouse,
   });
 
   final String itemCode;
@@ -4852,6 +4496,8 @@ class OperatorControlDraft {
   final String manualQtyText;
   final bool babinaEnabled;
   final String babinaText;
+  final String warehouseMode;
+  final String defaultWarehouse;
 
   Map<String, dynamic> toJson() {
     return {
@@ -4864,6 +4510,8 @@ class OperatorControlDraft {
       'manual_qty_text': manualQtyText,
       'babina_enabled': babinaEnabled,
       'babina_text': babinaText,
+      'warehouse_mode': warehouseMode,
+      'default_warehouse': defaultWarehouse,
     };
   }
 
@@ -4878,6 +4526,11 @@ class OperatorControlDraft {
       manualQtyText: _text(json['manual_qty_text']),
       babinaEnabled: json['babina_enabled'] == true,
       babinaText: _text(json['babina_text']),
+      warehouseMode:
+          _text(json['warehouse_mode'], fallback: 'manual') == 'default'
+              ? 'default'
+              : 'manual',
+      defaultWarehouse: _text(json['default_warehouse']),
     );
   }
 }
@@ -4901,6 +4554,8 @@ Future<OperatorControlDraft> loadOperatorControlDraft() async {
       manualQtyText: '',
       babinaEnabled: false,
       babinaText: '',
+      warehouseMode: 'manual',
+      defaultWarehouse: '',
     );
   }
 
@@ -4918,6 +4573,8 @@ Future<OperatorControlDraft> loadOperatorControlDraft() async {
         manualQtyText: '',
         babinaEnabled: false,
         babinaText: '',
+        warehouseMode: 'manual',
+        defaultWarehouse: '',
       );
     }
     return OperatorControlDraft.fromJson(json);
@@ -4932,6 +4589,8 @@ Future<OperatorControlDraft> loadOperatorControlDraft() async {
       manualQtyText: '',
       babinaEnabled: false,
       babinaText: '',
+      warehouseMode: 'manual',
+      defaultWarehouse: '',
     );
   }
 }

@@ -17,6 +17,7 @@ part 'admin/mobile_api_admin_items.dart';
 part 'admin/mobile_api_admin_item_groups.dart';
 part 'auth/mobile_api_auth_profile.dart';
 part 'customer/mobile_api_customer.dart';
+part 'gscale/mobile_api_gscale.dart';
 part 'supplier/mobile_api_supplier_notifications.dart';
 part 'werka/mobile_api_werka.dart';
 
