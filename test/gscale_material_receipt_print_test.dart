@@ -56,6 +56,30 @@ void main() {
     expect(response.printer, 'zebra');
   });
 
+  test('print success message distinguishes fast printed status', () {
+    const response = GScaleMaterialReceiptPrintResponse(
+      ok: true,
+      status: 'printed',
+      draftName: '',
+      epc: 'EPC-1',
+      itemCode: 'ITEM-1',
+      itemName: 'Green Tea',
+      warehouse: 'Stores - A',
+      qty: 2.5,
+      netQty: 2.5,
+      grossQty: 2.5,
+      unit: 'kg',
+      printer: 'godex',
+      printMode: 'label',
+      printerStatus: 'sent',
+    );
+
+    expect(
+      buildPrintSuccessMessage(response),
+      'Printerga yuborildi • netto 2.5 kg',
+    );
+  });
+
   test('rps batch start request matches RS contract', () {
     const request = GScaleRpsBatchStartRequest(
       clientBatchId: ' batch-1 ',
@@ -203,6 +227,96 @@ void main() {
     expect(snapshot.batchPrintMode, 'label');
   });
 
+  test('live monitor keeps active RS batch session state', () {
+    const rsBatch = GScaleRpsBatchSession(
+      id: 'batch-1',
+      active: true,
+      driverUrl: 'http://127.0.0.1:39117',
+      itemCode: 'ITEM-1',
+      itemName: 'Green Tea',
+      warehouse: 'Stores - A',
+      printer: 'godex',
+      printMode: 'label',
+      quantitySource: 'scale',
+      manualQtyKg: 0,
+      tareEnabled: true,
+      tareKg: 0.78,
+    );
+    final previous = MonitorSnapshot.empty().copyWithBatch(
+      MobileBatchState.fromRpsBatch(rsBatch),
+    );
+    final live = MonitorSnapshot.fromJson({
+      'ok': true,
+      'state': {
+        'scale': {
+          'source': 'serial',
+          'port': '/dev/pts/0',
+          'weight': 2.75,
+          'unit': 'kg',
+          'stable': true,
+          'error': '',
+        },
+        'zebra': {'verify': 'idle', 'action': 'printer state'},
+        'printer': {
+          'ok': true,
+          'connected': true,
+          'kind': 'godex',
+          'label': 'ulangan',
+        },
+        'batch': {
+          'active': false,
+          'printer': 'godex',
+          'print_mode': 'label',
+          'quantity_source': 'scale',
+        },
+        'print_request': {'status': 'idle'},
+      },
+    });
+
+    final merged = mergeLiveMonitorWithRsBatch(live, previous);
+
+    expect(merged.scaleValue, '2.75 kg');
+    expect(merged.scaleStable, isTrue);
+    expect(merged.printerKind, 'godex');
+    expect(merged.batchActive, isTrue);
+    expect(merged.batchItemCode, 'ITEM-1');
+    expect(merged.batchItemName, 'Green Tea');
+    expect(merged.batchWarehouse, 'Stores - A');
+    expect(merged.batchPrinter, 'godex');
+    expect(merged.batchPrintMode, 'label');
+  });
+
+  test('live monitor does not resurrect stopped RS batch session', () {
+    final previous = MonitorSnapshot.empty().copyWithBatch(
+      const MobileBatchState(
+        active: false,
+        itemCode: 'ITEM-1',
+        itemName: 'Green Tea',
+        warehouse: 'Stores - A',
+        printer: 'godex',
+        printMode: 'label',
+        quantitySource: 'scale',
+        manualQtyKg: 0,
+        tareEnabled: false,
+        tareKg: 0,
+      ),
+    );
+    final live = MonitorSnapshot.fromJson({
+      'ok': true,
+      'state': {
+        'scale': {'weight': 2.75, 'unit': 'kg', 'stable': true},
+        'printer': {'connected': true, 'kind': 'godex', 'label': 'ulangan'},
+        'batch': {'active': false, 'printer': 'godex'},
+        'print_request': {'status': 'idle'},
+      },
+    });
+
+    final merged = mergeLiveMonitorWithRsBatch(live, previous);
+
+    expect(merged.batchActive, isFalse);
+    expect(merged.batchItemCode, '');
+  });
+
   test('rps batch start helper carries current print controls', () {
     final request = buildGScaleRpsBatchStartRequest(
       driverUrl: 'http://127.0.0.1:39117',
@@ -288,6 +402,44 @@ void main() {
         babinaText: '',
       ),
       '',
+    );
+  });
+
+  test('scale batch action becomes stop while batch is active', () {
+    expect(
+      canPressScaleBatchAction(
+        hasPrintSelection: true,
+        batchActive: false,
+        manualPrintLoading: false,
+        batchActionLoading: false,
+      ),
+      isTrue,
+    );
+    expect(
+      scaleBatchActionLabel(loading: false, batchActive: false),
+      'Batch start',
+    );
+    expect(
+      canPressScaleBatchAction(
+        hasPrintSelection: false,
+        batchActive: true,
+        manualPrintLoading: false,
+        batchActionLoading: false,
+      ),
+      isTrue,
+    );
+    expect(
+      scaleBatchActionLabel(loading: false, batchActive: true),
+      'Batch stop',
+    );
+    expect(
+      canPressScaleBatchAction(
+        hasPrintSelection: true,
+        batchActive: true,
+        manualPrintLoading: false,
+        batchActionLoading: true,
+      ),
+      isFalse,
     );
   });
 

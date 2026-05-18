@@ -842,8 +842,9 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
 
   void _applySnapshot(MonitorSnapshot snapshot) {
     final previous = _snapshot;
-    _snapshot = snapshot.copyWithLatency(_snapshot.latencyMs);
-    final livePrinter = snapshot.livePrinterChoice;
+    final merged = mergeLiveMonitorWithRsBatch(snapshot, previous);
+    _snapshot = merged.copyWithLatency(previous.latencyMs);
+    final livePrinter = merged.livePrinterChoice;
     if (livePrinter.isNotEmpty && livePrinter != _batchPrinter) {
       _batchPrinter = livePrinter;
       if (livePrinter == 'godex') {
@@ -854,11 +855,11 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
     if (!mounted) {
       return;
     }
-    if (snapshot.printerEventKey.isNotEmpty &&
-        snapshot.printerEventKey != previous.printerEventKey) {
+    if (merged.printerEventKey.isNotEmpty &&
+        merged.printerEventKey != previous.printerEventKey) {
       final messenger = ScaffoldMessenger.maybeOf(context);
       _printerStatusTimer?.cancel();
-      _printerStatusOverride = snapshot.printerEventMessage;
+      _printerStatusOverride = merged.printerEventMessage;
       _printerStatusTimer = Timer(const Duration(seconds: 4), () {
         if (!mounted) {
           return;
@@ -868,20 +869,20 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
         });
       });
       if (messenger != null) {
-        if (snapshot.printerState == 'done') {
+        if (merged.printerState == 'done') {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             messenger
               ..hideCurrentSnackBar()
               ..showSnackBar(
-                SnackBar(content: Text(snapshot.printerEventMessage)),
+                SnackBar(content: Text(merged.printerEventMessage)),
               );
           });
-        } else if (snapshot.printerState == 'error') {
+        } else if (merged.printerState == 'error') {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             messenger
               ..hideCurrentSnackBar()
               ..showSnackBar(
-                SnackBar(content: Text(snapshot.printerEventMessage)),
+                SnackBar(content: Text(merged.printerEventMessage)),
               );
           });
         }
@@ -1321,12 +1322,10 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
   }
 
   void _showPrintSuccess(GScaleMaterialReceiptPrintResponse response) {
-    final qty =
-        formatCompactKg(response.netQty > 0 ? response.netQty : response.qty);
-    final draft = response.draftName.isEmpty ? 'draft' : response.draftName;
     ScaffoldMessenger.maybeOf(context)?.showSnackBar(
       SnackBar(
-          content: Text('$draft submit qilindi • netto $qty ${response.unit}')),
+        content: Text(buildPrintSuccessMessage(response)),
+      ),
     );
   }
 
@@ -2063,6 +2062,12 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
       babinaEnabled: _babinaEnabled,
       babinaText: _babinaWeightController.text,
     );
+    final scaleBatchActionEnabled = canPressScaleBatchAction(
+      hasPrintSelection: hasPrintSelection,
+      batchActive: _snapshot.batchActive,
+      manualPrintLoading: _manualPrintLoading,
+      batchActionLoading: _batchActionLoading,
+    );
     final printerStatusText = _printerStatusOverride.isNotEmpty
         ? _printerStatusOverride
         : _snapshot.printerLabel;
@@ -2355,11 +2360,10 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: hasPrintSelection &&
-                    !_snapshot.batchActive &&
-                    !_manualPrintLoading &&
-                    !_batchActionLoading
-                ? _startScaleBatch
+            onPressed: scaleBatchActionEnabled
+                ? (_snapshot.batchActive
+                    ? () => unawaited(_stopRsBatch())
+                    : _startScaleBatch)
                 : null,
             icon: _batchActionLoading
                 ? const SizedBox(
@@ -2368,14 +2372,13 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : Icon(_snapshot.batchActive
-                    ? Icons.sensors_rounded
+                    ? Icons.stop_circle_outlined
                     : Icons.play_arrow_rounded),
             label: Text(
-              _batchActionLoading
-                  ? 'Chop etish yuborilmoqda...'
-                  : (_snapshot.batchActive
-                      ? 'Batch ishlayapti'
-                      : 'Batch start'),
+              scaleBatchActionLabel(
+                loading: _batchActionLoading,
+                batchActive: _snapshot.batchActive,
+              ),
             ),
           ),
           if (_snapshot.batchActive) ...[
@@ -3574,6 +3577,29 @@ class MonitorSnapshot {
   }
 }
 
+MonitorSnapshot mergeLiveMonitorWithRsBatch(
+  MonitorSnapshot live,
+  MonitorSnapshot previous,
+) {
+  if (!previous.batchActive || live.batchActive) {
+    return live;
+  }
+  return live.copyWithBatch(
+    MobileBatchState(
+      active: true,
+      itemCode: previous.batchItemCode,
+      itemName: previous.batchItemName,
+      warehouse: previous.batchWarehouse,
+      printMode: previous.batchPrintMode,
+      printer: previous.batchPrinter,
+      quantitySource: previous.batchQuantitySource,
+      manualQtyKg: previous.batchManualQtyKg,
+      tareEnabled: previous.batchTareEnabled,
+      tareKg: previous.batchTareKg,
+    ),
+  );
+}
+
 String normalizePrinterChoice(String printer) {
   switch (printer.trim().toLowerCase()) {
     case 'godex':
@@ -3661,6 +3687,28 @@ bool shouldTriggerAutoBatchPrint({
       stablePrintKey != lastPrintedKey;
 }
 
+bool canPressScaleBatchAction({
+  required bool hasPrintSelection,
+  required bool batchActive,
+  required bool manualPrintLoading,
+  required bool batchActionLoading,
+}) {
+  if (manualPrintLoading || batchActionLoading) {
+    return false;
+  }
+  return batchActive || hasPrintSelection;
+}
+
+String scaleBatchActionLabel({
+  required bool loading,
+  required bool batchActive,
+}) {
+  if (loading) {
+    return 'Kutilmoqda...';
+  }
+  return batchActive ? 'Batch stop' : 'Batch start';
+}
+
 bool canTriggerManualPrint({
   required String qtyText,
   required bool babinaEnabled,
@@ -3723,6 +3771,17 @@ String formatCompactKg(double value) {
     text = text.substring(0, text.length - 1);
   }
   return text;
+}
+
+String buildPrintSuccessMessage(GScaleMaterialReceiptPrintResponse response) {
+  final qty =
+      formatCompactKg(response.netQty > 0 ? response.netQty : response.qty);
+  final status = response.status.trim().toLowerCase();
+  if (status == 'printed') {
+    return 'Printerga yuborildi • netto $qty ${response.unit}';
+  }
+  final draft = response.draftName.isEmpty ? 'draft' : response.draftName;
+  return '$draft submit qilindi • netto $qty ${response.unit}';
 }
 
 String buildScaleConnectionLabel({
