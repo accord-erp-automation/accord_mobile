@@ -1079,13 +1079,12 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
           hintText: 'Mahsulot qidiring',
           showScanIcon: true,
           pageSize: _catalogPickerPageSize,
-          loadPage: (query, offset, limit) => MobileApi.instance
-              .werkaCustomerItemOptions(
-                query: query,
-                offset: offset,
-                limit: limit,
-              )
-              .timeout(const Duration(seconds: 3)),
+          loadPage: (query, offset, limit) =>
+              MobileApi.instance.werkaCustomerItemOptions(
+            query: query,
+            offset: offset,
+            limit: limit,
+          ),
           itemTitle: (item) => item.itemName,
           itemSubtitle: (item) => '${item.customerName} • ${item.itemCode}',
           onSelected: (item) => Navigator.of(context).pop(item),

@@ -1,19 +1,6 @@
 import '../../core/api/mobile_api.dart';
-import '../../core/search/search_normalizer.dart';
 import '../../core/session/session.dart';
 import '../shared/models/app_models.dart';
-
-const _gscaleCatalogPageSize = 200;
-
-class GScaleCatalogItem {
-  const GScaleCatalogItem({
-    required this.itemCode,
-    required this.itemName,
-  });
-
-  final String itemCode;
-  final String itemName;
-}
 
 class GScaleCatalogWarehouse {
   const GScaleCatalogWarehouse({
@@ -25,41 +12,6 @@ class GScaleCatalogWarehouse {
   final String warehouse;
   final double? actualQty;
   final String? company;
-}
-
-Future<List<GScaleCatalogItem>> fetchGScaleCatalogItems({
-  String query = '',
-  int limit = _gscaleCatalogPageSize,
-  int offset = 0,
-  MobileApi? api,
-  UserRole? role,
-}) async {
-  final requestedLimit = _normalizeCatalogLimit(limit);
-  final client = api ?? MobileApi.instance;
-  final activeRole = role ?? AppSession.instance.profile?.role;
-  if (activeRole == UserRole.admin) {
-    final items = await client.adminItemsPage(
-      query: query,
-      limit: requestedLimit,
-      offset: offset,
-    );
-    return gscaleCatalogItemsFromSupplierItems(
-      items,
-      query: query,
-    ).take(requestedLimit).toList();
-  }
-  if (activeRole == UserRole.werka) {
-    final options = await client.werkaCustomerItemOptions(
-      query: query,
-      limit: requestedLimit,
-      offset: offset,
-    );
-    return gscaleCatalogItemsFromCustomerOptions(
-      options,
-      query: query,
-    ).take(requestedLimit).toList();
-  }
-  throw Exception('GScale katalog faqat admin yoki werka uchun mavjud');
 }
 
 Future<List<GScaleCatalogWarehouse>> fetchGScaleItemWarehouses({
@@ -133,44 +85,6 @@ Future<List<GScaleCatalogWarehouse>> fetchGScaleDefaultWarehouses({
   throw Exception('GScale omborlari faqat admin yoki werka uchun mavjud');
 }
 
-List<GScaleCatalogItem> gscaleCatalogItemsFromSupplierItems(
-  Iterable<SupplierItem> items, {
-  String query = '',
-}) {
-  final seen = <String>{};
-  final out = <GScaleCatalogItem>[];
-  for (final item in items) {
-    final code = item.code.trim();
-    if (code.isEmpty || !seen.add(code.toLowerCase())) {
-      continue;
-    }
-    out.add(GScaleCatalogItem(
-      itemCode: code,
-      itemName: item.name.trim().isEmpty ? code : item.name.trim(),
-    ));
-  }
-  return _sortCatalogItems(out, query: query);
-}
-
-List<GScaleCatalogItem> gscaleCatalogItemsFromCustomerOptions(
-  Iterable<CustomerItemOption> options, {
-  String query = '',
-}) {
-  final seen = <String>{};
-  final out = <GScaleCatalogItem>[];
-  for (final option in options) {
-    final code = option.itemCode.trim();
-    if (code.isEmpty || !seen.add(code.toLowerCase())) {
-      continue;
-    }
-    out.add(GScaleCatalogItem(
-      itemCode: code,
-      itemName: option.itemName.trim().isEmpty ? code : option.itemName.trim(),
-    ));
-  }
-  return _sortCatalogItems(out, query: query);
-}
-
 List<GScaleCatalogWarehouse> gscaleWarehousesFromSupplierItems(
   Iterable<SupplierItem> items, {
   String itemCode = '',
@@ -228,38 +142,4 @@ List<GScaleCatalogWarehouse> _uniqueWarehouses(
     out.add(GScaleCatalogWarehouse(warehouse: warehouse));
   }
   return out;
-}
-
-int _normalizeCatalogLimit(int limit) {
-  if (limit <= 0) {
-    return _gscaleCatalogPageSize;
-  }
-  return limit;
-}
-
-List<GScaleCatalogItem> _sortCatalogItems(
-  List<GScaleCatalogItem> items, {
-  required String query,
-}) {
-  if (query.trim().isEmpty) {
-    return items;
-  }
-  items.sort((left, right) {
-    final byRelevance = compareSearchRelevance(
-      query: query,
-      leftPrimary: left.itemName,
-      leftSecondary: [left.itemCode],
-      rightPrimary: right.itemName,
-      rightSecondary: [right.itemCode],
-    );
-    if (byRelevance != 0) {
-      return byRelevance;
-    }
-    final byName = left.itemName.compareTo(right.itemName);
-    if (byName != 0) {
-      return byName;
-    }
-    return left.itemCode.compareTo(right.itemCode);
-  });
-  return items;
 }
