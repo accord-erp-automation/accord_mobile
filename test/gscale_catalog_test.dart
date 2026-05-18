@@ -17,6 +17,31 @@ void main() {
     expect(items[1].itemName, 'ITEM-002');
   });
 
+  test('customer catalog keeps server order until user searches', () {
+    final options = [
+      _option(itemCode: 'ITEM-001', itemName: 'Sariq ip', warehouse: 'A'),
+      _option(itemCode: 'ITEM-002', itemName: 'Qora mato', warehouse: 'A'),
+      _option(itemCode: 'IP-003', itemName: 'Oq ip', warehouse: 'A'),
+    ];
+
+    final idleItems = gscaleCatalogItemsFromCustomerOptions(options);
+    final searchedItems = gscaleCatalogItemsFromCustomerOptions(
+      options,
+      query: 'ip',
+    );
+
+    expect(idleItems.map((item) => item.itemCode), [
+      'ITEM-001',
+      'ITEM-002',
+      'IP-003',
+    ]);
+    expect(searchedItems.map((item) => item.itemCode), [
+      'IP-003',
+      'ITEM-001',
+      'ITEM-002',
+    ]);
+  });
+
   test('customer options expose exact item warehouses only', () {
     final warehouses = gscaleWarehousesFromCustomerOptions(
       [

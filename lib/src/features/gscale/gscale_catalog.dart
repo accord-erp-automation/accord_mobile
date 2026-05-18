@@ -1,6 +1,10 @@
 import '../../core/api/mobile_api.dart';
+import '../../core/search/search_normalizer.dart';
 import '../../core/session/session.dart';
 import '../shared/models/app_models.dart';
+
+const _gscaleCatalogDefaultLimit = 80;
+const _gscaleCatalogFetchLimit = 240;
 
 class GScaleCatalogItem {
   const GScaleCatalogItem({
@@ -26,22 +30,32 @@ class GScaleCatalogWarehouse {
 
 Future<List<GScaleCatalogItem>> fetchGScaleCatalogItems({
   String query = '',
-  int limit = 12,
+  int limit = _gscaleCatalogDefaultLimit,
   MobileApi? api,
   UserRole? role,
 }) async {
+  final requestedLimit = _normalizeCatalogLimit(limit);
   final client = api ?? MobileApi.instance;
   final activeRole = role ?? AppSession.instance.profile?.role;
   if (activeRole == UserRole.admin) {
-    final items = await client.adminItemsPage(query: query, limit: limit);
-    return gscaleCatalogItemsFromSupplierItems(items);
+    final items = await client.adminItemsPage(
+      query: query,
+      limit: _expandedCatalogFetchLimit(requestedLimit),
+    );
+    return gscaleCatalogItemsFromSupplierItems(
+      items,
+      query: query,
+    ).take(requestedLimit).toList();
   }
   if (activeRole == UserRole.werka) {
     final options = await client.werkaCustomerItemOptions(
       query: query,
-      limit: limit * 4,
+      limit: _expandedCatalogFetchLimit(requestedLimit),
     );
-    return gscaleCatalogItemsFromCustomerOptions(options).take(limit).toList();
+    return gscaleCatalogItemsFromCustomerOptions(
+      options,
+      query: query,
+    ).take(requestedLimit).toList();
   }
   throw Exception('GScale katalog faqat admin yoki werka uchun mavjud');
 }
@@ -118,8 +132,9 @@ Future<List<GScaleCatalogWarehouse>> fetchGScaleDefaultWarehouses({
 }
 
 List<GScaleCatalogItem> gscaleCatalogItemsFromSupplierItems(
-  Iterable<SupplierItem> items,
-) {
+  Iterable<SupplierItem> items, {
+  String query = '',
+}) {
   final seen = <String>{};
   final out = <GScaleCatalogItem>[];
   for (final item in items) {
@@ -132,12 +147,13 @@ List<GScaleCatalogItem> gscaleCatalogItemsFromSupplierItems(
       itemName: item.name.trim().isEmpty ? code : item.name.trim(),
     ));
   }
-  return out;
+  return _sortCatalogItems(out, query: query);
 }
 
 List<GScaleCatalogItem> gscaleCatalogItemsFromCustomerOptions(
-  Iterable<CustomerItemOption> options,
-) {
+  Iterable<CustomerItemOption> options, {
+  String query = '',
+}) {
   final seen = <String>{};
   final out = <GScaleCatalogItem>[];
   for (final option in options) {
@@ -150,7 +166,7 @@ List<GScaleCatalogItem> gscaleCatalogItemsFromCustomerOptions(
       itemName: option.itemName.trim().isEmpty ? code : option.itemName.trim(),
     ));
   }
-  return out;
+  return _sortCatalogItems(out, query: query);
 }
 
 List<GScaleCatalogWarehouse> gscaleWarehousesFromSupplierItems(
@@ -210,4 +226,45 @@ List<GScaleCatalogWarehouse> _uniqueWarehouses(
     out.add(GScaleCatalogWarehouse(warehouse: warehouse));
   }
   return out;
+}
+
+int _normalizeCatalogLimit(int limit) {
+  if (limit <= 0) {
+    return _gscaleCatalogDefaultLimit;
+  }
+  return limit;
+}
+
+int _expandedCatalogFetchLimit(int limit) {
+  if (limit >= _gscaleCatalogFetchLimit) {
+    return limit;
+  }
+  return _gscaleCatalogFetchLimit;
+}
+
+List<GScaleCatalogItem> _sortCatalogItems(
+  List<GScaleCatalogItem> items, {
+  required String query,
+}) {
+  if (query.trim().isEmpty) {
+    return items;
+  }
+  items.sort((left, right) {
+    final byRelevance = compareSearchRelevance(
+      query: query,
+      leftPrimary: left.itemName,
+      leftSecondary: [left.itemCode],
+      rightPrimary: right.itemName,
+      rightSecondary: [right.itemCode],
+    );
+    if (byRelevance != 0) {
+      return byRelevance;
+    }
+    final byName = left.itemName.compareTo(right.itemName);
+    if (byName != 0) {
+      return byName;
+    }
+    return left.itemCode.compareTo(right.itemCode);
+  });
+  return items;
 }

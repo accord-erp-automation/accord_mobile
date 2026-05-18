@@ -35,6 +35,7 @@ const _bonjourDiscoveryTimeout = Duration(milliseconds: 900);
 const _emptyDiscoveryScansBeforeClear = 3;
 const _bonjourDiscoveryChannel = MethodChannel('gscale/bonjour');
 const _minManualPrintKg = 0.100;
+const _catalogPickerLimit = 80;
 const _configuredApiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
   defaultValue: _defaultWifiServerAddress,
@@ -804,8 +805,10 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
   }
 
   Future<List<MobileItem>> _fetchItems({String query = ''}) async {
-    final items = await fetchGScaleCatalogItems(query: query, limit: 12)
-        .timeout(const Duration(seconds: 3));
+    final items = await fetchGScaleCatalogItems(
+      query: query,
+      limit: _catalogPickerLimit,
+    ).timeout(const Duration(seconds: 3));
     return items
         .map(
           (item) => MobileItem(
@@ -3959,13 +3962,13 @@ DiscoveryResult mergeDiscoveryResults({
   }
 
   final merged = <String, DiscoveredServer>{};
-  if (current != null) {
-    for (final server in current.servers) {
-      merged[server.discoveryKey] = server;
-    }
-  }
   for (final server in next.servers) {
     merged[server.discoveryKey] = server;
+  }
+  if (current != null) {
+    for (final server in current.servers) {
+      merged.putIfAbsent(server.discoveryKey, () => server);
+    }
   }
 
   return DiscoveryResult(
