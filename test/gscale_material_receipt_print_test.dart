@@ -115,6 +115,53 @@ void main() {
     expect(response.batch.tareEnabled, isTrue);
   });
 
+  test('mobile batch state accepts RS batch session shape', () {
+    final batch = MobileBatchState.fromJson({
+      'active': true,
+      'item_code': 'ITEM-1',
+      'item_name': 'Green Tea',
+      'warehouse': 'Stores - A',
+      'printer': 'zebra',
+      'print_mode': 'rfid',
+      'quantity_source': 'scale',
+      'manual_qty_kg': 0,
+      'tare_enabled': true,
+      'tare_kg': 0.78,
+    });
+
+    expect(batch.active, isTrue);
+    expect(batch.displayItemName, 'Green Tea');
+    expect(batch.tareEnabled, isTrue);
+    expect(batch.tareKg, 0.78);
+  });
+
+  test('mobile batch state can be built from RS API model', () {
+    const rsBatch = GScaleRpsBatchSession(
+      id: 'batch-1',
+      active: true,
+      driverUrl: 'http://127.0.0.1:39117',
+      itemCode: 'ITEM-1',
+      itemName: 'Green Tea',
+      warehouse: 'Stores - A',
+      printer: 'zebra',
+      printMode: 'rfid',
+      quantitySource: 'scale',
+      manualQtyKg: 0,
+      tareEnabled: true,
+      tareKg: 0.78,
+    );
+
+    final snapshot = MonitorSnapshot.empty().copyWithBatch(
+      MobileBatchState.fromRpsBatch(rsBatch),
+    );
+
+    expect(snapshot.batchActive, isTrue);
+    expect(snapshot.batchItemCode, 'ITEM-1');
+    expect(snapshot.batchItemName, 'Green Tea');
+    expect(snapshot.batchWarehouse, 'Stores - A');
+    expect(snapshot.batchTareEnabled, isTrue);
+  });
+
   test('rps batch start helper carries current print controls', () {
     final request = buildGScaleRpsBatchStartRequest(
       driverUrl: 'http://127.0.0.1:39117',

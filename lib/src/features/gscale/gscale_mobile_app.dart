@@ -452,6 +452,7 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
     _loadControlDraftPreferences();
     _startLiveStream();
     _startPingLoop();
+    unawaited(_refreshRsBatchState());
   }
 
   @override
@@ -753,6 +754,7 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
           _errorText = '';
         });
       }
+      await _refreshRsBatchState();
     } catch (error) {
       if (mounted) {
         setState(() {
@@ -766,6 +768,65 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
           _manualLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _refreshRsBatchState({bool reportError = false}) async {
+    try {
+      if (!AppSession.instance.isLoggedIn) {
+        await AppSession.instance.load();
+      }
+      if (!AppSession.instance.isLoggedIn) {
+        return;
+      }
+      final response = await MobileApi.instance
+          .gscaleRpsBatchState()
+          .timeout(const Duration(seconds: 4));
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _applyRsBatchSession(response.batch);
+        if (reportError) {
+          _errorText = '';
+        }
+      });
+    } catch (error) {
+      if (reportError && mounted) {
+        setState(() {
+          _errorText = error.toString();
+        });
+      }
+    }
+  }
+
+  Future<void> _stopRsBatch() async {
+    if (_manualPrintLoading || _batchActionLoading || _requestInFlight) {
+      return;
+    }
+    setState(() {
+      _batchActionLoading = true;
+      _errorText = '';
+    });
+    try {
+      final response = await MobileApi.instance
+          .gscaleRpsBatchStop()
+          .timeout(const Duration(seconds: 8));
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _applyRsBatchSession(response.batch);
+        _batchActionLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _batchActionLoading = false;
+        _errorText = error.toString();
+      });
     }
   }
 
@@ -824,6 +885,10 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
         }
       }
     }
+  }
+
+  void _applyRsBatchSession(GScaleRpsBatchSession batch) {
+    _snapshot = _snapshot.copyWithBatch(MobileBatchState.fromRpsBatch(batch));
   }
 
   Uri _apiUri(String path, [Map<String, String?> query = const {}]) {
@@ -1102,7 +1167,7 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
         ? 'label'
         : (_batchPrintMode == 'label' ? 'label' : 'rfid');
     final api = MobileApi.instance;
-    await api
+    final started = await api
         .gscaleRpsBatchStart(
           buildGScaleRpsBatchStartRequest(
             driverUrl: widget.server.endpoint.baseUrl,
@@ -1119,7 +1184,12 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
           ),
         )
         .timeout(const Duration(seconds: 15));
-    return api
+    if (mounted) {
+      setState(() {
+        _applyRsBatchSession(started.batch);
+      });
+    }
+    final response = await api
         .gscaleRpsBatchPrint(
           buildGScaleRpsBatchPrintRequest(
             grossQtyKg: grossQtyKg,
@@ -1127,6 +1197,8 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
           ),
         )
         .timeout(const Duration(seconds: 15));
+    unawaited(_refreshRsBatchState());
+    return response;
   }
 
   void _showPrintSuccess(GScaleMaterialReceiptPrintResponse response) {
@@ -1957,6 +2029,36 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
           ],
         ),
         const SizedBox(height: 16),
+        if (_snapshot.batchActive) ...[
+          Row(
+            children: [
+              Expanded(
+                child: _MiniIconRow(
+                  icon: Icons.playlist_add_check_rounded,
+                  text: [
+                    _snapshot.batchItemName.isEmpty
+                        ? _snapshot.batchItemCode
+                        : _snapshot.batchItemName,
+                    if (_snapshot.batchWarehouse.isNotEmpty)
+                      _snapshot.batchWarehouse,
+                  ].where((part) => part.trim().isNotEmpty).join(' • '),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: modeLocked ? null : () => unawaited(_stopRsBatch()),
+                icon: _batchActionLoading
+                    ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.stop_circle_outlined),
+                label: const Text("To'xtatish"),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+        ],
         _PickerField(
           icon: Icons.search_rounded,
           label: 'Mahsulot tanlang',
@@ -3657,8 +3759,23 @@ class MobileBatchState {
       printer: normalizePrinterChoice(_text(json['printer'])),
       quantitySource: normalizeQuantitySource(_text(json['quantity_source'])),
       manualQtyKg: (json['manual_qty_kg'] as num?)?.toDouble() ?? 0,
-      tareEnabled: json['tare'] == true,
+      tareEnabled: json['tare_enabled'] == true || json['tare'] == true,
       tareKg: (json['tare_kg'] as num?)?.toDouble() ?? 0,
+    );
+  }
+
+  factory MobileBatchState.fromRpsBatch(GScaleRpsBatchSession batch) {
+    return MobileBatchState(
+      active: batch.active,
+      itemCode: batch.itemCode,
+      itemName: batch.itemName,
+      warehouse: batch.warehouse,
+      printMode: batch.printMode,
+      printer: normalizePrinterChoice(batch.printer),
+      quantitySource: normalizeQuantitySource(batch.quantitySource),
+      manualQtyKg: batch.manualQtyKg,
+      tareEnabled: batch.tareEnabled,
+      tareKg: batch.tareKg,
     );
   }
 
