@@ -1,6 +1,7 @@
 import '../../../core/api/mobile_api.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/lists/m3_segmented_list.dart';
+import '../../../core/widgets/shell/app_loading_indicator.dart';
 import '../../../core/widgets/shell/app_shell.dart';
 import '../models/admin_item_group_tree_entry.dart';
 import '../../shared/models/app_models.dart';
@@ -524,7 +525,7 @@ class _AdminItemsListTabState extends State<AdminItemsListTab>
   Widget build(BuildContext context) {
     super.build(context);
     final bottomPadding = MediaQuery.paddingOf(context).bottom + 240;
-    return RefreshIndicator(
+    return RefreshIndicator.noSpinner(
       onRefresh: () => _loadFirstPage(forceRefresh: true),
       child: ListView(
         controller: _scrollController,
@@ -593,11 +594,9 @@ class _AdminItemsListBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (initialLoading) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: CircularProgressIndicator(),
-        ),
+      return SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.48,
+        child: const Center(child: AppLoadingIndicator()),
       );
     }
     if (error != null && items.isEmpty) {
@@ -656,7 +655,7 @@ class _AdminItemsList extends StatelessWidget {
         if (loadingMore)
           const Padding(
             padding: EdgeInsets.all(14),
-            child: CircularProgressIndicator(),
+            child: AppLoadingIndicator(size: 48, glyphSize: 28),
           )
         else if (pageError != null)
           Padding(

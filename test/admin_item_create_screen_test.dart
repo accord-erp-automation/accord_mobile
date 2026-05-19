@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:erpnext_stock_mobile/src/core/localization/app_localizations.dart';
 import 'package:erpnext_stock_mobile/src/core/session/session.dart';
+import 'package:erpnext_stock_mobile/src/core/widgets/shell/app_loading_indicator.dart';
 import 'package:erpnext_stock_mobile/src/features/admin/models/admin_item_group_tree_entry.dart';
 import 'package:erpnext_stock_mobile/src/features/admin/presentation/admin_item_create_screen.dart';
 import 'package:erpnext_stock_mobile/src/features/admin/presentation/widgets/admin_summary_card.dart';
@@ -146,7 +147,7 @@ void main() {
       expect(find.text('Item yaratish'), findsNWidgets(2));
       expect(find.text('Itemlar'), findsOneWidget);
 
-      await tester.tap(find.text('Itemlar'));
+      await tester.tap(find.byType(Tab).last);
       await tester.pumpAndSettle();
 
       expect(
@@ -172,6 +173,41 @@ void main() {
       expect(find.text('Item 085'), findsOneWidget);
       expect(tester.takeException(), isNull);
     }, createHttpClient: (_) => client);
+  });
+
+  testWidgets('item list initial load shows one centered app loader',
+      (tester) async {
+    final itemsPage = Completer<List<SupplierItem>>();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(useMaterial3: true),
+        home: Scaffold(
+          body: AdminItemsListTab(
+            loadItemsPage: ({
+              required query,
+              required limit,
+              required offset,
+            }) {
+              return itemsPage.future;
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+
+    expect(find.byType(AppLoadingIndicator), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    itemsPage.complete(
+      _itemsPage(1, 1).map(SupplierItem.fromJson).toList(growable: false),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Item 001'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('item list reuses memory cache until user refreshes',
