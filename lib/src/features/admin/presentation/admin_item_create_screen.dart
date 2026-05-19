@@ -1,6 +1,7 @@
 import '../../../core/api/mobile_api.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/shell/app_shell.dart';
+import '../models/admin_item_group_tree_entry.dart';
 import '../../werka/presentation/widgets/m3_picker_sheet.dart';
 import 'widgets/admin_dock.dart';
 import 'widgets/admin_top_notice.dart';
@@ -18,13 +19,13 @@ class _AdminItemCreateScreenState extends State<AdminItemCreateScreen> {
   final TextEditingController name = TextEditingController();
   final TextEditingController itemGroup = TextEditingController();
   final TextEditingController uom = TextEditingController(text: 'Kg');
-  final Future<List<String>> itemGroupsFuture =
-      MobileApi.instance.adminItemGroups();
+  late final Future<List<String>> itemGroupsFuture;
   bool saving = false;
 
   @override
   void initState() {
     super.initState();
+    itemGroupsFuture = _loadItemGroups();
     _hydrateDefaultUom();
   }
 
@@ -49,6 +50,17 @@ class _AdminItemCreateScreenState extends State<AdminItemCreateScreen> {
         uom.text = defaultUom.isEmpty ? 'Kg' : defaultUom;
       }
     } catch (_) {}
+  }
+
+  Future<List<String>> _loadItemGroups() async {
+    try {
+      final tree = await MobileApi.instance.adminItemGroupTree();
+      final ordered = orderAdminItemGroupsByParent(tree);
+      if (ordered.isNotEmpty) {
+        return ordered;
+      }
+    } catch (_) {}
+    return MobileApi.instance.adminItemGroups();
   }
 
   void _syncItemGroupSelection(List<String> groups) {
@@ -274,6 +286,94 @@ class _AdminItemCreateScreenState extends State<AdminItemCreateScreen> {
       ),
     );
   }
+}
+
+List<String> orderAdminItemGroupsByParent(
+  List<AdminItemGroupTreeEntry> entries,
+) {
+  final names = <String>{};
+  final parentByName = <String, String>{};
+  final isGroupByName = <String, bool>{};
+  final indexByName = <String, int>{};
+  final childrenByParent = <String, List<String>>{};
+
+  for (var index = 0; index < entries.length; index++) {
+    final entry = entries[index];
+    final name = (entry.itemGroupName.trim().isNotEmpty
+            ? entry.itemGroupName
+            : entry.name)
+        .trim();
+    if (name.isEmpty || !names.add(name)) {
+      continue;
+    }
+    indexByName[name] = index;
+    isGroupByName[name] = entry.isGroup;
+    final parent = entry.parentItemGroup.trim();
+    parentByName[name] = parent;
+    if (parent.isNotEmpty && parent != name) {
+      childrenByParent.putIfAbsent(parent, () => <String>[]).add(name);
+    }
+  }
+
+  for (final children in childrenByParent.values) {
+    children.sort((left, right) => _compareItemGroupTreeOrder(
+          left,
+          right,
+          isGroupByName,
+          indexByName,
+        ));
+  }
+
+  final ordered = <String>[];
+  final visited = <String>{};
+
+  void visit(String name) {
+    if (!names.contains(name) || !visited.add(name)) {
+      return;
+    }
+    ordered.add(name);
+    for (final child in childrenByParent[name] ?? const <String>[]) {
+      visit(child);
+    }
+  }
+
+  if (names.contains('All Item Groups')) {
+    visit('All Item Groups');
+  }
+
+  final roots = names.where((name) {
+    final parent = parentByName[name] ?? '';
+    return parent.isEmpty || parent == name || !names.contains(parent);
+  }).toList()
+    ..sort((left, right) => _compareItemGroupTreeOrder(
+          left,
+          right,
+          isGroupByName,
+          indexByName,
+        ));
+
+  for (final root in roots) {
+    visit(root);
+  }
+  for (final name in names) {
+    visit(name);
+  }
+  return ordered;
+}
+
+int _compareItemGroupTreeOrder(
+  String left,
+  String right,
+  Map<String, bool> isGroupByName,
+  Map<String, int> indexByName,
+) {
+  final leftIsGroup = isGroupByName[left] ?? false;
+  final rightIsGroup = isGroupByName[right] ?? false;
+  if (leftIsGroup != rightIsGroup) {
+    return leftIsGroup ? -1 : 1;
+  }
+  return (indexByName[left] ?? 1 << 20)
+      .compareTo(indexByName[right] ?? 1 << 20);
 }
 
 class _TapBox extends StatelessWidget {

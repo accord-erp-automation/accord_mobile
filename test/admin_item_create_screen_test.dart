@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:erpnext_stock_mobile/src/core/localization/app_localizations.dart';
 import 'package:erpnext_stock_mobile/src/core/session/session.dart';
+import 'package:erpnext_stock_mobile/src/features/admin/models/admin_item_group_tree_entry.dart';
 import 'package:erpnext_stock_mobile/src/features/admin/presentation/admin_item_create_screen.dart';
 import 'package:erpnext_stock_mobile/src/features/shared/models/app_models.dart';
 import 'package:flutter/material.dart';
@@ -103,6 +104,11 @@ void main() {
       expect(find.text('Item group tanlang'), findsOneWidget);
       expect(find.text('Item group qidiring'), findsOneWidget);
 
+      await tester.scrollUntilVisible(
+        find.text('Group B'),
+        240,
+        scrollable: find.byType(Scrollable).last,
+      );
       await tester.tap(find.text('Group B'));
       await tester.pumpAndSettle();
 
@@ -110,6 +116,94 @@ void main() {
       expect(find.text('Group B'), findsOneWidget);
       expect(tester.takeException(), isNull);
     }, createHttpClient: (_) => client);
+  });
+
+  testWidgets('item group picker orders parent groups before children',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final seenRequests = <String>[];
+    final client = _AdminItemCreateHttpClient(seenRequests);
+
+    await HttpOverrides.runZoned(() async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(useMaterial3: true),
+          locale: const Locale('uz'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const AdminItemCreateScreen(),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('All Item Groups').first);
+      await tester.pumpAndSettle();
+
+      final allTop = tester.getTopLeft(find.text('All Item Groups').last).dy;
+      final homashyoTop = tester.getTopLeft(find.text('Homashyo')).dy;
+      final metalTop = tester.getTopLeft(find.text('Metal')).dy;
+
+      expect(allTop, lessThan(homashyoTop));
+      expect(homashyoTop, lessThan(metalTop));
+      expect(
+        seenRequests,
+        contains('GET /v1/mobile/admin/item-groups/tree'),
+      );
+      expect(tester.takeException(), isNull);
+    }, createHttpClient: (_) => client);
+  });
+
+  test('item group tree puts group parents before leaf children', () {
+    final ordered = orderAdminItemGroupsByParent(const [
+      AdminItemGroupTreeEntry(
+        name: 'Metal',
+        itemGroupName: 'Metal',
+        parentItemGroup: 'Homashyo',
+        isGroup: false,
+      ),
+      AdminItemGroupTreeEntry(
+        name: 'Group B',
+        itemGroupName: 'Group B',
+        parentItemGroup: 'All Item Groups',
+        isGroup: false,
+      ),
+      AdminItemGroupTreeEntry(
+        name: 'All Item Groups',
+        itemGroupName: 'All Item Groups',
+        parentItemGroup: '',
+        isGroup: true,
+      ),
+      AdminItemGroupTreeEntry(
+        name: 'Homashyo',
+        itemGroupName: 'Homashyo',
+        parentItemGroup: 'All Item Groups',
+        isGroup: true,
+      ),
+      AdminItemGroupTreeEntry(
+        name: 'Plastic',
+        itemGroupName: 'Plastic',
+        parentItemGroup: 'Homashyo',
+        isGroup: false,
+      ),
+    ]);
+
+    expect(
+      ordered,
+      const [
+        'All Item Groups',
+        'Homashyo',
+        'Metal',
+        'Plastic',
+        'Group B',
+      ],
+    );
   });
 }
 
@@ -132,6 +226,38 @@ class _AdminItemCreateHttpClient implements HttpClient {
           'All Item Groups',
           'Group A',
           'Group B',
+        ],
+      'GET /v1/mobile/admin/item-groups/tree' => const [
+          {
+            'name': 'Metal',
+            'item_group_name': 'Metal',
+            'parent_item_group': 'Homashyo',
+            'is_group': false,
+          },
+          {
+            'name': 'Group B',
+            'item_group_name': 'Group B',
+            'parent_item_group': 'All Item Groups',
+            'is_group': false,
+          },
+          {
+            'name': 'All Item Groups',
+            'item_group_name': 'All Item Groups',
+            'parent_item_group': '',
+            'is_group': true,
+          },
+          {
+            'name': 'Homashyo',
+            'item_group_name': 'Homashyo',
+            'parent_item_group': 'All Item Groups',
+            'is_group': true,
+          },
+          {
+            'name': 'Plastic',
+            'item_group_name': 'Plastic',
+            'parent_item_group': 'Homashyo',
+            'is_group': false,
+          },
         ],
       'GET /v1/mobile/admin/items?q=test&limit=5' => const [
           {
