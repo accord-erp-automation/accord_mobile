@@ -11,10 +11,10 @@ void main() {
     final scheme = theme.colorScheme;
 
     expect(theme.brightness, Brightness.light);
-    expect(theme.scaffoldBackgroundColor, const Color(0xFFDBCEA5));
+    expect(theme.scaffoldBackgroundColor, const Color(0xFFE7DCC0));
     expect(theme.cardColor, const Color(0xFFECE7D1));
     expect(scheme.surfaceContainerHighest, const Color(0xFFECE7D1));
-    expect(theme.appBarTheme.backgroundColor, const Color(0xFFC9B987));
-    expect(theme.navigationBarTheme.backgroundColor, const Color(0xFFC9B987));
+    expect(theme.appBarTheme.backgroundColor, const Color(0xFFDBCEA5));
+    expect(theme.navigationBarTheme.backgroundColor, const Color(0xFFDBCEA5));
   });
 }
