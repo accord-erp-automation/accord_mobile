@@ -40,24 +40,10 @@ class AdminCreateHubScreen extends StatelessWidget {
             child: Column(
               children: [
                 _CreateHubRow(
-                  title: context.l10n.adminCreateSupplierTitle,
-                  subtitle: context.l10n.adminCreateSupplierSubtitle,
+                  title: context.l10n.adminCreateUserTitle,
+                  subtitle: context.l10n.adminCreateUserSubtitle,
                   onTap: () => Navigator.of(context)
-                      .pushNamed(AppRoutes.adminSupplierCreate),
-                ),
-                const Divider(height: 1, thickness: 1),
-                _CreateHubRow(
-                  title: context.l10n.adminCreateCustomerTitle,
-                  subtitle: context.l10n.adminCreateCustomerSubtitle,
-                  onTap: () => Navigator.of(context)
-                      .pushNamed(AppRoutes.adminCustomerCreate),
-                ),
-                const Divider(height: 1, thickness: 1),
-                _CreateHubRow(
-                  title: context.l10n.adminCreateWerkaTitle,
-                  subtitle: context.l10n.adminCreateWerkaSubtitle,
-                  onTap: () =>
-                      Navigator.of(context).pushNamed(AppRoutes.adminWerka),
+                      .pushNamed(AppRoutes.adminUserCreate),
                 ),
                 const Divider(height: 1, thickness: 1),
                 _CreateHubRow(

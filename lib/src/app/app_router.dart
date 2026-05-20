@@ -20,6 +20,7 @@ import '../features/admin/presentation/admin_supplier_items_add_screen.dart';
 import '../features/admin/presentation/admin_supplier_items_view_screen.dart';
 import '../features/admin/presentation/admin_item_group_bulk_move_screen.dart';
 import '../features/admin/presentation/admin_suppliers_screen.dart';
+import '../features/admin/presentation/admin_user_create_screen.dart';
 import '../features/admin/presentation/admin_werka_screen.dart';
 import '../features/gscale/presentation/gscale_mode_screen.dart';
 import '../features/shared/models/app_models.dart';
@@ -119,6 +120,7 @@ class AppRoutes {
   static const String adminSettings = '/admin-settings';
   static const String adminRoles = '/admin-roles';
   static const String adminSuppliers = '/admin-suppliers';
+  static const String adminUserCreate = '/admin-user-create';
   static const String adminSupplierCreate = '/admin-supplier-create';
   static const String adminCustomerCreate = '/admin-customer-create';
   static const String adminCustomerDetail = '/admin-customer-detail';
@@ -147,6 +149,7 @@ class AppRouter {
     AppRoutes.adminSettings,
     AppRoutes.adminRoles,
     AppRoutes.adminSuppliers,
+    AppRoutes.adminUserCreate,
     AppRoutes.adminWerka,
     AppRoutes.profile,
     AppRoutes.customerHome,
@@ -409,6 +412,8 @@ class AppRouter {
         return _buildRoute(settings, const AdminRolesScreen());
       case AppRoutes.adminSuppliers:
         return _buildRoute(settings, const AdminSuppliersScreen());
+      case AppRoutes.adminUserCreate:
+        return _buildRoute(settings, const AdminUserCreateScreen());
       case AppRoutes.adminSupplierCreate:
         return _buildRoute(settings, const AdminSupplierCreateScreen());
       case AppRoutes.adminCustomerCreate:

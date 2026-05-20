@@ -613,6 +613,12 @@ class AppLocalizations {
   String get adminNoActivity =>
       _t('Hali harakat yo‘q.', 'No activity yet.', 'Активности пока нет.');
   String get adminCreateTitle => _t('Qo‘shish', 'Create', 'Создать');
+  String get adminCreateUserTitle =>
+      _t('Foydalanuvchi qo‘shish', 'Add user', 'Добавить пользователя');
+  String get adminCreateUserSubtitle => _t(
+      'Omborchi, haridor yoki ta\'minotchi yaratish',
+      'Create a warehouse worker, customer, or supplier',
+      'Создание кладовщика, покупателя или поставщика');
   String get adminSettingsLoadFailed => _t('Settings yuklanmadi',
       'Settings failed to load', 'Не удалось загрузить настройки');
   String get settingsSaved =>

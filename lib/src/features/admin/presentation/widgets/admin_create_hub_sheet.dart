@@ -265,71 +265,55 @@ class _AdminCreateHubOverlayState extends State<_AdminCreateHubOverlay>
 
   List<_AdminHubAction> _actions(BuildContext context) {
     final l10n = context.l10n;
-    const n = 8;
+    const n = 6;
     return [
       _AdminHubAction(
-        key: const ValueKey('admin-hub-supplier-create'),
-        title: l10n.adminCreateSupplierTitle,
-        icon: Icons.local_shipping_outlined,
-        routeName: AppRoutes.adminSupplierCreate,
+        key: const ValueKey('admin-hub-user-create'),
+        title: l10n.adminCreateUserTitle,
+        icon: Icons.group_add_outlined,
+        routeName: AppRoutes.adminUserCreate,
         row: 0,
         staggerOrder: n - 1 - 0,
-      ),
-      _AdminHubAction(
-        key: const ValueKey('admin-hub-customer-create'),
-        title: l10n.adminCreateCustomerTitle,
-        icon: Icons.person_add_alt_1_outlined,
-        routeName: AppRoutes.adminCustomerCreate,
-        row: 1,
-        staggerOrder: n - 1 - 1,
-      ),
-      _AdminHubAction(
-        key: const ValueKey('admin-hub-werka-create'),
-        title: l10n.adminCreateWerkaTitle,
-        icon: Icons.badge_outlined,
-        routeName: AppRoutes.adminWerka,
-        row: 2,
-        staggerOrder: n - 1 - 2,
       ),
       _AdminHubAction(
         key: const ValueKey('admin-hub-settings'),
         title: l10n.adminErpSettingsTitle,
         icon: Icons.settings_outlined,
         routeName: AppRoutes.adminSettings,
-        row: 3,
-        staggerOrder: n - 1 - 3,
+        row: 1,
+        staggerOrder: n - 1 - 1,
       ),
       const _AdminHubAction(
         key: ValueKey('admin-hub-roles'),
         title: 'Rollar',
         icon: Icons.admin_panel_settings_outlined,
         routeName: AppRoutes.adminRoles,
-        row: 4,
-        staggerOrder: n - 1 - 4,
+        row: 2,
+        staggerOrder: n - 1 - 2,
       ),
       _AdminHubAction(
         key: const ValueKey('admin-hub-item-create'),
         title: l10n.adminCreateItemTitle,
         icon: Icons.inventory_2_outlined,
         routeName: AppRoutes.adminItemCreate,
-        row: 5,
-        staggerOrder: n - 1 - 5,
+        row: 3,
+        staggerOrder: n - 1 - 3,
       ),
       _AdminHubAction(
         key: const ValueKey('admin-hub-item-group-create'),
         title: l10n.adminCreateItemGroupTitle,
         icon: Icons.account_tree_outlined,
         routeName: AppRoutes.adminItemGroupCreate,
-        row: 6,
-        staggerOrder: n - 1 - 6,
+        row: 4,
+        staggerOrder: n - 1 - 4,
       ),
       const _AdminHubAction(
         key: ValueKey('admin-hub-item-bulk-move'),
         title: 'Mahsulotlar',
         icon: Icons.grid_view_rounded,
         routeName: AppRoutes.adminItemBulkMove,
-        row: 7,
-        staggerOrder: n - 1 - 7,
+        row: 5,
+        staggerOrder: n - 1 - 5,
       ),
     ];
   }
