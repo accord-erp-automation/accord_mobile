@@ -191,6 +191,9 @@ class _WerkaCustomerIssueCustomerScreenState
         return M3AsyncPickerSheet<CustomerDirectoryEntry>(
           title: context.l10n.selectCustomer,
           hintText: context.l10n.searchCustomer,
+          cacheKey: _selectedItem != null
+              ? 'werka:issue-customers-for-item:${_selectedItem!.code}'
+              : 'werka:issue-customers',
           loadPage: (query, offset, limit) => _selectedItem != null
               ? MobileApi.instance.werkaCustomersForItem(
                   itemCode: _selectedItem!.code,
@@ -242,6 +245,7 @@ class _WerkaCustomerIssueCustomerScreenState
             hintText: context.l10n.searchItem,
             showScanIcon: true,
             pageSize: 100,
+            cacheKey: 'werka:issue-customer-items:${_selectedCustomer!.ref}',
             loadPage: (query, offset, limit) =>
                 MobileApi.instance.werkaCustomerItems(
               customerRef: _selectedCustomer!.ref,
@@ -282,6 +286,7 @@ class _WerkaCustomerIssueCustomerScreenState
           hintText: context.l10n.searchItem,
           showScanIcon: true,
           pageSize: 200,
+          cacheKey: 'werka:issue-customer-item-options',
           loadPage: (query, offset, limit) =>
               MobileApi.instance.werkaCustomerItemOptions(
             query: query,

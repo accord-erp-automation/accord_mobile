@@ -106,6 +106,64 @@ void main() {
     expect(find.text('Olma'), findsOneWidget);
     expect(find.text('Hozircha yozuv yo‘q'), findsNothing);
   });
+
+  testWidgets('async picker caches first page even when sheet is dismissed',
+      (tester) async {
+    final firstPage = Completer<List<_PickerItem>>();
+    var loadCalls = 0;
+
+    await tester.pumpWidget(
+      _wrap(
+        M3AsyncPickerSheet<_PickerItem>(
+          title: 'Mahsulot tanlang',
+          hintText: 'Mahsulot qidiring',
+          cacheKey: 'werka:dismissed-item-options',
+          pageSize: 80,
+          loadPage: (query, offset, limit) {
+            loadCalls++;
+            return firstPage.future;
+          },
+          itemTitle: (item) => item.title,
+          itemSubtitle: (item) => item.subtitle,
+          onSelected: (_) {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(loadCalls, 1);
+    expect(find.byType(AppLoadingIndicator), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+
+    firstPage.complete(const [_PickerItem('Cached after close', 'WP-4')]);
+    await tester.pump();
+
+    await tester.pumpWidget(
+      _wrap(
+        M3AsyncPickerSheet<_PickerItem>(
+          title: 'Mahsulot tanlang',
+          hintText: 'Mahsulot qidiring',
+          cacheKey: 'werka:dismissed-item-options',
+          pageSize: 80,
+          loadPage: (query, offset, limit) async {
+            loadCalls++;
+            return const [_PickerItem('Server again', 'WP-5')];
+          },
+          itemTitle: (item) => item.title,
+          itemSubtitle: (item) => item.subtitle,
+          onSelected: (_) {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(loadCalls, 1);
+    expect(find.byType(AppLoadingIndicator), findsNothing);
+    expect(find.text('Cached after close'), findsOneWidget);
+    expect(find.text('Server again'), findsNothing);
+  });
 }
 
 Widget _wrap(Widget child) {

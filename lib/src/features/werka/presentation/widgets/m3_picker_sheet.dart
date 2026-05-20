@@ -503,6 +503,13 @@ class _M3AsyncPickerSheetState<T> extends State<M3AsyncPickerSheet<T>> {
         limit: widget.pageSize,
         reset: reset,
       );
+      if (queries.isEmpty) {
+        _saveMemoryCacheResult(
+          result,
+          hasMore:
+              queries.length <= 1 && result.items.length >= widget.pageSize,
+        );
+      }
       if (!mounted || requestVersion != _requestVersion) {
         return;
       }
@@ -517,9 +524,6 @@ class _M3AsyncPickerSheetState<T> extends State<M3AsyncPickerSheet<T>> {
         _hasMore =
             queries.length <= 1 && result.items.length >= widget.pageSize;
       });
-      if (queries.isEmpty) {
-        _saveMemoryCache();
-      }
       debugPrint('picker loaded items=${result.items.length}');
     } catch (error) {
       if (!mounted || requestVersion != _requestVersion) {
@@ -575,18 +579,21 @@ class _M3AsyncPickerSheetState<T> extends State<M3AsyncPickerSheet<T>> {
     return true;
   }
 
-  void _saveMemoryCache() {
+  void _saveMemoryCacheResult(
+    _AsyncLoadResult<T> result, {
+    required bool hasMore,
+  }) {
     final key = widget.cacheKey?.trim();
-    if (key == null || key.isEmpty || _items.isEmpty) {
+    if (key == null || key.isEmpty || result.items.isEmpty) {
       return;
     }
     M3AsyncPickerSheet._memoryCache[key] = _AsyncPickerMemoryCache<T>(
-      items: List<T>.unmodifiable(_items),
-      queryRankByItem: Map<String, int>.unmodifiable(_queryRankByItem),
+      items: List<T>.unmodifiable(result.items),
+      queryRankByItem: Map<String, int>.unmodifiable(result.queryRankByItem),
       queryMatchCountByItem: Map<String, int>.unmodifiable(
-        _queryMatchCountByItem,
+        result.queryMatchCountByItem,
       ),
-      hasMore: _hasMore,
+      hasMore: hasMore,
     );
   }
 
