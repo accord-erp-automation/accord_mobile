@@ -405,7 +405,15 @@ class M3AsyncPickerSheet<T> extends StatefulWidget {
     this.supportingText,
     this.pageSize = 50,
     this.showScanIcon = false,
+    this.cacheKey,
   });
+
+  static final Map<String, _AsyncPickerMemoryCache<dynamic>> _memoryCache =
+      <String, _AsyncPickerMemoryCache<dynamic>>{};
+
+  static void clearMemoryCache() {
+    _memoryCache.clear();
+  }
 
   final String title;
   final String hintText;
@@ -416,6 +424,7 @@ class M3AsyncPickerSheet<T> extends StatefulWidget {
   final String? supportingText;
   final int pageSize;
   final bool showScanIcon;
+  final String? cacheKey;
 
   @override
   State<M3AsyncPickerSheet<T>> createState() => _M3AsyncPickerSheetState<T>();
@@ -441,7 +450,9 @@ class _M3AsyncPickerSheetState<T> extends State<M3AsyncPickerSheet<T>> {
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScroll);
-    _reload(reset: true);
+    if (!_restoreMemoryCache()) {
+      _reload(reset: true);
+    }
   }
 
   @override
@@ -506,6 +517,9 @@ class _M3AsyncPickerSheetState<T> extends State<M3AsyncPickerSheet<T>> {
         _hasMore =
             queries.length <= 1 && result.items.length >= widget.pageSize;
       });
+      if (queries.isEmpty) {
+        _saveMemoryCache();
+      }
       debugPrint('picker loaded items=${result.items.length}');
     } catch (error) {
       if (!mounted || requestVersion != _requestVersion) {
@@ -515,7 +529,7 @@ class _M3AsyncPickerSheetState<T> extends State<M3AsyncPickerSheet<T>> {
         _error = error;
       });
     } finally {
-      if (mounted) {
+      if (mounted && requestVersion == _requestVersion) {
         setState(() {
           _loading = false;
           _loadingMore = false;
@@ -533,6 +547,47 @@ class _M3AsyncPickerSheetState<T> extends State<M3AsyncPickerSheet<T>> {
     _debounce = Timer(const Duration(milliseconds: 220), () {
       _reload(reset: true);
     });
+  }
+
+  bool _restoreMemoryCache() {
+    final key = widget.cacheKey?.trim();
+    if (key == null || key.isEmpty) {
+      return false;
+    }
+    final cache = M3AsyncPickerSheet._memoryCache[key];
+    if (cache == null || cache.items.isEmpty) {
+      return false;
+    }
+    final typedItems = cache.items.whereType<T>().toList(growable: false);
+    if (typedItems.length != cache.items.length) {
+      M3AsyncPickerSheet._memoryCache.remove(key);
+      return false;
+    }
+    _query = '';
+    _searchQueries = const <String>[];
+    _items = typedItems;
+    _queryRankByItem = Map<String, int>.from(cache.queryRankByItem);
+    _queryMatchCountByItem = Map<String, int>.from(cache.queryMatchCountByItem);
+    _hasMore = cache.hasMore;
+    _loading = false;
+    _loadingMore = false;
+    _error = null;
+    return true;
+  }
+
+  void _saveMemoryCache() {
+    final key = widget.cacheKey?.trim();
+    if (key == null || key.isEmpty || _items.isEmpty) {
+      return;
+    }
+    M3AsyncPickerSheet._memoryCache[key] = _AsyncPickerMemoryCache<T>(
+      items: List<T>.unmodifiable(_items),
+      queryRankByItem: Map<String, int>.unmodifiable(_queryRankByItem),
+      queryMatchCountByItem: Map<String, int>.unmodifiable(
+        _queryMatchCountByItem,
+      ),
+      hasMore: _hasMore,
+    );
   }
 
   List<String> _effectiveQueries() {
@@ -1081,4 +1136,18 @@ class _AsyncLoadResult<T> {
   final List<T> items;
   final Map<String, int> queryRankByItem;
   final Map<String, int> queryMatchCountByItem;
+}
+
+class _AsyncPickerMemoryCache<T> {
+  const _AsyncPickerMemoryCache({
+    required this.items,
+    required this.queryRankByItem,
+    required this.queryMatchCountByItem,
+    required this.hasMore,
+  });
+
+  final List<T> items;
+  final Map<String, int> queryRankByItem;
+  final Map<String, int> queryMatchCountByItem;
+  final bool hasMore;
 }

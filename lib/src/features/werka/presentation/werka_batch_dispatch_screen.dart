@@ -346,6 +346,7 @@ class _WerkaBatchDispatchScreenState extends State<WerkaBatchDispatchScreen> {
             hintText: context.l10n.searchItem,
             showScanIcon: true,
             pageSize: 100,
+            cacheKey: 'werka:customer-items:${_selectedCustomer!.ref}',
             loadPage: (query, offset, limit) =>
                 MobileApi.instance.werkaCustomerItems(
               customerRef: _selectedCustomer!.ref,
@@ -383,6 +384,7 @@ class _WerkaBatchDispatchScreenState extends State<WerkaBatchDispatchScreen> {
           hintText: context.l10n.searchItem,
           showScanIcon: true,
           pageSize: 200,
+          cacheKey: 'werka:customer-item-options',
           loadPage: (query, offset, limit) =>
               MobileApi.instance.werkaCustomerItemOptions(
             query: query,
