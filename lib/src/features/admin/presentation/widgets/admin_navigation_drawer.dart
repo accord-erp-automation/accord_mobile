@@ -36,7 +36,8 @@ class AdminNavigationDrawer extends StatelessWidget {
                 0 => AppRoutes.adminHome,
                 1 => AppRoutes.adminSuppliers,
                 2 => AppRoutes.adminActivity,
-                3 => AppRoutes.profile,
+                3 => AppRoutes.adminRoles,
+                4 => AppRoutes.profile,
                 _ => AppRoutes.gscaleMode,
               };
               Navigator.of(context).pop();
@@ -78,6 +79,11 @@ class AdminNavigationDrawer extends StatelessWidget {
                 icon: Icon(Icons.history_outlined),
                 selectedIcon: Icon(Icons.history_rounded),
                 label: Text('Harakatlar'),
+              ),
+              NavigationDrawerDestination(
+                icon: Icon(Icons.admin_panel_settings_outlined),
+                selectedIcon: Icon(Icons.admin_panel_settings_rounded),
+                label: Text('Rollar'),
               ),
               NavigationDrawerDestination(
                 icon: Icon(Icons.person_outline_rounded),

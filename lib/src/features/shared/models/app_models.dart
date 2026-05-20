@@ -5,6 +5,37 @@ enum UserRole {
   admin,
 }
 
+UserRole userRoleFromJson(String? value) {
+  final roleValue = (value ?? '').trim().toLowerCase();
+  return roleValue == 'werka'
+      ? UserRole.werka
+      : roleValue == 'customer'
+          ? UserRole.customer
+          : roleValue == 'admin'
+              ? UserRole.admin
+              : UserRole.supplier;
+}
+
+String userRoleToJson(UserRole role) {
+  return role == UserRole.werka
+      ? 'werka'
+      : role == UserRole.customer
+          ? 'customer'
+          : role == UserRole.admin
+              ? 'admin'
+              : 'supplier';
+}
+
+String userRoleLabel(UserRole role) {
+  return role == UserRole.werka
+      ? 'Werka'
+      : role == UserRole.customer
+          ? 'Haridor'
+          : role == UserRole.admin
+              ? 'Admin'
+              : 'Ta\'minotchi';
+}
+
 enum DispatchStatus {
   draft,
   pending,
@@ -785,16 +816,8 @@ class SessionProfile {
   final String avatarUrl;
 
   factory SessionProfile.fromJson(Map<String, dynamic> json) {
-    final String roleValue =
-        (json['role'] as String? ?? '').trim().toLowerCase();
     return SessionProfile(
-      role: roleValue == 'werka'
-          ? UserRole.werka
-          : roleValue == 'customer'
-              ? UserRole.customer
-              : roleValue == 'admin'
-                  ? UserRole.admin
-                  : UserRole.supplier,
+      role: userRoleFromJson(json['role'] as String?),
       displayName: json['display_name'] as String? ?? '',
       legalName: json['legal_name'] as String? ?? '',
       ref: json['ref'] as String? ?? '',
@@ -805,13 +828,7 @@ class SessionProfile {
 
   Map<String, dynamic> toJson() {
     return {
-      'role': role == UserRole.werka
-          ? 'werka'
-          : role == UserRole.customer
-              ? 'customer'
-              : role == UserRole.admin
-                  ? 'admin'
-                  : 'supplier',
+      'role': userRoleToJson(role),
       'display_name': displayName,
       'legal_name': legalName,
       'ref': ref,
@@ -836,6 +853,109 @@ class SessionProfile {
       phone: phone ?? this.phone,
       avatarUrl: avatarUrl ?? this.avatarUrl,
     );
+  }
+}
+
+class AdminCapability {
+  const AdminCapability({
+    required this.code,
+    required this.label,
+    required this.defaultRoles,
+  });
+
+  final String code;
+  final String label;
+  final List<UserRole> defaultRoles;
+
+  factory AdminCapability.fromJson(Map<String, dynamic> json) {
+    return AdminCapability(
+      code: json['code'] as String? ?? '',
+      label: json['label'] as String? ?? '',
+      defaultRoles: (json['default_roles'] as List<dynamic>? ?? const [])
+          .map((item) => userRoleFromJson(item as String?))
+          .toList(growable: false),
+    );
+  }
+}
+
+class AdminRoleDefinition {
+  const AdminRoleDefinition({
+    required this.id,
+    required this.label,
+    required this.baseRole,
+    required this.capabilityCodes,
+    required this.system,
+  });
+
+  final String id;
+  final String label;
+  final UserRole baseRole;
+  final List<String> capabilityCodes;
+  final bool system;
+
+  factory AdminRoleDefinition.fromJson(Map<String, dynamic> json) {
+    return AdminRoleDefinition(
+      id: json['id'] as String? ?? '',
+      label: json['label'] as String? ?? '',
+      baseRole: userRoleFromJson(json['base_role'] as String?),
+      capabilityCodes: (json['capability_codes'] as List<dynamic>? ?? const [])
+          .map((item) => item as String)
+          .toList(growable: false),
+      system: json['system'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'label': label,
+      'base_role': userRoleToJson(baseRole),
+      'capability_codes': capabilityCodes,
+    };
+  }
+
+  AdminRoleDefinition copyWith({
+    String? id,
+    String? label,
+    UserRole? baseRole,
+    List<String>? capabilityCodes,
+    bool? system,
+  }) {
+    return AdminRoleDefinition(
+      id: id ?? this.id,
+      label: label ?? this.label,
+      baseRole: baseRole ?? this.baseRole,
+      capabilityCodes: capabilityCodes ?? this.capabilityCodes,
+      system: system ?? this.system,
+    );
+  }
+}
+
+class AdminRoleAssignment {
+  const AdminRoleAssignment({
+    required this.principalRole,
+    required this.principalRef,
+    required this.roleId,
+  });
+
+  final UserRole principalRole;
+  final String principalRef;
+  final String roleId;
+
+  factory AdminRoleAssignment.fromJson(Map<String, dynamic> json) {
+    return AdminRoleAssignment(
+      principalRole: userRoleFromJson(json['principal_role'] as String?),
+      principalRef: json['principal_ref'] as String? ?? '',
+      roleId: json['role_id'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'principal_role': userRoleToJson(principalRole),
+      'principal_ref': principalRef,
+      'role_id': roleId,
+    };
   }
 }
 

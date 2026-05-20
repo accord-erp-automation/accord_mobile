@@ -66,6 +66,94 @@ extension MobileApiAdmin on MobileApi {
         .toList();
   }
 
+  Future<List<AdminCapability>> adminCapabilities() async {
+    final response = await _sendAuthorized(
+      () => http.get(
+        Uri.parse('$baseUrl/v1/mobile/admin/capabilities'),
+        headers: _headers(requireToken()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Admin capabilities failed');
+    }
+    final List<dynamic> json = jsonDecode(response.body) as List<dynamic>;
+    return json
+        .map((item) => AdminCapability.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<AdminRoleDefinition>> adminRoles() async {
+    final response = await _sendAuthorized(
+      () => http.get(
+        Uri.parse('$baseUrl/v1/mobile/admin/roles'),
+        headers: _headers(requireToken()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Admin roles failed');
+    }
+    final List<dynamic> json = jsonDecode(response.body) as List<dynamic>;
+    return json
+        .map((item) =>
+            AdminRoleDefinition.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<AdminRoleDefinition> adminUpsertRole(
+    AdminRoleDefinition role,
+  ) async {
+    final response = await _sendAuthorized(
+      () => http.put(
+        Uri.parse('$baseUrl/v1/mobile/admin/roles'),
+        headers: _headers(requireToken())
+          ..['Content-Type'] = 'application/json',
+        body: jsonEncode(role.toJson()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Admin role save failed');
+    }
+    return AdminRoleDefinition.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  Future<List<AdminRoleAssignment>> adminRoleAssignments() async {
+    final response = await _sendAuthorized(
+      () => http.get(
+        Uri.parse('$baseUrl/v1/mobile/admin/role-assignments'),
+        headers: _headers(requireToken()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Admin role assignments failed');
+    }
+    final List<dynamic> json = jsonDecode(response.body) as List<dynamic>;
+    return json
+        .map((item) =>
+            AdminRoleAssignment.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<AdminRoleAssignment> adminUpsertRoleAssignment(
+    AdminRoleAssignment assignment,
+  ) async {
+    final response = await _sendAuthorized(
+      () => http.put(
+        Uri.parse('$baseUrl/v1/mobile/admin/role-assignments'),
+        headers: _headers(requireToken())
+          ..['Content-Type'] = 'application/json',
+        body: jsonEncode(assignment.toJson()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Admin role assignment save failed');
+    }
+    return AdminRoleAssignment.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
   Future<AdminSuppliersPage> adminSuppliersPage() async {
     final response = await _sendAuthorized(
       () => http.get(

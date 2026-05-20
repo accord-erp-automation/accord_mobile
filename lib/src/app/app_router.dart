@@ -11,6 +11,7 @@ import '../features/admin/presentation/admin_inactive_suppliers_screen.dart';
 import '../features/admin/presentation/admin_item_create_screen.dart';
 import '../features/admin/presentation/admin_item_group_create_screen.dart';
 import '../features/admin/presentation/admin_settings_screen.dart';
+import '../features/admin/presentation/admin_roles_screen.dart';
 import '../features/admin/presentation/admin_supplier_create_screen.dart';
 import '../features/admin/presentation/admin_customer_create_screen.dart';
 import '../features/admin/presentation/admin_customer_detail_screen.dart';
@@ -116,6 +117,7 @@ class AppRoutes {
   static const String adminActivity = '/admin-activity';
   static const String adminCreateHub = '/admin-create-hub';
   static const String adminSettings = '/admin-settings';
+  static const String adminRoles = '/admin-roles';
   static const String adminSuppliers = '/admin-suppliers';
   static const String adminSupplierCreate = '/admin-supplier-create';
   static const String adminCustomerCreate = '/admin-customer-create';
@@ -143,6 +145,7 @@ class AppRouter {
     AppRoutes.adminActivity,
     AppRoutes.adminCreateHub,
     AppRoutes.adminSettings,
+    AppRoutes.adminRoles,
     AppRoutes.adminSuppliers,
     AppRoutes.adminWerka,
     AppRoutes.profile,
@@ -177,6 +180,7 @@ class AppRouter {
     AppRoutes.werkaStockEntryLookup,
     AppRoutes.werkaArchiveBatchQrLookup,
     AppRoutes.adminSettings,
+    AppRoutes.adminRoles,
     AppRoutes.adminSupplierCreate,
     AppRoutes.adminCustomerCreate,
     AppRoutes.adminCustomerDetail,
@@ -401,6 +405,8 @@ class AppRouter {
         return _buildRoute(settings, const AdminCreateHubScreen());
       case AppRoutes.adminSettings:
         return _buildAdminSettingsRoute(settings, const AdminSettingsScreen());
+      case AppRoutes.adminRoles:
+        return _buildRoute(settings, const AdminRolesScreen());
       case AppRoutes.adminSuppliers:
         return _buildRoute(settings, const AdminSuppliersScreen());
       case AppRoutes.adminSupplierCreate:

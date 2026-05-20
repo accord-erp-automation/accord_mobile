@@ -1,0 +1,722 @@
+import '../../../core/api/mobile_api.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/display/motion_widgets.dart';
+import '../../../core/widgets/lists/m3_segmented_list.dart';
+import '../../../core/widgets/scroll/top_refresh_scroll_physics.dart';
+import '../../../core/widgets/shell/app_loading_indicator.dart';
+import '../../../core/widgets/shell/app_retry_state.dart';
+import '../../../core/widgets/shell/app_shell.dart';
+import '../../shared/models/app_models.dart';
+import 'widgets/admin_dock.dart';
+import 'widgets/admin_navigation_drawer.dart';
+import 'widgets/admin_top_notice.dart';
+import 'package:flutter/material.dart';
+
+class AdminRolesScreen extends StatefulWidget {
+  const AdminRolesScreen({super.key});
+
+  @override
+  State<AdminRolesScreen> createState() => _AdminRolesScreenState();
+}
+
+class _AdminRolesScreenState extends State<AdminRolesScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  late Future<_AdminRolesData> _future;
+  bool _openingRoute = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _future = _load();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<_AdminRolesData> _load() async {
+    final results = await Future.wait<Object>([
+      MobileApi.instance.adminCapabilities(),
+      MobileApi.instance.adminRoles(),
+      MobileApi.instance.adminRoleAssignments(),
+      MobileApi.instance.adminSettings(),
+      MobileApi.instance.adminSuppliers(limit: 100),
+      MobileApi.instance.adminCustomers(limit: 100),
+    ]);
+    return _AdminRolesData(
+      capabilities: results[0] as List<AdminCapability>,
+      roles: results[1] as List<AdminRoleDefinition>,
+      assignments: results[2] as List<AdminRoleAssignment>,
+      settings: results[3] as AdminSettings,
+      suppliers: results[4] as List<AdminSupplier>,
+      customers: results[5] as List<CustomerDirectoryEntry>,
+    );
+  }
+
+  Future<void> _reload() async {
+    setState(() {
+      _future = _load();
+    });
+    await _future;
+  }
+
+  void _openDrawerRoute(String routeName) {
+    if (_openingRoute) {
+      return;
+    }
+    final current = ModalRoute.of(context)?.settings.name;
+    if (current == routeName) {
+      return;
+    }
+    _openingRoute = true;
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      routeName,
+      (route) => false,
+    );
+  }
+
+  Future<void> _openRoleEditor(_AdminRolesData data) async {
+    final role = await showModalBottomSheet<AdminRoleDefinition>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) => _AdminRoleEditorSheet(data: data),
+    );
+    if (role == null || !mounted) {
+      return;
+    }
+    try {
+      final saved = await MobileApi.instance.adminUpsertRole(role);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _future = Future<_AdminRolesData>.value(data.upsertRole(saved));
+      });
+      showAdminTopNotice(context, 'Role saqlandi', icon: Icons.verified_user);
+    } catch (_) {
+      if (mounted) {
+        showAdminTopNotice(context, 'Role saqlanmadi', icon: Icons.error);
+      }
+    }
+  }
+
+  Future<void> _assignRole(
+    _AdminRolesData data,
+    _RolePrincipal principal,
+  ) async {
+    final roles = data.roles
+        .where((role) => role.baseRole == principal.role)
+        .toList(growable: false);
+    final assignment = await showModalBottomSheet<AdminRoleAssignment>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) {
+        return _RoleAssignmentSheet(principal: principal, roles: roles);
+      },
+    );
+    if (assignment == null || !mounted) {
+      return;
+    }
+    try {
+      final saved = await MobileApi.instance.adminUpsertRoleAssignment(
+        assignment,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _future = Future<_AdminRolesData>.value(data.upsertAssignment(saved));
+      });
+      showAdminTopNotice(
+        context,
+        'Role biriktirildi',
+        icon: Icons.assignment_turned_in_outlined,
+      );
+    } catch (_) {
+      if (mounted) {
+        showAdminTopNotice(context, 'Role biriktirilmadi', icon: Icons.error);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom + 136.0;
+    return AppShell(
+      drawer: AdminNavigationDrawer(
+        selectedIndex: 3,
+        onNavigate: _openDrawerRoute,
+      ),
+      title: 'Rollar',
+      subtitle: '',
+      nativeTopBar: true,
+      nativeTitleTextStyle: AppTheme.werkaNativeAppBarTitleStyle(context),
+      bottom: const AdminDock(activeTab: AdminDockTab.settings),
+      bottomDockFadeStrength: null,
+      contentPadding: EdgeInsets.zero,
+      child: FutureBuilder<_AdminRolesData>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: AppLoadingIndicator());
+          }
+          if (snapshot.hasError || !snapshot.hasData) {
+            return AppRetryState(onRetry: _reload);
+          }
+          final data = snapshot.data!;
+          return Column(
+            children: [
+              _AdminRoleTabs(controller: _tabController),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _RolesTab(
+                      data: data,
+                      bottomPadding: bottomPadding,
+                      onRefresh: _reload,
+                      onCreateRole: () => _openRoleEditor(data),
+                    ),
+                    _AssignmentsTab(
+                      data: data,
+                      bottomPadding: bottomPadding,
+                      onRefresh: _reload,
+                      onAssign: (principal) => _assignRole(data, principal),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _AdminRoleTabs extends StatelessWidget {
+  const _AdminRoleTabs({required this.controller});
+
+  final TabController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surfaceContainerLow,
+      child: TabBar(
+        controller: controller,
+        tabs: const [
+          Tab(text: 'Rollar'),
+          Tab(text: 'Biriktirish'),
+        ],
+      ),
+    );
+  }
+}
+
+class _RolesTab extends StatelessWidget {
+  const _RolesTab({
+    required this.data,
+    required this.bottomPadding,
+    required this.onRefresh,
+    required this.onCreateRole,
+  });
+
+  final _AdminRolesData data;
+  final double bottomPadding;
+  final Future<void> Function() onRefresh;
+  final VoidCallback onCreateRole;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppRefreshIndicator(
+      onRefresh: onRefresh,
+      allowRefreshOnShortContent: true,
+      child: ListView(
+        physics: const TopRefreshScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(12, 12, 12, bottomPadding),
+        children: [
+          SmoothAppear(
+            child: FilledButton.icon(
+              onPressed: onCreateRole,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Yangi role'),
+            ),
+          ),
+          const SizedBox(height: 12),
+          M3SegmentSpacedColumn(
+            children: [
+              for (int index = 0; index < data.roles.length; index++)
+                _RoleDefinitionTile(
+                  role: data.roles[index],
+                  capabilities: data.capabilities,
+                  slot: M3SegmentedListGeometry.standaloneListSlotForIndex(
+                    index,
+                    data.roles.length,
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RoleDefinitionTile extends StatelessWidget {
+  const _RoleDefinitionTile({
+    required this.role,
+    required this.capabilities,
+    required this.slot,
+  });
+
+  final AdminRoleDefinition role;
+  final List<AdminCapability> capabilities;
+  final M3SegmentVerticalSlot slot;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final capabilityLabels = role.capabilityCodes
+        .map((code) => capabilities
+            .where((capability) => capability.code == code)
+            .map((capability) => capability.label)
+            .letFirstOrNull())
+        .whereType<String>()
+        .toList(growable: false);
+    return M3SegmentFilledSurface(
+      slot: slot,
+      cornerRadius: M3SegmentedListGeometry.cornerLarge,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              role.system
+                  ? Icons.admin_panel_settings_outlined
+                  : Icons.verified_user_outlined,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(role.label, style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${userRoleLabel(role.baseRole)} • ${role.system ? 'system' : 'custom'}',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  if (capabilityLabels.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      capabilityLabels.join(', '),
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AssignmentsTab extends StatelessWidget {
+  const _AssignmentsTab({
+    required this.data,
+    required this.bottomPadding,
+    required this.onRefresh,
+    required this.onAssign,
+  });
+
+  final _AdminRolesData data;
+  final double bottomPadding;
+  final Future<void> Function() onRefresh;
+  final ValueChanged<_RolePrincipal> onAssign;
+
+  @override
+  Widget build(BuildContext context) {
+    final principals = data.principals;
+    return AppRefreshIndicator(
+      onRefresh: onRefresh,
+      allowRefreshOnShortContent: true,
+      child: ListView(
+        physics: const TopRefreshScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(12, 12, 12, bottomPadding),
+        children: [
+          M3SegmentSpacedColumn(
+            children: [
+              for (int index = 0; index < principals.length; index++)
+                _RoleAssignmentTile(
+                  principal: principals[index],
+                  assignedRole: data.roleForPrincipal(principals[index]),
+                  slot: M3SegmentedListGeometry.standaloneListSlotForIndex(
+                    index,
+                    principals.length,
+                  ),
+                  onAssign: () => onAssign(principals[index]),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RoleAssignmentTile extends StatelessWidget {
+  const _RoleAssignmentTile({
+    required this.principal,
+    required this.assignedRole,
+    required this.slot,
+    required this.onAssign,
+  });
+
+  final _RolePrincipal principal;
+  final AdminRoleDefinition? assignedRole;
+  final M3SegmentVerticalSlot slot;
+  final VoidCallback onAssign;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return M3SegmentFilledSurface(
+      slot: slot,
+      cornerRadius: M3SegmentedListGeometry.cornerLarge,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+        child: Row(
+          children: [
+            Icon(principal.icon, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(principal.name, style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${userRoleLabel(principal.role)} • ${principal.ref}',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    assignedRole?.label ?? 'Default role',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+            OutlinedButton(
+              onPressed: onAssign,
+              child: const Text('Tanlash'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminRoleEditorSheet extends StatefulWidget {
+  const _AdminRoleEditorSheet({required this.data});
+
+  final _AdminRolesData data;
+
+  @override
+  State<_AdminRoleEditorSheet> createState() => _AdminRoleEditorSheetState();
+}
+
+class _AdminRoleEditorSheetState extends State<_AdminRoleEditorSheet> {
+  final TextEditingController _labelController = TextEditingController();
+  UserRole _baseRole = UserRole.werka;
+  final Set<String> _capabilityCodes = <String>{};
+
+  @override
+  void dispose() {
+    _labelController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.viewInsetsOf(context).bottom;
+    final canSave =
+        _labelController.text.trim().isNotEmpty && _capabilityCodes.isNotEmpty;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 20),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Yangi role', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _labelController,
+              decoration: const InputDecoration(
+                labelText: 'Role nomi',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<UserRole>(
+              initialValue: _baseRole,
+              decoration: const InputDecoration(
+                labelText: 'Base role',
+                border: OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(value: UserRole.werka, child: Text('Werka')),
+                DropdownMenuItem(
+                  value: UserRole.supplier,
+                  child: Text('Ta\'minotchi'),
+                ),
+                DropdownMenuItem(
+                  value: UserRole.customer,
+                  child: Text('Haridor'),
+                ),
+                DropdownMenuItem(value: UserRole.admin, child: Text('Admin')),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() => _baseRole = value);
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+            for (final capability in widget.data.capabilities)
+              CheckboxListTile(
+                value: _capabilityCodes.contains(capability.code),
+                onChanged: (checked) {
+                  setState(() {
+                    if (checked == true) {
+                      _capabilityCodes.add(capability.code);
+                    } else {
+                      _capabilityCodes.remove(capability.code);
+                    }
+                  });
+                },
+                title: Text(capability.label),
+                subtitle: Text(capability.code),
+              ),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: canSave
+                  ? () {
+                      Navigator.of(context).pop(
+                        AdminRoleDefinition(
+                          id: _roleIdFromLabel(_labelController.text),
+                          label: _labelController.text.trim(),
+                          baseRole: _baseRole,
+                          capabilityCodes:
+                              _capabilityCodes.toList(growable: false),
+                          system: false,
+                        ),
+                      );
+                    }
+                  : null,
+              child: const Text('Saqlash'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RoleAssignmentSheet extends StatelessWidget {
+  const _RoleAssignmentSheet({
+    required this.principal,
+    required this.roles,
+  });
+
+  final _RolePrincipal principal;
+  final List<AdminRoleDefinition> roles;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+        children: [
+          Text(
+            '${principal.name} uchun role',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 12),
+          for (final role in roles)
+            ListTile(
+              leading: Icon(
+                role.system
+                    ? Icons.admin_panel_settings_outlined
+                    : Icons.verified_user_outlined,
+              ),
+              title: Text(role.label),
+              subtitle: Text(userRoleLabel(role.baseRole)),
+              onTap: () {
+                Navigator.of(context).pop(
+                  AdminRoleAssignment(
+                    principalRole: principal.role,
+                    principalRef: principal.ref,
+                    roleId: role.id,
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AdminRolesData {
+  const _AdminRolesData({
+    required this.capabilities,
+    required this.roles,
+    required this.assignments,
+    required this.settings,
+    required this.suppliers,
+    required this.customers,
+  });
+
+  final List<AdminCapability> capabilities;
+  final List<AdminRoleDefinition> roles;
+  final List<AdminRoleAssignment> assignments;
+  final AdminSettings settings;
+  final List<AdminSupplier> suppliers;
+  final List<CustomerDirectoryEntry> customers;
+
+  List<_RolePrincipal> get principals {
+    return [
+      _RolePrincipal(
+        role: UserRole.werka,
+        ref: 'werka',
+        name: settings.werkaName.trim().isEmpty ? 'Werka' : settings.werkaName,
+        icon: Icons.badge_outlined,
+      ),
+      for (final supplier in suppliers)
+        _RolePrincipal(
+          role: UserRole.supplier,
+          ref: supplier.ref,
+          name: supplier.name,
+          icon: Icons.local_shipping_outlined,
+        ),
+      for (final customer in customers)
+        _RolePrincipal(
+          role: UserRole.customer,
+          ref: customer.ref,
+          name: customer.name,
+          icon: Icons.person_outline_rounded,
+        ),
+    ];
+  }
+
+  AdminRoleDefinition? roleForPrincipal(_RolePrincipal principal) {
+    final assignment = assignments
+        .where(
+          (item) =>
+              item.principalRole == principal.role &&
+              item.principalRef == principal.ref,
+        )
+        .letFirstOrNull();
+    if (assignment == null) {
+      return roles
+          .where(
+            (role) =>
+                role.system &&
+                role.baseRole == principal.role &&
+                role.id == userRoleToJson(principal.role),
+          )
+          .letFirstOrNull();
+    }
+    return roles.where((role) => role.id == assignment.roleId).letFirstOrNull();
+  }
+
+  _AdminRolesData upsertRole(AdminRoleDefinition role) {
+    final nextRoles = roles.where((item) => item.id != role.id).toList()
+      ..add(role)
+      ..sort((left, right) {
+        if (left.system != right.system) {
+          return left.system ? -1 : 1;
+        }
+        return left.label.compareTo(right.label);
+      });
+    return copyWith(roles: nextRoles);
+  }
+
+  _AdminRolesData upsertAssignment(AdminRoleAssignment assignment) {
+    final nextAssignments = assignments
+        .where(
+          (item) =>
+              item.principalRole != assignment.principalRole ||
+              item.principalRef != assignment.principalRef,
+        )
+        .toList()
+      ..add(assignment);
+    return copyWith(assignments: nextAssignments);
+  }
+
+  _AdminRolesData copyWith({
+    List<AdminRoleDefinition>? roles,
+    List<AdminRoleAssignment>? assignments,
+  }) {
+    return _AdminRolesData(
+      capabilities: capabilities,
+      roles: roles ?? this.roles,
+      assignments: assignments ?? this.assignments,
+      settings: settings,
+      suppliers: suppliers,
+      customers: customers,
+    );
+  }
+}
+
+class _RolePrincipal {
+  const _RolePrincipal({
+    required this.role,
+    required this.ref,
+    required this.name,
+    required this.icon,
+  });
+
+  final UserRole role;
+  final String ref;
+  final String name;
+  final IconData icon;
+}
+
+String _roleIdFromLabel(String value) {
+  final normalized = value
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+      .replaceAll(RegExp(r'^_+|_+$'), '');
+  return normalized.isEmpty ? 'custom_role' : normalized;
+}
+
+extension _FirstOrNull<T> on Iterable<T> {
+  T? letFirstOrNull() {
+    final iterator = this.iterator;
+    if (!iterator.moveNext()) {
+      return null;
+    }
+    return iterator.current;
+  }
+}
