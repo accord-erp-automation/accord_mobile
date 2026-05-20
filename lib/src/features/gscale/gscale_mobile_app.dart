@@ -1125,7 +1125,7 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
       );
       return;
     }
-    final option = await showModalBottomSheet<CustomerItemOption>(
+    final option = await showModalBottomSheet<SupplierItem>(
       context: context,
       isDismissible: true,
       enableDrag: true,
@@ -1135,19 +1135,20 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
       barrierColor: Colors.black.withValues(alpha: 0.32),
       sheetAnimationStyle: kM3PickerSheetAnimation,
       builder: (context) {
-        return M3AsyncPickerSheet<CustomerItemOption>(
+        return M3AsyncPickerSheet<SupplierItem>(
           title: 'Mahsulot tanlang',
           hintText: 'Mahsulot qidiring',
           showScanIcon: true,
           pageSize: _catalogPickerPageSize,
+          cacheKey: 'gscale:items',
           loadPage: (query, offset, limit) =>
-              MobileApi.instance.werkaCustomerItemOptions(
+              MobileApi.instance.gscaleItemsPage(
             query: query,
             offset: offset,
             limit: limit,
           ),
-          itemTitle: (item) => item.itemName,
-          itemSubtitle: (item) => '${item.customerName} • ${item.itemCode}',
+          itemTitle: (item) => item.name,
+          itemSubtitle: (item) => item.code,
           onSelected: (item) => Navigator.of(context).pop(item),
         );
       },
@@ -1156,10 +1157,8 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
       return;
     }
     _selectItem(MobileItem(
-      itemCode: option.itemCode,
-      itemName: option.itemName.trim().isEmpty
-          ? option.itemCode
-          : option.itemName.trim(),
+      itemCode: option.code,
+      itemName: option.name.trim().isEmpty ? option.code : option.name.trim(),
     ));
   }
 

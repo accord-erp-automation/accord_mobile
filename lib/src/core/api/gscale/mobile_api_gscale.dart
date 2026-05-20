@@ -1,6 +1,43 @@
 part of '../mobile_api.dart';
 
 extension MobileApiGScale on MobileApi {
+  Future<List<SupplierItem>> gscaleItemsPage({
+    String query = '',
+    String group = '',
+    int limit = 80,
+    int offset = 0,
+  }) async {
+    final response = await _sendAuthorized(
+      () => http.get(
+        Uri.parse('${MobileApi.baseUrl}/v1/mobile/gscale/items').replace(
+          queryParameters: {
+            if (query.trim().isNotEmpty) 'q': query.trim(),
+            if (group.trim().isNotEmpty) 'group': group.trim(),
+            if (limit > 0) 'limit': '$limit',
+            if (offset > 0) 'offset': '$offset',
+          },
+        ),
+        headers: _headers(requireToken()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw MobileApiException(
+        code: 'gscale_items_failed',
+        message: 'GScale items failed',
+        statusCode: response.statusCode,
+      );
+    }
+    final List<dynamic> json = jsonDecode(response.body) as List<dynamic>;
+    final items = json
+        .map((item) => SupplierItem.fromJson(item as Map<String, dynamic>))
+        .toList();
+    return SearchActivityStore.instance.sortByItemCode(
+      items,
+      itemCode: (item) => item.code,
+      fallback: _compareSupplierItems,
+    );
+  }
+
   Future<GScaleRpsBatchResponse> gscaleRpsBatchStart(
     GScaleRpsBatchStartRequest request,
   ) async {

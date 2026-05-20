@@ -47,15 +47,24 @@ Future<List<GScaleCatalogWarehouse>> fetchGScaleItemWarehouses({
     );
   }
   if (activeRole == UserRole.werka) {
-    final options = await client.werkaCustomerItemOptions(
+    final items = await client.gscaleItemsPage(
       query: itemCode,
-      limit: 200,
+      limit: 50,
     );
-    return gscaleWarehousesFromCustomerOptions(
-      options,
+    final warehouses = gscaleWarehousesFromSupplierItems(
+      items,
       itemCode: itemCode,
       query: query,
-    ).take(limit).toList();
+    );
+    if (warehouses.isNotEmpty) {
+      return warehouses.take(limit).toList();
+    }
+    return fetchGScaleDefaultWarehouses(
+      query: query,
+      limit: limit,
+      api: client,
+      role: activeRole,
+    );
   }
   throw Exception('GScale omborlari faqat admin yoki werka uchun mavjud');
 }
@@ -76,11 +85,10 @@ Future<List<GScaleCatalogWarehouse>> fetchGScaleDefaultWarehouses({
     ).take(limit).toList();
   }
   if (activeRole == UserRole.werka) {
-    final options = await client.werkaCustomerItemOptions(limit: 200);
-    return gscaleWarehousesFromCustomerOptions(
-      options,
-      query: query,
-    ).take(limit).toList();
+    final items = await client.gscaleItemsPage(limit: 200);
+    return gscaleWarehousesFromSupplierItems(items, query: query)
+        .take(limit)
+        .toList();
   }
   throw Exception('GScale omborlari faqat admin yoki werka uchun mavjud');
 }
