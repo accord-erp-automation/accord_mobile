@@ -64,10 +64,14 @@ void main() {
           contains('GET /v1/mobile/admin/customers/list?limit=100'));
       expect(find.text('Rollar'), findsWidgets);
       expect(find.text('Admin'), findsOneWidget);
-      expect(find.textContaining('Role huquqlarini ko‘rish'), findsOneWidget);
+      expect(find.textContaining('Role huquqlarini ko‘rish'), findsNothing);
       expect(find.textContaining('Role capability catalog read'), findsNothing);
       expect(find.text('Scale operator'), findsOneWidget);
-      expect(find.text('GScale chop etish'), findsWidgets);
+
+      await tester.tap(find.byKey(const ValueKey('admin-role-details-admin')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Role huquqlarini ko‘rish'), findsOneWidget);
 
       await tester.tap(find.widgetWithText(FilledButton, 'Yangi role'));
       await tester.pumpAndSettle();

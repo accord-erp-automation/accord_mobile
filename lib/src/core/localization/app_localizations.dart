@@ -622,6 +622,10 @@ class AppLocalizations {
       _t('Role nomi', 'Role name', 'Название роли');
   String get adminBaseRoleLabel =>
       _t('Asosiy role', 'Base role', 'Базовая роль');
+  String get adminRoleDetailsShow =>
+      _t('Tafsilotlarni ko‘rsatish', 'Show details', 'Показать детали');
+  String get adminRoleDetailsHide =>
+      _t('Tafsilotlarni yashirish', 'Hide details', 'Скрыть детали');
   String get adminSystemRoleKind => _t('tizim', 'system', 'система');
   String get adminCustomRoleKind => _t('maxsus', 'custom', 'пользовательская');
   String get adminDefaultRole =>

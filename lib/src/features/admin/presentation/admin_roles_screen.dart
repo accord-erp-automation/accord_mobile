@@ -284,7 +284,7 @@ class _RolesTab extends StatelessWidget {
   }
 }
 
-class _RoleDefinitionTile extends StatelessWidget {
+class _RoleDefinitionTile extends StatefulWidget {
   const _RoleDefinitionTile({
     required this.role,
     required this.capabilities,
@@ -296,49 +296,86 @@ class _RoleDefinitionTile extends StatelessWidget {
   final M3SegmentVerticalSlot slot;
 
   @override
+  State<_RoleDefinitionTile> createState() => _RoleDefinitionTileState();
+}
+
+class _RoleDefinitionTileState extends State<_RoleDefinitionTile>
+    with SingleTickerProviderStateMixin {
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
-    final capabilityLabels = role.capabilityCodes
-        .map((code) => _capabilityLabel(l10n, code, capabilities))
+    final capabilityLabels = widget.role.capabilityCodes
+        .map((code) => _capabilityLabel(l10n, code, widget.capabilities))
         .toList(growable: false);
     return M3SegmentFilledSurface(
-      slot: slot,
+      slot: widget.slot,
       cornerRadius: M3SegmentedListGeometry.cornerLarge,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              role.system
-                  ? Icons.admin_panel_settings_outlined
-                  : Icons.verified_user_outlined,
-              size: 24,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _roleDefinitionLabel(context, role),
+            Row(
+              children: [
+                Icon(
+                  widget.role.system
+                      ? Icons.admin_panel_settings_outlined
+                      : Icons.verified_user_outlined,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _roleDefinitionLabel(context, widget.role),
                     style: theme.textTheme.titleMedium,
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    '${l10n.roleLabelForCode(userRoleToJson(role.baseRole))} • ${l10n.adminRoleKindLabel(role.system)}',
-                    style: theme.textTheme.bodySmall,
+                ),
+                IconButton(
+                  key: ValueKey('admin-role-details-${widget.role.id}'),
+                  tooltip: _expanded
+                      ? l10n.adminRoleDetailsHide
+                      : l10n.adminRoleDetailsShow,
+                  onPressed: () {
+                    setState(() => _expanded = !_expanded);
+                  },
+                  icon: AnimatedRotation(
+                    turns: _expanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    child: const Icon(Icons.keyboard_arrow_down_rounded),
                   ),
-                  if (capabilityLabels.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      capabilityLabels.join(', '),
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ],
-                ],
-              ),
+                ),
+              ],
+            ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.topCenter,
+              child: _expanded
+                  ? Padding(
+                      padding: const EdgeInsets.only(left: 36, right: 4),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 6),
+                          Text(
+                            '${l10n.roleLabelForCode(userRoleToJson(widget.role.baseRole))} • ${l10n.adminRoleKindLabel(widget.role.system)}',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                          if (capabilityLabels.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              capabilityLabels.join(', '),
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                          ],
+                        ],
+                      ),
+                    )
+                  : const SizedBox.shrink(),
             ),
           ],
         ),
