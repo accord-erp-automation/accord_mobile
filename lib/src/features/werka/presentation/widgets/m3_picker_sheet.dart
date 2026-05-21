@@ -406,6 +406,8 @@ class M3AsyncPickerSheet<T> extends StatefulWidget {
     this.pageSize = 50,
     this.showScanIcon = false,
     this.cacheKey,
+    this.emptyActionLabel,
+    this.onEmptyAction,
   });
 
   static final Map<String, _AsyncPickerMemoryCache<dynamic>> _memoryCache =
@@ -425,6 +427,8 @@ class M3AsyncPickerSheet<T> extends StatefulWidget {
   final int pageSize;
   final bool showScanIcon;
   final String? cacheKey;
+  final String Function(String query)? emptyActionLabel;
+  final Future<T> Function(String query)? onEmptyAction;
 
   @override
   State<M3AsyncPickerSheet<T>> createState() => _M3AsyncPickerSheetState<T>();
@@ -437,6 +441,7 @@ class _M3AsyncPickerSheetState<T> extends State<M3AsyncPickerSheet<T>> {
   String _query = '';
   List<String> _searchQueries = const <String>[];
   bool _scanning = false;
+  bool _runningEmptyAction = false;
   bool _loading = true;
   bool _loadingMore = false;
   bool _hasMore = true;
@@ -827,6 +832,35 @@ class _M3AsyncPickerSheetState<T> extends State<M3AsyncPickerSheet<T>> {
     ];
   }
 
+  Future<void> _handleEmptyAction() async {
+    final action = widget.onEmptyAction;
+    final query = _query.trim();
+    if (action == null || query.isEmpty || _runningEmptyAction) {
+      return;
+    }
+    setState(() => _runningEmptyAction = true);
+    try {
+      final item = await action(query);
+      if (!mounted) {
+        return;
+      }
+      widget.onSelected(item);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.maybeOf(context)
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(context.l10n.serverDisconnectedRetry)),
+        );
+    } finally {
+      if (mounted) {
+        setState(() => _runningEmptyAction = false);
+      }
+    }
+  }
+
   List<T> _sortedItems() {
     final queries = _effectiveQueries();
     if (queries.isEmpty || _items.length < 2) {
@@ -921,14 +955,40 @@ class _M3AsyncPickerSheetState<T> extends State<M3AsyncPickerSheet<T>> {
         ),
       );
     } else if (_items.isEmpty) {
+      final emptyQuery = _query.trim();
+      final emptyActionLabel = widget.emptyActionLabel;
+      final canRunEmptyAction = emptyQuery.isNotEmpty &&
+          emptyActionLabel != null &&
+          widget.onEmptyAction != null;
       body = Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 24),
-          child: Text(
-            l10n.noRecordsYet,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (canRunEmptyAction) ...[
+                FilledButton.icon(
+                  onPressed: _runningEmptyAction ? null : _handleEmptyAction,
+                  icon: _runningEmptyAction
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: scheme.onPrimary,
+                          ),
+                        )
+                      : const Icon(Icons.add_rounded),
+                  label: Text(emptyActionLabel(emptyQuery)),
+                ),
+              ] else
+                Text(
+                  l10n.noRecordsYet,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+            ],
           ),
         ),
       );

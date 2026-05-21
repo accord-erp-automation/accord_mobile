@@ -164,6 +164,40 @@ void main() {
     expect(find.text('Cached after close'), findsOneWidget);
     expect(find.text('Server again'), findsNothing);
   });
+
+  testWidgets('async picker can create a searched item from empty state',
+      (tester) async {
+    _PickerItem? selected;
+
+    await tester.pumpWidget(
+      _wrap(
+        M3AsyncPickerSheet<_PickerItem>(
+          title: 'Mahsulot tanlang',
+          hintText: 'Mahsulot qidiring',
+          pageSize: 80,
+          loadPage: (query, offset, limit) async => const <_PickerItem>[],
+          itemTitle: (item) => item.title,
+          itemSubtitle: (item) => item.subtitle,
+          onSelected: (item) => selected = item,
+          emptyActionLabel: (query) => '$query ni qo‘shish',
+          onEmptyAction: (query) async => _PickerItem(query, query),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(SearchBar), 'Yangi mahsulot');
+    await tester.pump(const Duration(milliseconds: 240));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Yangi mahsulot ni qo‘shish'), findsOneWidget);
+
+    await tester.tap(find.text('Yangi mahsulot ni qo‘shish'));
+    await tester.pumpAndSettle();
+
+    expect(selected?.title, 'Yangi mahsulot');
+    expect(selected?.subtitle, 'Yangi mahsulot');
+  });
 }
 
 Widget _wrap(Widget child) {

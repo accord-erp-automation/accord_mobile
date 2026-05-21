@@ -1145,6 +1145,10 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
           itemTitle: (item) => item.name,
           itemSubtitle: (item) => item.code,
           onSelected: (item) => Navigator.of(context).pop(item),
+          emptyActionLabel:
+              _canCreateCatalogItem ? (query) => '$query ni qo‘shish' : null,
+          onEmptyAction:
+              _canCreateCatalogItem ? _createCatalogItemFromSearch : null,
         );
       },
     );
@@ -1155,6 +1159,23 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
       itemCode: option.code,
       itemName: option.name.trim().isEmpty ? option.code : option.name.trim(),
     ));
+  }
+
+  bool get _canCreateCatalogItem {
+    return AppSession.instance.profile?.hasCapability('catalog.item.create') ==
+        true;
+  }
+
+  Future<SupplierItem> _createCatalogItemFromSearch(String query) {
+    final value = query.trim();
+    final item = MobileApi.instance.adminCreateItem(
+      code: value,
+      name: value,
+      uom: 'Kg',
+      itemGroup: 'All Item Groups',
+    );
+    M3AsyncPickerSheet.clearMemoryCache();
+    return item;
   }
 
   Future<List<SupplierItem>> _loadGScaleCatalogItems(
