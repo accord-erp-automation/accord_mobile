@@ -321,50 +321,44 @@ class _RoleDefinitionTile extends StatelessWidget {
         .map((code) => _capabilityLabel(l10n, code, capabilities))
         .toList(growable: false);
     return M3SegmentFilledSurface(
+      key: ValueKey('admin-role-card-${role.id}'),
       slot: slot,
       cornerRadius: M3SegmentedListGeometry.cornerLarge,
+      onTap: () => onExpandedChanged(!expanded),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            InkWell(
-              key: ValueKey('admin-role-card-${role.id}'),
-              borderRadius: BorderRadius.circular(12),
-              onTap: () => onExpandedChanged(!expanded),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Row(
-                  children: [
-                    Icon(
-                      role.system
-                          ? Icons.admin_panel_settings_outlined
-                          : Icons.verified_user_outlined,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        _roleDefinitionLabel(context, role),
-                        style: theme.textTheme.titleMedium,
-                      ),
-                    ),
-                    IconButton(
-                      key: ValueKey('admin-role-details-${role.id}'),
-                      tooltip: expanded
-                          ? l10n.adminRoleDetailsHide
-                          : l10n.adminRoleDetailsShow,
-                      onPressed: () => onExpandedChanged(!expanded),
-                      icon: AnimatedRotation(
-                        turns: expanded ? 0.5 : 0,
-                        duration: const Duration(milliseconds: 180),
-                        curve: Curves.easeOutCubic,
-                        child: const Icon(Icons.keyboard_arrow_down_rounded),
-                      ),
-                    ),
-                  ],
+            Row(
+              children: [
+                Icon(
+                  role.system
+                      ? Icons.admin_panel_settings_outlined
+                      : Icons.verified_user_outlined,
+                  size: 24,
                 ),
-              ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _roleDefinitionLabel(context, role),
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+                IconButton(
+                  key: ValueKey('admin-role-details-${role.id}'),
+                  tooltip: expanded
+                      ? l10n.adminRoleDetailsHide
+                      : l10n.adminRoleDetailsShow,
+                  onPressed: () => onExpandedChanged(!expanded),
+                  icon: AnimatedRotation(
+                    turns: expanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    child: const Icon(Icons.keyboard_arrow_down_rounded),
+                  ),
+                ),
+              ],
             ),
             AnimatedSize(
               duration: const Duration(milliseconds: 180),
