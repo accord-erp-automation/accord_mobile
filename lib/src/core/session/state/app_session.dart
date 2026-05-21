@@ -34,13 +34,6 @@ class AppSession {
       return '/customer-home';
     }
     if (profile.hasAnyCapability(const [
-      'gscale.print',
-      'gscale.catalog.read',
-      'rps.batch.manage',
-    ])) {
-      return '/gscale-mode';
-    }
-    if (profile.hasAnyCapability(const [
       'admin.access',
       'role.capability.read',
       'role.capability.manage',
@@ -63,6 +56,13 @@ class AppSession {
       'werka.code.manage',
     ])) {
       return '/admin-home';
+    }
+    if (profile.hasAnyCapability(const [
+      'gscale.print',
+      'gscale.catalog.read',
+      'rps.batch.manage',
+    ])) {
+      return '/gscale-mode';
     }
     switch (profile.role) {
       case UserRole.supplier:

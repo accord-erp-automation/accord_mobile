@@ -66,6 +66,46 @@ void main() {
     expect(AppSession.instance.homeRoute, AppRoutes.adminHome);
   });
 
+  test('admin catalog capabilities win over shared gscale capabilities', () async {
+    await AppSession.instance.setSession(
+      token: 'token',
+      profile: const SessionProfile(
+        role: UserRole.customer,
+        displayName: 'Custom operator',
+        legalName: '',
+        ref: 'custom',
+        phone: '',
+        avatarUrl: '',
+        capabilities: [
+          'catalog.item.read',
+          'catalog.item.create',
+          'gscale.print',
+          'rps.batch.manage',
+        ],
+      ),
+    );
+
+    expect(AppSession.instance.homeRoute, AppRoutes.adminHome);
+    expect(AppSession.instance.can('gscale.print'), isTrue);
+  });
+
+  test('gscale only capabilities still open gscale mode', () async {
+    await AppSession.instance.setSession(
+      token: 'token',
+      profile: const SessionProfile(
+        role: UserRole.customer,
+        displayName: 'Scale only',
+        legalName: '',
+        ref: 'scale',
+        phone: '',
+        avatarUrl: '',
+        capabilities: ['gscale.print', 'rps.batch.manage'],
+      ),
+    );
+
+    expect(AppSession.instance.homeRoute, AppRoutes.gscaleMode);
+  });
+
   test('empty capability profile falls back to default role access', () {
     const profile = SessionProfile(
       role: UserRole.werka,
