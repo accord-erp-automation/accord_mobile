@@ -889,15 +889,16 @@ class AdminRoleDefinition {
 
   final String id;
   final String label;
-  final UserRole baseRole;
+  final UserRole? baseRole;
   final List<String> capabilityCodes;
   final bool system;
 
   factory AdminRoleDefinition.fromJson(Map<String, dynamic> json) {
+    final rawBaseRole = json['base_role'] as String?;
     return AdminRoleDefinition(
       id: json['id'] as String? ?? '',
       label: json['label'] as String? ?? '',
-      baseRole: userRoleFromJson(json['base_role'] as String?),
+      baseRole: rawBaseRole == null ? null : userRoleFromJson(rawBaseRole),
       capabilityCodes: (json['capability_codes'] as List<dynamic>? ?? const [])
           .map((item) => item as String)
           .toList(growable: false),
@@ -906,12 +907,16 @@ class AdminRoleDefinition {
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final json = <String, dynamic>{
       'id': id,
       'label': label,
-      'base_role': userRoleToJson(baseRole),
       'capability_codes': capabilityCodes,
     };
+    final baseRole = this.baseRole;
+    if (baseRole != null) {
+      json['base_role'] = userRoleToJson(baseRole);
+    }
+    return json;
   }
 
   AdminRoleDefinition copyWith({

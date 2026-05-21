@@ -369,7 +369,7 @@ class _RoleDefinitionTile extends StatelessWidget {
                         children: [
                           const SizedBox(height: 6),
                           Text(
-                            '${l10n.roleLabelForCode(userRoleToJson(role.baseRole))} • ${l10n.adminRoleKindLabel(role.system)}',
+                            _roleDefinitionSummary(l10n, role),
                             style: theme.textTheme.bodySmall,
                           ),
                           if (capabilityLabels.isNotEmpty) ...[
@@ -506,7 +506,6 @@ class _AdminRoleEditorSheet extends StatefulWidget {
 
 class _AdminRoleEditorSheetState extends State<_AdminRoleEditorSheet> {
   final TextEditingController _labelController = TextEditingController();
-  UserRole _baseRole = UserRole.werka;
   final Set<String> _capabilityCodes = <String>{};
 
   @override
@@ -542,37 +541,6 @@ class _AdminRoleEditorSheetState extends State<_AdminRoleEditorSheet> {
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 12),
-            DropdownButtonFormField<UserRole>(
-              initialValue: _baseRole,
-              decoration: InputDecoration(
-                labelText: l10n.adminBaseRoleLabel,
-                border: const OutlineInputBorder(),
-              ),
-              items: [
-                DropdownMenuItem(
-                  value: UserRole.werka,
-                  child: Text(l10n.roleLabelForCode('werka')),
-                ),
-                DropdownMenuItem(
-                  value: UserRole.supplier,
-                  child: Text(l10n.roleLabelForCode('supplier')),
-                ),
-                DropdownMenuItem(
-                  value: UserRole.customer,
-                  child: Text(l10n.roleLabelForCode('customer')),
-                ),
-                DropdownMenuItem(
-                  value: UserRole.admin,
-                  child: Text(l10n.roleLabelForCode('admin')),
-                ),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() => _baseRole = value);
-                }
-              },
-            ),
-            const SizedBox(height: 12),
             for (final capability in widget.data.capabilities)
               CheckboxListTile(
                 value: _capabilityCodes.contains(capability.code),
@@ -598,7 +566,7 @@ class _AdminRoleEditorSheetState extends State<_AdminRoleEditorSheet> {
                         AdminRoleDefinition(
                           id: _roleIdFromLabel(_labelController.text),
                           label: _labelController.text.trim(),
-                          baseRole: _baseRole,
+                          baseRole: null,
                           capabilityCodes:
                               _capabilityCodes.toList(growable: false),
                           system: false,
@@ -640,16 +608,15 @@ class _RoleAssignmentSheet extends StatelessWidget {
           const SizedBox(height: 12),
           for (final role in roles)
             ListTile(
-              enabled: role.baseRole == principal.role,
+              enabled: _roleCanAssignToPrincipal(role, principal),
               leading: Icon(
                 role.system
                     ? Icons.admin_panel_settings_outlined
                     : Icons.verified_user_outlined,
               ),
               title: Text(_roleDefinitionLabel(context, role)),
-              subtitle:
-                  Text(l10n.roleLabelForCode(userRoleToJson(role.baseRole))),
-              onTap: role.baseRole == principal.role
+              subtitle: Text(_roleAssignmentSubtitle(l10n, role)),
+              onTap: _roleCanAssignToPrincipal(role, principal)
                   ? () {
                       Navigator.of(context).pop(
                         AdminRoleAssignment(
@@ -831,6 +798,35 @@ String _roleDefinitionLabel(BuildContext context, AdminRoleDefinition role) {
     return role.label;
   }
   return context.l10n.systemRoleLabel(role.id, role.label);
+}
+
+String _roleDefinitionSummary(
+  AppLocalizations l10n,
+  AdminRoleDefinition role,
+) {
+  final baseRole = role.baseRole;
+  if (baseRole == null) {
+    return l10n.adminRoleKindLabel(role.system);
+  }
+  return '${l10n.roleLabelForCode(userRoleToJson(baseRole))} • ${l10n.adminRoleKindLabel(role.system)}';
+}
+
+bool _roleCanAssignToPrincipal(
+  AdminRoleDefinition role,
+  _RolePrincipal principal,
+) {
+  return !role.system || role.baseRole == principal.role;
+}
+
+String _roleAssignmentSubtitle(
+  AppLocalizations l10n,
+  AdminRoleDefinition role,
+) {
+  final baseRole = role.baseRole;
+  if (baseRole == null) {
+    return l10n.adminRoleKindLabel(role.system);
+  }
+  return l10n.roleLabelForCode(userRoleToJson(baseRole));
 }
 
 String _capabilityLabel(

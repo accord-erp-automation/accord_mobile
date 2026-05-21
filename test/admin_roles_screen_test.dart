@@ -84,6 +84,7 @@ void main() {
 
       await tester.tap(find.widgetWithText(FilledButton, 'Yangi role'));
       await tester.pumpAndSettle();
+      expect(find.text('Foydalanuvchi turi'), findsNothing);
       await tester.enterText(find.byType(TextField).at(0), 'Catalog reader');
       await tester.pump();
       await tester.tap(find.text('Katalog mahsulotlarini ko‘rish'));
@@ -93,7 +94,7 @@ void main() {
 
       expect(seenRequests, contains('PUT /v1/mobile/admin/roles'));
       expect(seenBodies.last, contains('"id":"catalog_reader"'));
-      expect(seenBodies.last, contains('"base_role":"werka"'));
+      expect(seenBodies.last, isNot(contains('"base_role"')));
       expect(seenBodies.last, contains('"catalog.item.read"'));
       expect(find.text('Role saqlandi'), findsOneWidget);
       await tester.pump(const Duration(milliseconds: 1900));
@@ -132,6 +133,48 @@ void main() {
       await tester.tap(find.widgetWithText(OutlinedButton, 'Tanlash').first);
       await tester.pumpAndSettle();
       expect(find.text('Admin'), findsWidgets);
+      expect(find.text('Catalog reader'), findsOneWidget);
+      await tester.tap(find.text('Catalog reader'));
+      await tester.pumpAndSettle();
+
+      expect(seenRequests, contains('PUT /v1/mobile/admin/role-assignments'));
+      expect(seenBodies.last, contains('"principal_role":"werka"'));
+      expect(seenBodies.last, contains('"principal_ref":"werka"'));
+      expect(seenBodies.last, contains('"role_id":"catalog_reader"'));
+      expect(find.text('Role biriktirildi'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 1900));
+      expect(tester.takeException(), isNull);
+    }, createHttpClient: (_) => client);
+  });
+
+  testWidgets('admin role assignments save selected system user role',
+      (tester) async {
+    final seenRequests = <String>[];
+    final seenBodies = <String>[];
+    final client = _AdminRolesHttpClient(seenRequests, seenBodies);
+
+    await HttpOverrides.runZoned(() async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light(AppThemeVariant.earthy),
+          locale: const Locale('uz'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const AdminRolesScreen(),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Biriktirish'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Tanlash').first);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Scale operator').last);
       await tester.pumpAndSettle();
 
@@ -257,6 +300,12 @@ class _AdminRolesHttpClient implements HttpClient {
             'capability_codes': ['gscale.print'],
             'system': false,
           },
+          {
+            'id': 'catalog_reader',
+            'label': 'Catalog reader',
+            'capability_codes': ['catalog.item.read'],
+            'system': false,
+          },
         ];
       case 'GET /v1/mobile/admin/role-assignments':
         body = emptyAssignments
@@ -304,7 +353,6 @@ class _AdminRolesHttpClient implements HttpClient {
         body = const {
           'id': 'catalog_reader',
           'label': 'Catalog reader',
-          'base_role': 'werka',
           'capability_codes': ['catalog.item.read'],
           'system': false,
         };
