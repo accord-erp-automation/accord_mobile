@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:erpnext_stock_mobile/src/core/localization/app_localizations.dart';
 import 'package:erpnext_stock_mobile/src/core/session/session.dart';
+import 'package:erpnext_stock_mobile/src/core/theme/app_theme.dart';
+import 'package:erpnext_stock_mobile/src/core/theme/theme_controller.dart';
 import 'package:erpnext_stock_mobile/src/features/admin/presentation/admin_roles_screen.dart';
 import 'package:erpnext_stock_mobile/src/features/shared/models/app_models.dart';
 import 'package:flutter/material.dart';
@@ -39,7 +41,7 @@ void main() {
     await HttpOverrides.runZoned(() async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(useMaterial3: true),
+          theme: AppTheme.light(AppThemeVariant.earthy),
           locale: const Locale('uz'),
           localizationsDelegates: const [
             AppLocalizations.delegate,
@@ -107,7 +109,7 @@ void main() {
     await HttpOverrides.runZoned(() async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(useMaterial3: true),
+          theme: AppTheme.light(AppThemeVariant.earthy),
           locale: const Locale('uz'),
           localizationsDelegates: const [
             AppLocalizations.delegate,
@@ -129,6 +131,7 @@ void main() {
 
       await tester.tap(find.widgetWithText(OutlinedButton, 'Tanlash').first);
       await tester.pumpAndSettle();
+      expect(find.text('Admin'), findsWidgets);
       await tester.tap(find.text('Scale operator').last);
       await tester.pumpAndSettle();
 
@@ -141,13 +144,63 @@ void main() {
       expect(tester.takeException(), isNull);
     }, createHttpClient: (_) => client);
   });
+
+  testWidgets(
+      'admin role assignments keep werka principal when directories are empty',
+      (tester) async {
+    final seenRequests = <String>[];
+    final seenBodies = <String>[];
+    final client = _AdminRolesHttpClient(
+      seenRequests,
+      seenBodies,
+      blankWerkaName: true,
+      emptyDirectories: true,
+      emptyAssignments: true,
+    );
+
+    await HttpOverrides.runZoned(() async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light(AppThemeVariant.earthy),
+          locale: const Locale('uz'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const AdminRolesScreen(),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Biriktirish'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Omborchi'), findsWidgets);
+      expect(find.widgetWithText(OutlinedButton, 'Tanlash'), findsOneWidget);
+      expect(find.text('Supplier'), findsNothing);
+      expect(find.text('Customer'), findsNothing);
+      expect(tester.takeException(), isNull);
+    }, createHttpClient: (_) => client);
+  });
 }
 
 class _AdminRolesHttpClient implements HttpClient {
-  _AdminRolesHttpClient(this.seenRequests, this.seenBodies);
+  _AdminRolesHttpClient(
+    this.seenRequests,
+    this.seenBodies, {
+    this.blankWerkaName = false,
+    this.emptyDirectories = false,
+    this.emptyAssignments = false,
+  });
 
   final List<String> seenRequests;
   final List<String> seenBodies;
+  final bool blankWerkaName;
+  final bool emptyDirectories;
+  final bool emptyAssignments;
 
   @override
   Future<HttpClientRequest> openUrl(String method, Uri url) async {
@@ -206,41 +259,47 @@ class _AdminRolesHttpClient implements HttpClient {
           },
         ];
       case 'GET /v1/mobile/admin/role-assignments':
-        body = const [
-          {
-            'principal_role': 'werka',
-            'principal_ref': 'werka',
-            'role_id': 'scale_operator',
-          },
-        ];
+        body = emptyAssignments
+            ? const []
+            : const [
+                {
+                  'principal_role': 'werka',
+                  'principal_ref': 'werka',
+                  'role_id': 'scale_operator',
+                },
+              ];
       case 'GET /v1/mobile/admin/settings':
-        body = const {
-          'werka_name': 'Werka',
+        body = {
+          'werka_name': blankWerkaName ? '' : 'Werka',
           'werka_phone': '+998',
         };
       case 'GET /v1/mobile/admin/suppliers/list?limit=100':
       case 'GET /v1/mobile/admin/suppliers/list?limit=100&offset=0':
-        body = const [
-          {
-            'ref': 'SUP-1',
-            'name': 'Supplier',
-            'phone': '+9981',
-            'code': 'S1',
-            'blocked': false,
-            'removed': false,
-            'assigned_item_codes': [],
-            'assigned_item_count': 0,
-          },
-        ];
+        body = emptyDirectories
+            ? const []
+            : const [
+                {
+                  'ref': 'SUP-1',
+                  'name': 'Supplier',
+                  'phone': '+9981',
+                  'code': 'S1',
+                  'blocked': false,
+                  'removed': false,
+                  'assigned_item_codes': [],
+                  'assigned_item_count': 0,
+                },
+              ];
       case 'GET /v1/mobile/admin/customers/list?limit=100':
       case 'GET /v1/mobile/admin/customers/list?limit=100&offset=0':
-        body = const [
-          {
-            'ref': 'CUS-1',
-            'name': 'Customer',
-            'phone': '+9982',
-          },
-        ];
+        body = emptyDirectories
+            ? const []
+            : const [
+                {
+                  'ref': 'CUS-1',
+                  'name': 'Customer',
+                  'phone': '+9982',
+                },
+              ];
       case 'PUT /v1/mobile/admin/roles':
         body = const {
           'id': 'catalog_reader',

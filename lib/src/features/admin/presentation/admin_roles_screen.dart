@@ -119,15 +119,12 @@ class _AdminRolesScreenState extends State<AdminRolesScreen>
     _AdminRolesData data,
     _RolePrincipal principal,
   ) async {
-    final roles = data.roles
-        .where((role) => role.baseRole == principal.role)
-        .toList(growable: false);
     final assignment = await showModalBottomSheet<AdminRoleAssignment>(
       context: context,
       useSafeArea: true,
       showDragHandle: true,
       builder: (context) {
-        return _RoleAssignmentSheet(principal: principal, roles: roles);
+        return _RoleAssignmentSheet(principal: principal, roles: data.roles);
       },
     );
     if (assignment == null || !mounted) {
@@ -409,7 +406,7 @@ class _AssignmentsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final principals = data.principals;
+    final principals = data.principalsForDisplay(context.l10n);
     return AppRefreshIndicator(
       onRefresh: onRefresh,
       allowRefreshOnShortContent: true,
@@ -484,6 +481,10 @@ class _RoleAssignmentTile extends StatelessWidget {
               ),
             ),
             OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(0, 44),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+              ),
               onPressed: onAssign,
               child: Text(l10n.archiveSelectDateAction),
             ),
@@ -639,6 +640,7 @@ class _RoleAssignmentSheet extends StatelessWidget {
           const SizedBox(height: 12),
           for (final role in roles)
             ListTile(
+              enabled: role.baseRole == principal.role,
               leading: Icon(
                 role.system
                     ? Icons.admin_panel_settings_outlined
@@ -647,15 +649,17 @@ class _RoleAssignmentSheet extends StatelessWidget {
               title: Text(_roleDefinitionLabel(context, role)),
               subtitle:
                   Text(l10n.roleLabelForCode(userRoleToJson(role.baseRole))),
-              onTap: () {
-                Navigator.of(context).pop(
-                  AdminRoleAssignment(
-                    principalRole: principal.role,
-                    principalRef: principal.ref,
-                    roleId: role.id,
-                  ),
-                );
-              },
+              onTap: role.baseRole == principal.role
+                  ? () {
+                      Navigator.of(context).pop(
+                        AdminRoleAssignment(
+                          principalRole: principal.role,
+                          principalRef: principal.ref,
+                          roleId: role.id,
+                        ),
+                      );
+                    }
+                  : null,
             ),
         ],
       ),
@@ -680,12 +684,12 @@ class _AdminRolesData {
   final List<AdminSupplier> suppliers;
   final List<CustomerDirectoryEntry> customers;
 
-  List<_RolePrincipal> get principals {
-    return [
+  List<_RolePrincipal> get _principals {
+    return <_RolePrincipal>[
       _RolePrincipal(
         role: UserRole.werka,
         ref: 'werka',
-        name: settings.werkaName.trim().isEmpty ? 'Werka' : settings.werkaName,
+        name: settings.werkaName.trim(),
         icon: Icons.badge_outlined,
       ),
       for (final supplier in suppliers)
@@ -702,6 +706,31 @@ class _AdminRolesData {
           name: customer.name,
           icon: Icons.person_outline_rounded,
         ),
+    ];
+  }
+
+  List<_RolePrincipal> principalsForDisplay(AppLocalizations l10n) {
+    final principals = _principals
+        .map((principal) {
+          final isWerka =
+              principal.role == UserRole.werka && principal.ref == 'werka';
+          if (isWerka && principal.name.trim().isEmpty) {
+            return principal.copyWith(name: l10n.werkaRoleName);
+          }
+          return principal;
+        })
+        .where((principal) => principal.name.trim().isNotEmpty)
+        .toList(growable: false);
+    if (principals.isNotEmpty) {
+      return principals;
+    }
+    return <_RolePrincipal>[
+      _RolePrincipal(
+        role: UserRole.werka,
+        ref: 'werka',
+        name: l10n.werkaRoleName,
+        icon: Icons.badge_outlined,
+      ),
     ];
   }
 
@@ -777,6 +806,15 @@ class _RolePrincipal {
   final String ref;
   final String name;
   final IconData icon;
+
+  _RolePrincipal copyWith({String? name}) {
+    return _RolePrincipal(
+      role: role,
+      ref: ref,
+      name: name ?? this.name,
+      icon: icon,
+    );
+  }
 }
 
 String _roleIdFromLabel(String value) {
