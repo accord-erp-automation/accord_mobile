@@ -5,6 +5,7 @@ import 'package:erpnext_stock_mobile/src/core/session/session.dart';
 import 'package:erpnext_stock_mobile/src/core/theme/app_theme.dart';
 import 'package:erpnext_stock_mobile/src/core/theme/theme_controller.dart';
 import 'package:erpnext_stock_mobile/src/features/admin/presentation/admin_home_screen.dart';
+import 'package:erpnext_stock_mobile/src/features/admin/presentation/widgets/admin_navigation_drawer.dart';
 import 'package:erpnext_stock_mobile/src/features/shared/models/app_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -62,6 +63,53 @@ void main() {
       expect(find.text('Jami users'), findsNothing);
       expect(seenRequests, isEmpty);
     }, createHttpClient: (_) => _RecordingHttpClient(seenRequests));
+  });
+
+  testWidgets('custom catalog role drawer hides blocked admin routes',
+      (tester) async {
+    AppSession.instance.token = 'token';
+    AppSession.instance.profile = const SessionProfile(
+      role: UserRole.customer,
+      displayName: 'Custom operator',
+      legalName: '',
+      ref: 'custom',
+      phone: '',
+      avatarUrl: '',
+      capabilities: [
+        'catalog.item.read',
+        'catalog.item.create',
+        'gscale.print',
+        'rps.batch.manage',
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(AppThemeVariant.earthy),
+        locale: const Locale('uz'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: AdminNavigationDrawer(
+            selectedIndex: 0,
+            onNavigate: (_) {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Uy'), findsOneWidget);
+    expect(find.text('Profil'), findsOneWidget);
+    expect(find.text('GScale Mode'), findsOneWidget);
+    expect(find.text('Foydalanuvchilar'), findsNothing);
+    expect(find.text('Harakatlar'), findsNothing);
+    expect(find.text('Rollar'), findsNothing);
   });
 }
 
