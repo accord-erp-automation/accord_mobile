@@ -5,6 +5,7 @@ import '../../../core/widgets/shell/app_retry_state.dart';
 import '../../../core/widgets/shell/app_shell.dart';
 import '../../shared/models/app_models.dart';
 import '../../werka/presentation/widgets/m3_picker_sheet.dart';
+import 'admin_suppliers_screen.dart';
 import 'widgets/admin_dock.dart';
 import 'widgets/admin_top_notice.dart';
 import 'dart:async';
@@ -325,6 +326,7 @@ class _CustomerCreateTabState extends State<_CustomerCreateTab> {
       }
       name.clear();
       phone.clear();
+      AdminSuppliersScreen.invalidateCache();
       showAdminTopNotice(context, 'Haridor yaratildi');
     } catch (_) {
       if (mounted) {
@@ -389,6 +391,7 @@ class _SupplierCreateTabState extends State<_SupplierCreateTab> {
       }
       name.clear();
       phone.clear();
+      AdminSuppliersScreen.invalidateCache();
       showAdminTopNotice(context, 'Ta’minotchi yaratildi');
     } catch (_) {
       if (mounted) {
@@ -449,6 +452,7 @@ class _CustomRoleCreateTabState extends State<_CustomRoleCreateTab> {
       }
       name.clear();
       phone.clear();
+      AdminSuppliersScreen.invalidateCache();
       showAdminTopNotice(context, 'Foydalanuvchi yaratildi');
     } catch (_) {
       if (mounted) {
@@ -572,6 +576,7 @@ class _WerkaCreateTabState extends State<_WerkaCreateTab> {
       setState(() {
         werkaCode = updated.werkaCode;
       });
+      AdminSuppliersScreen.invalidateCache();
       showAdminTopNotice(context, 'Omborchi saqlandi');
     } catch (_) {
       if (mounted) {

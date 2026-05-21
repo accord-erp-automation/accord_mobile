@@ -15,6 +15,10 @@ import 'widgets/admin_supplier_list_module.dart';
 class AdminSuppliersScreen extends StatefulWidget {
   const AdminSuppliersScreen({super.key});
 
+  static void invalidateCache() {
+    _AdminSuppliersScreenState.invalidateCache();
+  }
+
   @override
   State<AdminSuppliersScreen> createState() => _AdminSuppliersScreenState();
 }
@@ -23,6 +27,12 @@ class _AdminSuppliersScreenState extends State<AdminSuppliersScreen> {
   static const int _pageSize = 50;
   static const double _prefetchExtentAfterFactor = 2.5;
   static _AdminSuppliersCache? _cache;
+  static final ValueNotifier<int> _usersChanged = ValueNotifier<int>(0);
+
+  static void invalidateCache() {
+    _cache = null;
+    _usersChanged.value++;
+  }
 
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
@@ -39,16 +49,22 @@ class _AdminSuppliersScreenState extends State<AdminSuppliersScreen> {
   @override
   void initState() {
     super.initState();
+    _usersChanged.addListener(_handleUsersChanged);
     _scrollController.addListener(_handleScroll);
     _bootstrap();
   }
 
   @override
   void dispose() {
+    _usersChanged.removeListener(_handleUsersChanged);
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _handleUsersChanged() {
+    unawaited(_bootstrap(forceRefresh: true));
   }
 
   Future<void> _reload() async {

@@ -1,6 +1,7 @@
 import '../../../core/api/mobile_api.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/shell/app_shell.dart';
+import 'admin_suppliers_screen.dart';
 import 'widgets/admin_dock.dart';
 import 'package:flutter/material.dart';
 
@@ -34,6 +35,7 @@ class _AdminCustomerCreateScreenState extends State<AdminCustomerCreateScreen> {
       if (!mounted) {
         return;
       }
+      AdminSuppliersScreen.invalidateCache();
       Navigator.of(context).pop(true);
     } finally {
       if (mounted) {
