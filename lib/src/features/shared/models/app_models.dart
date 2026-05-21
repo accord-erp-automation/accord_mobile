@@ -806,6 +806,7 @@ class SessionProfile {
     required this.ref,
     required this.phone,
     required this.avatarUrl,
+    this.capabilities = const [],
   });
 
   final UserRole role;
@@ -814,6 +815,7 @@ class SessionProfile {
   final String ref;
   final String phone;
   final String avatarUrl;
+  final List<String> capabilities;
 
   factory SessionProfile.fromJson(Map<String, dynamic> json) {
     return SessionProfile(
@@ -823,6 +825,9 @@ class SessionProfile {
       ref: json['ref'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
       avatarUrl: json['avatar_url'] as String? ?? '',
+      capabilities: (json['capabilities'] as List<dynamic>? ?? const [])
+          .map((item) => item as String)
+          .toList(growable: false),
     );
   }
 
@@ -834,7 +839,23 @@ class SessionProfile {
       'ref': ref,
       'phone': phone,
       'avatar_url': avatarUrl,
+      'capabilities': capabilities,
     };
+  }
+
+  List<String> get effectiveCapabilities {
+    if (capabilities.isNotEmpty) {
+      return capabilities;
+    }
+    return _defaultCapabilitiesForRole(role);
+  }
+
+  bool hasCapability(String code) {
+    return effectiveCapabilities.contains(code);
+  }
+
+  bool hasAnyCapability(Iterable<String> codes) {
+    return codes.any(hasCapability);
   }
 
   SessionProfile copyWith({
@@ -844,6 +865,7 @@ class SessionProfile {
     String? ref,
     String? phone,
     String? avatarUrl,
+    List<String>? capabilities,
   }) {
     return SessionProfile(
       role: role ?? this.role,
@@ -852,7 +874,55 @@ class SessionProfile {
       ref: ref ?? this.ref,
       phone: phone ?? this.phone,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      capabilities: capabilities ?? this.capabilities,
     );
+  }
+}
+
+List<String> _defaultCapabilitiesForRole(UserRole role) {
+  switch (role) {
+    case UserRole.supplier:
+      return const [
+        'supplier.access',
+        'push.token.manage',
+        'supplier.avatar.manage',
+      ];
+    case UserRole.werka:
+      return const [
+        'werka.access',
+        'push.token.manage',
+        'gscale.catalog.read',
+        'gscale.print',
+        'rps.batch.manage',
+      ];
+    case UserRole.customer:
+      return const ['customer.access'];
+    case UserRole.admin:
+      return const [
+        'admin.access',
+        'role.capability.read',
+        'role.capability.manage',
+        'admin.settings.read',
+        'admin.settings.manage',
+        'catalog.item.read',
+        'catalog.item.create',
+        'catalog.item_group.read',
+        'catalog.item_group.manage',
+        'catalog.item.bulk_move',
+        'party.supplier.read',
+        'party.supplier.manage',
+        'party.supplier.item.assign',
+        'party.supplier.code.manage',
+        'party.customer.read',
+        'party.customer.manage',
+        'party.customer.item.assign',
+        'party.customer.code.manage',
+        'admin.activity.read',
+        'werka.code.manage',
+        'gscale.catalog.read',
+        'gscale.print',
+        'rps.batch.manage',
+      ];
   }
 }
 

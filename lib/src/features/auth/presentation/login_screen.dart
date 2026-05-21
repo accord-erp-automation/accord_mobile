@@ -6,6 +6,7 @@ import '../../../core/localization/locale_controller.dart';
 import '../../../core/network/network_required_dialog.dart';
 import '../../../core/notifications/service/push_messaging_service.dart';
 import '../../../core/security/state/security_controller.dart';
+import '../../../core/session/state/app_session.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/widgets/shell/app_shell.dart';
 import '../../../core/widgets/display/motion_widgets.dart';
@@ -152,16 +153,9 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       PushMessagingService.instance.syncCurrentToken();
       SecurityController.instance.unlockAfterLogin();
-      final String route = profile.role == UserRole.supplier
-          ? AppRoutes.supplierHome
-          : profile.role == UserRole.werka
-              ? AppRoutes.werkaHome
-              : profile.role == UserRole.customer
-                  ? AppRoutes.customerHome
-                  : AppRoutes.adminHome;
       _openPostLoginRoute(
         context,
-        AppPreview.initialRouteOverride ?? route,
+        AppPreview.initialRouteOverride ?? AppSession.instance.homeRoute,
       );
     }).catchError((error) {
       if (!context.mounted) {

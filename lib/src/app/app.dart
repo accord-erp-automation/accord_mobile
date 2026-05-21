@@ -12,7 +12,6 @@ import '../core/security/gate/app_lock_gate.dart';
 import '../core/theme/theme_controller.dart';
 import 'app_router.dart';
 import 'package:device_preview/device_preview.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';

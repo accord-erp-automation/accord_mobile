@@ -30,8 +30,11 @@ extension MobileApiAuthProfile on MobileApi {
     final Map<String, dynamic> json =
         jsonDecode(response.body) as Map<String, dynamic>;
     final String token = json['token'] as String? ?? '';
-    final SessionProfile profile =
-        SessionProfile.fromJson(json['profile'] as Map<String, dynamic>);
+    final profileJson = Map<String, dynamic>.from(
+      json['profile'] as Map<String, dynamic>,
+    );
+    profileJson['capabilities'] = json['capabilities'] as List<dynamic>? ?? [];
+    final SessionProfile profile = SessionProfile.fromJson(profileJson);
     final WerkaHomeData? werkaHome = profile.role == UserRole.werka &&
             json['werka_home'] is Map<String, dynamic>
         ? WerkaHomeData.fromJson(json['werka_home'] as Map<String, dynamic>)
@@ -120,7 +123,7 @@ extension MobileApiAuthProfile on MobileApi {
     if (response.statusCode != 200) {
       throw Exception('Profile fetch failed');
     }
-    final SessionProfile profile = SessionProfile.fromJson(
+    final SessionProfile profile = _profilePreservingCapabilities(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
     await AppSession.instance.updateProfile(profile);
@@ -139,7 +142,7 @@ extension MobileApiAuthProfile on MobileApi {
     if (response.statusCode != 200) {
       throw Exception('Nickname update failed');
     }
-    final SessionProfile profile = SessionProfile.fromJson(
+    final SessionProfile profile = _profilePreservingCapabilities(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
     await AppSession.instance.updateProfile(profile);
@@ -171,10 +174,18 @@ extension MobileApiAuthProfile on MobileApi {
     if (response.statusCode != 200) {
       throw Exception('Avatar upload failed');
     }
-    final SessionProfile profile = SessionProfile.fromJson(
+    final SessionProfile profile = _profilePreservingCapabilities(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
     await AppSession.instance.updateProfile(profile);
     return profile;
+  }
+
+  SessionProfile _profilePreservingCapabilities(Map<String, dynamic> json) {
+    if (!json.containsKey('capabilities')) {
+      json = Map<String, dynamic>.from(json);
+      json['capabilities'] = AppSession.instance.profile?.capabilities ?? [];
+    }
+    return SessionProfile.fromJson(json);
   }
 }

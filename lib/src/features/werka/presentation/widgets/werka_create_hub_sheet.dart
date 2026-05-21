@@ -274,16 +274,16 @@ class _WerkaCreateHubOverlayState extends State<_WerkaCreateHubOverlay>
         row: 0,
         staggerOrder: n - 1 - 0,
       ),
-      _WerkaHubAction(
-        key: const ValueKey('werka-hub-qr-scan'),
+      const _WerkaHubAction(
+        key: ValueKey('werka-hub-qr-scan'),
         title: 'QR scan',
         icon: Icons.qr_code_scanner_rounded,
         routeName: AppRoutes.werkaStockEntryQrScan,
         row: 1,
         staggerOrder: n - 1 - 1,
       ),
-      _WerkaHubAction(
-        key: const ValueKey('werka-hub-gscale-mode'),
+      const _WerkaHubAction(
+        key: ValueKey('werka-hub-gscale-mode'),
         title: 'Switch',
         icon: Icons.swap_horiz_rounded,
         routeName: AppRoutes.gscaleMode,

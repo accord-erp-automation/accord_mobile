@@ -20,7 +20,51 @@ class AppSession {
     if (!isLoggedIn) {
       return '/';
     }
-    switch (profile!.role) {
+    final profile = this.profile!;
+    if (profile.hasCapability('admin.access')) {
+      return '/admin-home';
+    }
+    if (profile.hasCapability('werka.access')) {
+      return '/werka-home';
+    }
+    if (profile.hasCapability('supplier.access')) {
+      return '/supplier-home';
+    }
+    if (profile.hasCapability('customer.access')) {
+      return '/customer-home';
+    }
+    if (profile.hasAnyCapability(const [
+      'gscale.print',
+      'gscale.catalog.read',
+      'rps.batch.manage',
+    ])) {
+      return '/gscale-mode';
+    }
+    if (profile.hasAnyCapability(const [
+      'admin.access',
+      'role.capability.read',
+      'role.capability.manage',
+      'admin.settings.read',
+      'admin.settings.manage',
+      'catalog.item.read',
+      'catalog.item.create',
+      'catalog.item_group.read',
+      'catalog.item_group.manage',
+      'catalog.item.bulk_move',
+      'party.supplier.read',
+      'party.supplier.manage',
+      'party.supplier.item.assign',
+      'party.supplier.code.manage',
+      'party.customer.read',
+      'party.customer.manage',
+      'party.customer.item.assign',
+      'party.customer.code.manage',
+      'admin.activity.read',
+      'werka.code.manage',
+    ])) {
+      return '/admin-home';
+    }
+    switch (profile.role) {
       case UserRole.supplier:
         return '/supplier-home';
       case UserRole.werka:
@@ -30,6 +74,10 @@ class AppSession {
       case UserRole.admin:
         return '/admin-home';
     }
+  }
+
+  bool can(String capability) {
+    return profile?.hasCapability(capability) ?? false;
   }
 
   Future<void> load() async {

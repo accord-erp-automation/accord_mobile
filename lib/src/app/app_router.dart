@@ -60,6 +60,7 @@ import '../features/werka/presentation/werka_unannounced_supplier_screen.dart';
 import '../features/werka/presentation/werka_status_detail_screen.dart';
 import '../features/werka/presentation/werka_status_breakdown_screen.dart';
 import '../features/werka/presentation/werka_success_screen.dart';
+import '../core/session/state/app_session.dart';
 import '../core/theme/app_motion.dart';
 import 'package:full_screen_back_gesture/cupertino.dart'
     as fullscreen_cupertino;
@@ -198,6 +199,9 @@ class AppRouter {
   };
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
+    if (!canOpenRoute(settings.name)) {
+      return _buildRoute(settings, const _CapabilityDeniedScreen());
+    }
     switch (settings.name) {
       case AppRoutes.login:
         return _buildRoute(settings, const AppEntryScreen());
@@ -459,6 +463,126 @@ class AppRouter {
     }
   }
 
+  static bool canOpenRoute(String? routeName) {
+    if (routeName == null ||
+        routeName == AppRoutes.login ||
+        routeName == AppRoutes.profile ||
+        routeName == AppRoutes.pinSetupEntry ||
+        routeName == AppRoutes.pinSetupConfirm) {
+      return true;
+    }
+    final profile = AppSession.instance.profile;
+    if (profile == null) {
+      return true;
+    }
+    final required = _routeCapabilities[routeName];
+    if (required == null) {
+      return true;
+    }
+    return profile.hasAnyCapability(required);
+  }
+
+  static const Map<String, Set<String>> _routeCapabilities = {
+    AppRoutes.supplierHome: {'supplier.access'},
+    AppRoutes.supplierStatusBreakdown: {'supplier.access'},
+    AppRoutes.supplierSubmittedCategoryDetail: {'supplier.access'},
+    AppRoutes.supplierStatusDetail: {'supplier.access'},
+    AppRoutes.supplierItemPicker: {'supplier.access'},
+    AppRoutes.supplierQty: {'supplier.access'},
+    AppRoutes.supplierConfirm: {'supplier.access'},
+    AppRoutes.supplierSuccess: {'supplier.access'},
+    AppRoutes.supplierNotifications: {'supplier.access'},
+    AppRoutes.supplierRecent: {'supplier.access'},
+    AppRoutes.customerHome: {'customer.access'},
+    AppRoutes.customerNotifications: {'customer.access'},
+    AppRoutes.customerStatusDetail: {'customer.access'},
+    AppRoutes.customerDetail: {'customer.access'},
+    AppRoutes.notificationDetail: {
+      'supplier.access',
+      'werka.access',
+      'customer.access',
+    },
+    AppRoutes.werkaHome: {'werka.access'},
+    AppRoutes.werkaCreateHub: {'werka.access'},
+    AppRoutes.werkaBatchDispatch: {'werka.access'},
+    AppRoutes.werkaCustomerIssueCustomer: {'werka.access'},
+    AppRoutes.werkaUnannouncedSupplier: {'werka.access'},
+    AppRoutes.werkaStockEntryQrScan: {'werka.access'},
+    AppRoutes.werkaStockEntryLookup: {'werka.access'},
+    AppRoutes.werkaArchiveBatchQrLookup: {'werka.access'},
+    AppRoutes.werkaNotifications: {'werka.access'},
+    AppRoutes.werkaArchive: {'werka.access'},
+    AppRoutes.werkaArchiveSentHub: {'werka.access'},
+    AppRoutes.werkaArchiveDailyCalendar: {'werka.access'},
+    AppRoutes.werkaArchiveMonthlyCalendar: {'werka.access'},
+    AppRoutes.werkaArchiveYearlyCalendar: {'werka.access'},
+    AppRoutes.werkaArchivePeriods: {'werka.access'},
+    AppRoutes.werkaArchiveList: {'werka.access'},
+    AppRoutes.werkaStatusBreakdown: {'werka.access'},
+    AppRoutes.werkaStatusDetail: {'werka.access'},
+    AppRoutes.werkaDetail: {'werka.access'},
+    AppRoutes.werkaCustomerDeliveryDetail: {'werka.access'},
+    AppRoutes.werkaSuccess: {'werka.access'},
+    AppRoutes.gscaleMode: {
+      'gscale.catalog.read',
+      'gscale.print',
+      'rps.batch.manage',
+    },
+    AppRoutes.adminHome: {
+      'admin.access',
+      'role.capability.read',
+      'role.capability.manage',
+      'admin.settings.read',
+      'admin.settings.manage',
+      'catalog.item.read',
+      'catalog.item.create',
+      'catalog.item_group.read',
+      'catalog.item_group.manage',
+      'catalog.item.bulk_move',
+      'party.supplier.read',
+      'party.supplier.manage',
+      'party.supplier.item.assign',
+      'party.supplier.code.manage',
+      'party.customer.read',
+      'party.customer.manage',
+      'party.customer.item.assign',
+      'party.customer.code.manage',
+      'admin.activity.read',
+      'werka.code.manage',
+    },
+    AppRoutes.adminActivity: {'admin.activity.read'},
+    AppRoutes.adminCreateHub: {
+      'catalog.item.create',
+      'catalog.item_group.manage',
+      'party.supplier.manage',
+      'party.customer.manage',
+      'werka.code.manage',
+      'role.capability.manage',
+    },
+    AppRoutes.adminSettings: {'admin.settings.read'},
+    AppRoutes.adminRoles: {'role.capability.read'},
+    AppRoutes.adminSuppliers: {
+      'party.supplier.read',
+      'party.customer.read',
+    },
+    AppRoutes.adminUserCreate: {
+      'party.supplier.manage',
+      'party.customer.manage',
+      'werka.code.manage',
+    },
+    AppRoutes.adminSupplierCreate: {'party.supplier.manage'},
+    AppRoutes.adminCustomerCreate: {'party.customer.manage'},
+    AppRoutes.adminCustomerDetail: {'party.customer.read'},
+    AppRoutes.adminInactiveSuppliers: {'party.supplier.read'},
+    AppRoutes.adminItemCreate: {'catalog.item.read', 'catalog.item.create'},
+    AppRoutes.adminItemGroupCreate: {'catalog.item_group.manage'},
+    AppRoutes.adminItemBulkMove: {'catalog.item.bulk_move'},
+    AppRoutes.adminSupplierDetail: {'party.supplier.read'},
+    AppRoutes.adminSupplierItemsView: {'party.supplier.item.assign'},
+    AppRoutes.adminSupplierItemsAdd: {'party.supplier.item.assign'},
+    AppRoutes.adminWerka: {'werka.code.manage'},
+  };
+
   static PageRoute<dynamic> _buildRoute(RouteSettings settings, Widget child) {
     if (_usesAdminPageTransition(settings.name)) {
       return PageRouteBuilder<dynamic>(
@@ -543,5 +667,18 @@ class AppRouter {
 
   static bool _usesAdminPageTransition(String? routeName) {
     return false;
+  }
+}
+
+class _CapabilityDeniedScreen extends StatelessWidget {
+  const _CapabilityDeniedScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: Text('Ruxsat yo‘q'),
+      ),
+    );
   }
 }
