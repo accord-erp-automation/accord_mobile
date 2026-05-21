@@ -62,6 +62,17 @@ void main() {
       await tester.tap(find.text('Omborchi').first);
       await tester.pumpAndSettle();
       expect(find.text('Role tanlang'), findsOneWidget);
+      expect(seenRequests, contains('GET /v1/mobile/admin/roles'));
+      expect(find.text('Item yaratuvchi'), findsOneWidget);
+      await tester.tap(find.text('Item yaratuvchi'));
+      await tester.pumpAndSettle();
+      expect(find.text('Code'), findsNothing);
+      expect(find.text('Omborchi saqlash'), findsNothing);
+      expect(find.text('Foydalanuvchi saqlash'), findsOneWidget);
+
+      await tester.tap(find.text('Item yaratuvchi').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Role tanlang'), findsOneWidget);
       await tester.tap(find.text('Haridor').last);
       await tester.pumpAndSettle();
 
@@ -99,11 +110,47 @@ class _AdminUserCreateHttpClient implements HttpClient {
           'werka_phone': '+998',
           'werka_code': 'WERKA-1',
         };
+      case 'GET /v1/mobile/admin/roles':
+        body = const [
+          {
+            'id': 'werka',
+            'label': 'Werka',
+            'base_role': 'werka',
+            'capability_codes': ['werka.access'],
+            'system': true,
+          },
+          {
+            'id': 'customer',
+            'label': 'Customer',
+            'base_role': 'customer',
+            'capability_codes': ['customer.access'],
+            'system': true,
+          },
+          {
+            'id': 'supplier',
+            'label': 'Supplier',
+            'base_role': 'supplier',
+            'capability_codes': ['supplier.access'],
+            'system': true,
+          },
+          {
+            'id': 'item_creator',
+            'label': 'Item yaratuvchi',
+            'capability_codes': ['catalog.item.read', 'catalog.item.create'],
+            'system': false,
+          },
+        ];
       case 'POST /v1/mobile/admin/customers':
         body = const {
           'ref': 'CUS-1',
           'name': 'Ali Market',
           'phone': '+998900001111',
+        };
+      case 'PUT /v1/mobile/admin/role-assignments':
+        body = const {
+          'principal_role': 'customer',
+          'principal_ref': 'CUS-1',
+          'role_id': 'item_creator',
         };
       default:
         statusCode = HttpStatus.notFound;
@@ -138,6 +185,24 @@ class _FakeHttpClientRequest implements HttpClientRequest {
 
   final _FakeHttpClientResponse response;
   final BytesBuilder _body = BytesBuilder();
+
+  @override
+  bool persistentConnection = true;
+
+  @override
+  bool followRedirects = true;
+
+  @override
+  int maxRedirects = 5;
+
+  @override
+  int contentLength = -1;
+
+  @override
+  bool bufferOutput = true;
+
+  @override
+  List<Cookie> get cookies => const <Cookie>[];
 
   @override
   void write(Object? object) {
@@ -211,10 +276,78 @@ class _FakeHttpClientResponse extends Stream<List<int>>
   HttpHeaders get headers => _FakeHttpHeaders();
 
   @override
+  bool get isRedirect => false;
+
+  @override
+  List<RedirectInfo> get redirects => const <RedirectInfo>[];
+
+  @override
+  HttpClientResponseCompressionState get compressionState =>
+      HttpClientResponseCompressionState.notCompressed;
+
+  @override
+  bool get persistentConnection => false;
+
+  @override
+  String get reasonPhrase => '';
+
+  @override
+  X509Certificate? get certificate => null;
+
+  @override
+  HttpConnectionInfo? get connectionInfo => null;
+
+  @override
+  List<Cookie> get cookies => const <Cookie>[];
+
+  @override
+  Future<Socket> detachSocket() {
+    return Future<Socket>.error(
+      UnsupportedError('detachSocket is not supported in tests'),
+    );
+  }
+
+  @override
+  Future<HttpClientResponse> redirect([
+    String? method,
+    Uri? url,
+    bool? followLoops,
+  ]) =>
+      Future<HttpClientResponse>.value(this);
+
+  @override
   noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _FakeHttpHeaders implements HttpHeaders {
+  final Map<String, List<String>> _values = <String, List<String>>{};
+
+  @override
+  void forEach(void Function(String name, List<String> values) action) {
+    _values.forEach(action);
+  }
+
+  @override
+  void set(
+    String name,
+    Object value, {
+    bool preserveHeaderCase = false,
+  }) {
+    _values[name] = <String>[value.toString()];
+  }
+
+  @override
+  void add(
+    String name,
+    Object value, {
+    bool preserveHeaderCase = false,
+  }) {
+    _values.putIfAbsent(name, () => <String>[]).add(value.toString());
+  }
+
+  @override
+  List<String>? operator [](String name) => _values[name];
+
   @override
   noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

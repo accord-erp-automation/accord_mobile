@@ -20,10 +20,40 @@ class AdminUserCreateScreen extends StatefulWidget {
 }
 
 class _AdminUserCreateScreenState extends State<AdminUserCreateScreen> {
-  _AdminUserCreateKind _kind = _AdminUserCreateKind.werka;
+  late Future<List<_AdminUserCreateChoice>> _roleChoices;
+  _AdminUserCreateChoice _choice = _AdminUserCreateChoice.system(
+    _AdminUserCreateKind.werka,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _roleChoices = _loadRoleChoices();
+  }
+
+  Future<List<_AdminUserCreateChoice>> _loadRoleChoices() async {
+    final fallbackChoices = _AdminUserCreateKind.values
+        .map(_AdminUserCreateChoice.system)
+        .toList(growable: true);
+    try {
+      final roles = await MobileApi.instance.adminRoles();
+      return [
+        ...roles
+            .where((role) => !role.system)
+            .map(_AdminUserCreateChoice.custom),
+        ...fallbackChoices,
+      ];
+    } catch (_) {
+      return fallbackChoices;
+    }
+  }
 
   Future<void> _openRolePicker() async {
-    final picked = await showModalBottomSheet<_AdminUserCreateKind>(
+    final choices = await _roleChoices;
+    if (!mounted) {
+      return;
+    }
+    final picked = await showModalBottomSheet<_AdminUserCreateChoice>(
       context: context,
       isDismissible: true,
       enableDrag: true,
@@ -33,29 +63,30 @@ class _AdminUserCreateScreenState extends State<AdminUserCreateScreen> {
       barrierColor: Colors.black.withValues(alpha: 0.32),
       sheetAnimationStyle: kM3PickerSheetAnimation,
       builder: (context) {
-        return M3PickerSheet<_AdminUserCreateKind>(
+        return M3PickerSheet<_AdminUserCreateChoice>(
           title: 'Role tanlang',
           hintText: 'Role qidiring',
-          items: _AdminUserCreateKind.values,
-          itemTitle: (kind) => kind.label,
-          itemSubtitle: (kind) => kind.subtitle,
-          matchesQuery: (kind, query) {
+          items: choices,
+          itemTitle: (choice) => choice.label,
+          itemSubtitle: (choice) => choice.subtitle,
+          matchesQuery: (choice, query) {
             final normalized = query.trim().toLowerCase();
-            return kind.label.toLowerCase().contains(normalized) ||
-                kind.subtitle.toLowerCase().contains(normalized);
+            return choice.label.toLowerCase().contains(normalized) ||
+                choice.subtitle.toLowerCase().contains(normalized);
           },
-          onSelected: (kind) => Navigator.of(context).pop(kind),
+          onSelected: (choice) => Navigator.of(context).pop(choice),
         );
       },
     );
     if (picked == null || !mounted) {
       return;
     }
-    setState(() => _kind = picked);
+    setState(() => _choice = picked);
   }
 
   @override
   Widget build(BuildContext context) {
+    final kind = _choice.kind;
     return AppShell(
       title: 'Foydalanuvchi qo‘shish',
       subtitle: '',
@@ -66,14 +97,23 @@ class _AdminUserCreateScreenState extends State<AdminUserCreateScreen> {
       child: Column(
         children: [
           _RoleSelector(
-            kind: _kind,
+            choice: _choice,
             onTap: _openRolePicker,
           ),
           Expanded(
-            child: switch (_kind) {
-              _AdminUserCreateKind.werka => const _WerkaCreateTab(),
-              _AdminUserCreateKind.customer => const _CustomerCreateTab(),
-              _AdminUserCreateKind.supplier => const _SupplierCreateTab(),
+            child: switch (kind) {
+              _AdminUserCreateKind.werka => _WerkaCreateTab(
+                  assignedRole: _choice.customRole,
+                ),
+              _AdminUserCreateKind.customer => _CustomerCreateTab(
+                  assignedRole: _choice.customRole,
+                ),
+              _AdminUserCreateKind.supplier => _SupplierCreateTab(
+                  assignedRole: _choice.customRole,
+                ),
+              _AdminUserCreateKind.custom => _CustomRoleCreateTab(
+                  assignedRole: _choice.customRole!,
+                ),
             },
           ),
         ],
@@ -82,16 +122,50 @@ class _AdminUserCreateScreenState extends State<AdminUserCreateScreen> {
   }
 }
 
+class _AdminUserCreateChoice {
+  const _AdminUserCreateChoice({
+    required this.kind,
+    required this.label,
+    required this.subtitle,
+    this.customRole,
+  });
+
+  factory _AdminUserCreateChoice.system(_AdminUserCreateKind kind) {
+    return _AdminUserCreateChoice(
+      kind: kind,
+      label: kind.label,
+      subtitle: kind.subtitle,
+    );
+  }
+
+  factory _AdminUserCreateChoice.custom(AdminRoleDefinition role) {
+    final kind = _kindForRole(role);
+    return _AdminUserCreateChoice(
+      kind: kind,
+      label: role.label,
+      subtitle: kind.label,
+      customRole: role,
+    );
+  }
+
+  final _AdminUserCreateKind kind;
+  final String label;
+  final String subtitle;
+  final AdminRoleDefinition? customRole;
+}
+
 enum _AdminUserCreateKind {
   werka,
   customer,
-  supplier;
+  supplier,
+  custom;
 
   String get label {
     return switch (this) {
       _AdminUserCreateKind.werka => 'Omborchi',
       _AdminUserCreateKind.customer => 'Haridor',
       _AdminUserCreateKind.supplier => 'Ta’minotchi',
+      _AdminUserCreateKind.custom => 'Foydalanuvchi',
     };
   }
 
@@ -100,17 +174,38 @@ enum _AdminUserCreateKind {
       _AdminUserCreateKind.werka => 'Warehouse worker account',
       _AdminUserCreateKind.customer => 'Mahsulot qabul qiluvchi haridor',
       _AdminUserCreateKind.supplier => 'Mahsulot yuboruvchi ta’minotchi',
+      _AdminUserCreateKind.custom => 'Role asosidagi foydalanuvchi',
     };
   }
 }
 
+_AdminUserCreateKind _kindForRole(AdminRoleDefinition role) {
+  final baseRole = role.baseRole;
+  if (baseRole == UserRole.supplier) {
+    return _AdminUserCreateKind.supplier;
+  }
+  if (baseRole == UserRole.customer) {
+    return _AdminUserCreateKind.customer;
+  }
+  if (role.capabilityCodes.contains('supplier.access')) {
+    return _AdminUserCreateKind.supplier;
+  }
+  if (role.capabilityCodes.contains('customer.access')) {
+    return _AdminUserCreateKind.customer;
+  }
+  if (role.capabilityCodes.contains('werka.access')) {
+    return _AdminUserCreateKind.werka;
+  }
+  return _AdminUserCreateKind.custom;
+}
+
 class _RoleSelector extends StatelessWidget {
   const _RoleSelector({
-    required this.kind,
+    required this.choice,
     required this.onTap,
   });
 
-  final _AdminUserCreateKind kind;
+  final _AdminUserCreateChoice choice;
   final VoidCallback onTap;
 
   @override
@@ -159,14 +254,14 @@ class _RoleSelector extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            kind.label,
+                            choice.label,
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            kind.subtitle,
+                            choice.subtitle,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodySmall?.copyWith(
@@ -193,7 +288,9 @@ class _RoleSelector extends StatelessWidget {
 }
 
 class _CustomerCreateTab extends StatefulWidget {
-  const _CustomerCreateTab();
+  const _CustomerCreateTab({required this.assignedRole});
+
+  final AdminRoleDefinition? assignedRole;
 
   @override
   State<_CustomerCreateTab> createState() => _CustomerCreateTabState();
@@ -214,9 +311,14 @@ class _CustomerCreateTabState extends State<_CustomerCreateTab> {
   Future<void> _create() async {
     setState(() => saving = true);
     try {
-      await MobileApi.instance.adminCreateCustomer(
+      final customer = await MobileApi.instance.adminCreateCustomer(
         name: name.text.trim(),
         phone: phone.text.trim(),
+      );
+      await _assignCustomRole(
+        widget.assignedRole,
+        UserRole.customer,
+        customer.ref,
       );
       if (!mounted) {
         return;
@@ -250,7 +352,9 @@ class _CustomerCreateTabState extends State<_CustomerCreateTab> {
 }
 
 class _SupplierCreateTab extends StatefulWidget {
-  const _SupplierCreateTab();
+  const _SupplierCreateTab({required this.assignedRole});
+
+  final AdminRoleDefinition? assignedRole;
 
   @override
   State<_SupplierCreateTab> createState() => _SupplierCreateTabState();
@@ -271,9 +375,14 @@ class _SupplierCreateTabState extends State<_SupplierCreateTab> {
   Future<void> _create() async {
     setState(() => saving = true);
     try {
-      await MobileApi.instance.adminCreateSupplier(
+      final supplier = await MobileApi.instance.adminCreateSupplier(
         name: name.text.trim(),
         phone: phone.text.trim(),
+      );
+      await _assignCustomRole(
+        widget.assignedRole,
+        UserRole.supplier,
+        supplier.ref,
       );
       if (!mounted) {
         return;
@@ -306,8 +415,70 @@ class _SupplierCreateTabState extends State<_SupplierCreateTab> {
   }
 }
 
+class _CustomRoleCreateTab extends StatefulWidget {
+  const _CustomRoleCreateTab({required this.assignedRole});
+
+  final AdminRoleDefinition assignedRole;
+
+  @override
+  State<_CustomRoleCreateTab> createState() => _CustomRoleCreateTabState();
+}
+
+class _CustomRoleCreateTabState extends State<_CustomRoleCreateTab> {
+  final TextEditingController name = TextEditingController();
+  final TextEditingController phone = TextEditingController();
+  bool saving = false;
+
+  @override
+  void dispose() {
+    name.dispose();
+    phone.dispose();
+    super.dispose();
+  }
+
+  Future<void> _create() async {
+    setState(() => saving = true);
+    try {
+      final user = await MobileApi.instance.adminCreateCustomer(
+        name: name.text.trim(),
+        phone: phone.text.trim(),
+      );
+      await _assignCustomRole(widget.assignedRole, UserRole.customer, user.ref);
+      if (!mounted) {
+        return;
+      }
+      name.clear();
+      phone.clear();
+      showAdminTopNotice(context, 'Foydalanuvchi yaratildi');
+    } catch (_) {
+      if (mounted) {
+        showAdminTopNotice(context, 'Foydalanuvchi yaratilmadi');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => saving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _CreateUserForm(
+      name: name,
+      phone: phone,
+      nameLabel: 'Foydalanuvchi name',
+      phoneLabel: 'Foydalanuvchi phone',
+      actionLabel: saving ? 'Saqlanmoqda...' : 'Foydalanuvchi saqlash',
+      saving: saving,
+      onSubmit: _create,
+    );
+  }
+}
+
 class _WerkaCreateTab extends StatefulWidget {
-  const _WerkaCreateTab();
+  const _WerkaCreateTab({required this.assignedRole});
+
+  final AdminRoleDefinition? assignedRole;
 
   @override
   State<_WerkaCreateTab> createState() => _WerkaCreateTabState();
@@ -394,6 +565,7 @@ class _WerkaCreateTabState extends State<_WerkaCreateTab> {
           adminName: current.adminName,
         ),
       );
+      await _assignCustomRole(widget.assignedRole, UserRole.werka, 'werka');
       if (!mounted) {
         return;
       }
@@ -492,6 +664,23 @@ class _WerkaCreateTabState extends State<_WerkaCreateTab> {
       },
     );
   }
+}
+
+Future<void> _assignCustomRole(
+  AdminRoleDefinition? role,
+  UserRole principalRole,
+  String principalRef,
+) async {
+  if (role == null || role.system) {
+    return;
+  }
+  await MobileApi.instance.adminUpsertRoleAssignment(
+    AdminRoleAssignment(
+      principalRole: principalRole,
+      principalRef: principalRef,
+      roleId: role.id,
+    ),
+  );
 }
 
 class _CreateUserForm extends StatelessWidget {
