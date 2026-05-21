@@ -265,56 +265,58 @@ class _AdminCreateHubOverlayState extends State<_AdminCreateHubOverlay>
 
   List<_AdminHubAction> _actions(BuildContext context) {
     final l10n = context.l10n;
-    const n = 6;
-    return [
-      _AdminHubAction(
+    final candidates = [
+      _AdminHubActionCandidate(
         key: const ValueKey('admin-hub-user-create'),
         title: l10n.adminCreateUserTitle,
         icon: Icons.group_add_outlined,
         routeName: AppRoutes.adminUserCreate,
-        row: 0,
-        staggerOrder: n - 1 - 0,
       ),
-      _AdminHubAction(
+      _AdminHubActionCandidate(
         key: const ValueKey('admin-hub-settings'),
         title: l10n.adminErpSettingsTitle,
         icon: Icons.settings_outlined,
         routeName: AppRoutes.adminSettings,
-        row: 1,
-        staggerOrder: n - 1 - 1,
       ),
-      _AdminHubAction(
+      _AdminHubActionCandidate(
         key: const ValueKey('admin-hub-roles'),
         title: l10n.adminRolesTitle,
         icon: Icons.admin_panel_settings_outlined,
         routeName: AppRoutes.adminRoles,
-        row: 2,
-        staggerOrder: n - 1 - 2,
       ),
-      _AdminHubAction(
+      _AdminHubActionCandidate(
         key: const ValueKey('admin-hub-item-create'),
         title: l10n.adminCreateItemTitle,
         icon: Icons.inventory_2_outlined,
         routeName: AppRoutes.adminItemCreate,
-        row: 3,
-        staggerOrder: n - 1 - 3,
       ),
-      _AdminHubAction(
+      _AdminHubActionCandidate(
         key: const ValueKey('admin-hub-item-group-create'),
         title: l10n.adminCreateItemGroupTitle,
         icon: Icons.account_tree_outlined,
         routeName: AppRoutes.adminItemGroupCreate,
-        row: 4,
-        staggerOrder: n - 1 - 4,
       ),
-      _AdminHubAction(
+      _AdminHubActionCandidate(
         key: const ValueKey('admin-hub-item-bulk-move'),
         title: l10n.adminProductsTitle,
         icon: Icons.grid_view_rounded,
         routeName: AppRoutes.adminItemBulkMove,
-        row: 5,
-        staggerOrder: n - 1 - 5,
       ),
+    ];
+    final visible = candidates
+        .where((action) => AppRouter.canOpenRoute(action.routeName))
+        .toList(growable: false);
+    final n = visible.length;
+    return [
+      for (var i = 0; i < visible.length; i++)
+        _AdminHubAction(
+          key: visible[i].key,
+          title: visible[i].title,
+          icon: visible[i].icon,
+          routeName: visible[i].routeName,
+          row: i,
+          staggerOrder: n - 1 - i,
+        ),
     ];
   }
 
@@ -449,6 +451,20 @@ class _AdminHubAction {
   final String routeName;
   final int row;
   final int staggerOrder;
+}
+
+class _AdminHubActionCandidate {
+  const _AdminHubActionCandidate({
+    required this.key,
+    required this.title,
+    required this.icon,
+    required this.routeName,
+  });
+
+  final Key key;
+  final String title;
+  final IconData icon;
+  final String routeName;
 }
 
 class _AdminHubActionPill extends StatelessWidget {
