@@ -17,6 +17,7 @@ class AdminNavigationDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final onSurfaceVariant = scheme.onSurfaceVariant;
+    final l10n = context.l10n;
     return SizedBox(
       width: 272,
       child: Stack(
@@ -56,7 +57,7 @@ class AdminNavigationDrawer extends StatelessWidget {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Bo‘limlar',
+                  l10n.adminDrawerSections,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: onSurfaceVariant,
                         fontWeight: FontWeight.w700,
@@ -64,38 +65,38 @@ class AdminNavigationDrawer extends StatelessWidget {
                 ),
               ),
             ),
-            children: const [
+            children: [
               NavigationDrawerDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home_rounded),
-                label: Text('Uy'),
+                icon: const Icon(Icons.home_outlined),
+                selectedIcon: const Icon(Icons.home_rounded),
+                label: Text(l10n.adminHomeNavTitle),
               ),
               NavigationDrawerDestination(
-                icon: Icon(Icons.groups_outlined),
-                selectedIcon: Icon(Icons.groups_rounded),
-                label: Text('Users'),
+                icon: const Icon(Icons.groups_outlined),
+                selectedIcon: const Icon(Icons.groups_rounded),
+                label: Text(l10n.adminUsersTitle),
               ),
               NavigationDrawerDestination(
-                icon: Icon(Icons.history_outlined),
-                selectedIcon: Icon(Icons.history_rounded),
-                label: Text('Harakatlar'),
+                icon: const Icon(Icons.history_outlined),
+                selectedIcon: const Icon(Icons.history_rounded),
+                label: Text(l10n.adminActivityTitle),
               ),
               NavigationDrawerDestination(
-                icon: Icon(Icons.admin_panel_settings_outlined),
-                selectedIcon: Icon(Icons.admin_panel_settings_rounded),
-                label: Text('Rollar'),
+                icon: const Icon(Icons.admin_panel_settings_outlined),
+                selectedIcon: const Icon(Icons.admin_panel_settings_rounded),
+                label: Text(l10n.adminRolesTitle),
               ),
               NavigationDrawerDestination(
-                icon: Icon(Icons.person_outline_rounded),
-                selectedIcon: Icon(Icons.person_rounded),
-                label: Text('Profil'),
+                icon: const Icon(Icons.person_outline_rounded),
+                selectedIcon: const Icon(Icons.person_rounded),
+                label: Text(l10n.profileTitle),
               ),
-              NavigationDrawerDestination(
+              const NavigationDrawerDestination(
                 icon: Icon(Icons.swap_horiz_rounded),
                 selectedIcon: Icon(Icons.swap_horiz_rounded),
                 label: Text('GScale Mode'),
               ),
-              SizedBox(height: 80),
+              const SizedBox(height: 80),
             ],
           ),
           Positioned(

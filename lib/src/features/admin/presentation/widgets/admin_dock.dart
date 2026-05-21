@@ -1,4 +1,5 @@
 import '../../../../app/app_router.dart';
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/navigation/profile_route_overlay_notifier.dart';
 import '../../../../core/native_dock_bridge.dart';
 import '../../../../core/widgets/navigation/app_navigation_bar.dart';
@@ -28,6 +29,14 @@ class AdminDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = Localizations.of<AppLocalizations>(
+      context,
+      AppLocalizations,
+    );
+    final homeLabel = l10n?.adminHomeNavTitle ?? 'Uy';
+    final usersLabel = l10n?.adminUsersTitle ?? 'Foydalanuvchilar';
+    final createLabel = l10n?.adminCreateTitle ?? 'Yangi';
+    final activityLabel = l10n?.adminActivityNavTitle ?? 'Faoliyat';
     return AnimatedBuilder(
       animation: Listenable.merge([
         NativeDockBridge.instance,
@@ -90,7 +99,7 @@ class AdminDock extends StatelessWidget {
                   items: [
                     NativeDockItem(
                       id: 'admin-home',
-                      label: 'Uy',
+                      label: homeLabel,
                       iconCodePoint: Icons.home_outlined.codePoint,
                       selectedIconCodePoint: Icons.home_rounded.codePoint,
                       active: activeTab == AdminDockTab.home,
@@ -102,7 +111,7 @@ class AdminDock extends StatelessWidget {
                     ),
                     NativeDockItem(
                       id: 'admin-suppliers',
-                      label: 'Foydalanuvchilar',
+                      label: usersLabel,
                       iconCodePoint: Icons.groups_outlined.codePoint,
                       selectedIconCodePoint: Icons.groups_rounded.codePoint,
                       active: activeTab == AdminDockTab.suppliers,
@@ -115,7 +124,7 @@ class AdminDock extends StatelessWidget {
                     if (!menuOpen && effectiveShowPrimaryFab)
                       NativeDockItem(
                         id: 'admin-create',
-                        label: 'Yangi',
+                        label: createLabel,
                         iconCodePoint: Icons.add_rounded.codePoint,
                         selectedIconCodePoint: Icons.add_rounded.codePoint,
                         active: activeTab == AdminDockTab.settings,
@@ -125,7 +134,7 @@ class AdminDock extends StatelessWidget {
                       ),
                     NativeDockItem(
                       id: 'admin-activity',
-                      label: 'Faoliyat',
+                      label: activityLabel,
                       iconCodePoint: Icons.history_outlined.codePoint,
                       selectedIconCodePoint: Icons.history_rounded.codePoint,
                       active: activeTab == AdminDockTab.activity,
@@ -148,27 +157,27 @@ class AdminDock extends StatelessWidget {
                 selectionVisible: selectionVisible,
                 selectedIndex: selectedIndex,
                 primaryVisible: !menuOpen && effectiveShowPrimaryFab,
-                destinations: const [
+                destinations: [
                   AppNavigationDestination(
-                    label: 'Uy',
-                    icon: Icon(Icons.home_outlined),
-                    selectedIcon: Icon(Icons.home_rounded),
+                    label: homeLabel,
+                    icon: const Icon(Icons.home_outlined),
+                    selectedIcon: const Icon(Icons.home_rounded),
                   ),
                   AppNavigationDestination(
-                    label: 'Foydalanuvchilar',
-                    icon: Icon(Icons.groups_outlined),
-                    selectedIcon: Icon(Icons.groups_rounded),
+                    label: usersLabel,
+                    icon: const Icon(Icons.groups_outlined),
+                    selectedIcon: const Icon(Icons.groups_rounded),
                   ),
                   AppNavigationDestination(
-                    label: 'Yangi',
-                    icon: Icon(Icons.add_rounded),
-                    selectedIcon: Icon(Icons.add_rounded),
+                    label: createLabel,
+                    icon: const Icon(Icons.add_rounded),
+                    selectedIcon: const Icon(Icons.add_rounded),
                     isPrimary: true,
                   ),
                   AppNavigationDestination(
-                    label: 'Faoliyat',
-                    icon: Icon(Icons.history_outlined),
-                    selectedIcon: Icon(Icons.history_rounded),
+                    label: activityLabel,
+                    icon: const Icon(Icons.history_outlined),
+                    selectedIcon: const Icon(Icons.history_rounded),
                   ),
                 ],
                 onDestinationSelected: handleSelection,

@@ -63,6 +63,9 @@ void main() {
       expect(seenRequests,
           contains('GET /v1/mobile/admin/customers/list?limit=100'));
       expect(find.text('Rollar'), findsWidgets);
+      expect(find.text('Admin'), findsOneWidget);
+      expect(find.textContaining('Role huquqlarini ko‘rish'), findsOneWidget);
+      expect(find.textContaining('Role capability catalog read'), findsNothing);
       expect(find.text('Scale operator'), findsOneWidget);
       expect(find.text('GScale chop etish'), findsWidgets);
 
@@ -70,7 +73,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).at(0), 'Catalog reader');
       await tester.pump();
-      await tester.tap(find.text('Catalog item read'));
+      await tester.tap(find.text('Katalog mahsulotlarini ko‘rish'));
       await tester.pump();
       await tester.tap(find.widgetWithText(FilledButton, 'Saqlash'));
       await tester.pumpAndSettle();
@@ -147,6 +150,16 @@ class _AdminRolesHttpClient implements HttpClient {
       case 'GET /v1/mobile/admin/capabilities':
         body = const [
           {
+            'code': 'admin.access',
+            'label': 'Admin panel',
+            'default_roles': ['admin'],
+          },
+          {
+            'code': 'role.capability.read',
+            'label': 'Role capability catalog read',
+            'default_roles': ['admin'],
+          },
+          {
             'code': 'gscale.print',
             'label': 'GScale chop etish',
             'default_roles': ['admin', 'werka'],
@@ -159,6 +172,13 @@ class _AdminRolesHttpClient implements HttpClient {
         ];
       case 'GET /v1/mobile/admin/roles':
         body = const [
+          {
+            'id': 'admin',
+            'label': 'Admin',
+            'base_role': 'admin',
+            'capability_codes': ['admin.access', 'role.capability.read'],
+            'system': true,
+          },
           {
             'id': 'werka',
             'label': 'Werka',

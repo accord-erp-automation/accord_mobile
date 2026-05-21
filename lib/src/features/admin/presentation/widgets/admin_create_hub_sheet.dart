@@ -283,9 +283,9 @@ class _AdminCreateHubOverlayState extends State<_AdminCreateHubOverlay>
         row: 1,
         staggerOrder: n - 1 - 1,
       ),
-      const _AdminHubAction(
-        key: ValueKey('admin-hub-roles'),
-        title: 'Rollar',
+      _AdminHubAction(
+        key: const ValueKey('admin-hub-roles'),
+        title: l10n.adminRolesTitle,
         icon: Icons.admin_panel_settings_outlined,
         routeName: AppRoutes.adminRoles,
         row: 2,
@@ -307,9 +307,9 @@ class _AdminCreateHubOverlayState extends State<_AdminCreateHubOverlay>
         row: 4,
         staggerOrder: n - 1 - 4,
       ),
-      const _AdminHubAction(
-        key: ValueKey('admin-hub-item-bulk-move'),
-        title: 'Mahsulotlar',
+      _AdminHubAction(
+        key: const ValueKey('admin-hub-item-bulk-move'),
+        title: l10n.adminProductsTitle,
         icon: Icons.grid_view_rounded,
         routeName: AppRoutes.adminItemBulkMove,
         row: 5,

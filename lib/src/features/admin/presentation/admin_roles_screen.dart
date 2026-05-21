@@ -1,4 +1,5 @@
 import '../../../core/api/mobile_api.dart';
+import '../../../core/localization/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/display/motion_widgets.dart';
 import '../../../core/widgets/lists/m3_segmented_list.dart';
@@ -98,10 +99,18 @@ class _AdminRolesScreenState extends State<AdminRolesScreen>
       setState(() {
         _future = Future<_AdminRolesData>.value(data.upsertRole(saved));
       });
-      showAdminTopNotice(context, 'Role saqlandi', icon: Icons.verified_user);
+      showAdminTopNotice(
+        context,
+        context.l10n.adminRoleSaved,
+        icon: Icons.verified_user,
+      );
     } catch (_) {
       if (mounted) {
-        showAdminTopNotice(context, 'Role saqlanmadi', icon: Icons.error);
+        showAdminTopNotice(
+          context,
+          context.l10n.adminRoleSaveFailed,
+          icon: Icons.error,
+        );
       }
     }
   }
@@ -136,12 +145,16 @@ class _AdminRolesScreenState extends State<AdminRolesScreen>
       });
       showAdminTopNotice(
         context,
-        'Role biriktirildi',
+        context.l10n.adminRoleAssigned,
         icon: Icons.assignment_turned_in_outlined,
       );
     } catch (_) {
       if (mounted) {
-        showAdminTopNotice(context, 'Role biriktirilmadi', icon: Icons.error);
+        showAdminTopNotice(
+          context,
+          context.l10n.adminRoleAssignFailed,
+          icon: Icons.error,
+        );
       }
     }
   }
@@ -154,7 +167,7 @@ class _AdminRolesScreenState extends State<AdminRolesScreen>
         selectedIndex: 3,
         onNavigate: _openDrawerRoute,
       ),
-      title: 'Rollar',
+      title: context.l10n.adminRolesTitle,
       subtitle: '',
       nativeTopBar: true,
       nativeTitleTextStyle: AppTheme.werkaNativeAppBarTitleStyle(context),
@@ -213,9 +226,9 @@ class _AdminRoleTabs extends StatelessWidget {
       color: scheme.surfaceContainerLow,
       child: TabBar(
         controller: controller,
-        tabs: const [
-          Tab(text: 'Rollar'),
-          Tab(text: 'Biriktirish'),
+        tabs: [
+          Tab(text: context.l10n.adminRolesTitle),
+          Tab(text: context.l10n.adminRolesAssignTab),
         ],
       ),
     );
@@ -248,7 +261,7 @@ class _RolesTab extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: onCreateRole,
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Yangi role'),
+              label: Text(context.l10n.adminNewRole),
             ),
           ),
           const SizedBox(height: 12),
@@ -285,12 +298,9 @@ class _RoleDefinitionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final capabilityLabels = role.capabilityCodes
-        .map((code) => capabilities
-            .where((capability) => capability.code == code)
-            .map((capability) => capability.label)
-            .letFirstOrNull())
-        .whereType<String>()
+        .map((code) => _capabilityLabel(l10n, code, capabilities))
         .toList(growable: false);
     return M3SegmentFilledSurface(
       slot: slot,
@@ -311,10 +321,13 @@ class _RoleDefinitionTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(role.label, style: theme.textTheme.titleMedium),
+                  Text(
+                    _roleDefinitionLabel(context, role),
+                    style: theme.textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 3),
                   Text(
-                    '${userRoleLabel(role.baseRole)} • ${role.system ? 'system' : 'custom'}',
+                    '${l10n.roleLabelForCode(userRoleToJson(role.baseRole))} • ${l10n.adminRoleKindLabel(role.system)}',
                     style: theme.textTheme.bodySmall,
                   ),
                   if (capabilityLabels.isNotEmpty) ...[
@@ -393,6 +406,7 @@ class _RoleAssignmentTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return M3SegmentFilledSurface(
       slot: slot,
       cornerRadius: M3SegmentedListGeometry.cornerLarge,
@@ -409,12 +423,14 @@ class _RoleAssignmentTile extends StatelessWidget {
                   Text(principal.name, style: theme.textTheme.titleMedium),
                   const SizedBox(height: 3),
                   Text(
-                    '${userRoleLabel(principal.role)} • ${principal.ref}',
+                    '${l10n.roleLabelForCode(userRoleToJson(principal.role))} • ${principal.ref}',
                     style: theme.textTheme.bodySmall,
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    assignedRole?.label ?? 'Default role',
+                    assignedRole == null
+                        ? l10n.adminDefaultRole
+                        : _roleDefinitionLabel(context, assignedRole!),
                     style: theme.textTheme.bodyMedium,
                   ),
                 ],
@@ -422,7 +438,7 @@ class _RoleAssignmentTile extends StatelessWidget {
             ),
             OutlinedButton(
               onPressed: onAssign,
-              child: const Text('Tanlash'),
+              child: Text(l10n.archiveSelectDateAction),
             ),
           ],
         ),
@@ -454,6 +470,7 @@ class _AdminRoleEditorSheetState extends State<_AdminRoleEditorSheet> {
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
+    final l10n = context.l10n;
     final canSave =
         _labelController.text.trim().isNotEmpty && _capabilityCodes.isNotEmpty;
     return Padding(
@@ -463,34 +480,43 @@ class _AdminRoleEditorSheetState extends State<_AdminRoleEditorSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Yangi role', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              l10n.adminNewRole,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: _labelController,
-              decoration: const InputDecoration(
-                labelText: 'Role nomi',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.adminRoleNameLabel,
+                border: const OutlineInputBorder(),
               ),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<UserRole>(
               initialValue: _baseRole,
-              decoration: const InputDecoration(
-                labelText: 'Base role',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.adminBaseRoleLabel,
+                border: const OutlineInputBorder(),
               ),
-              items: const [
-                DropdownMenuItem(value: UserRole.werka, child: Text('Werka')),
+              items: [
+                DropdownMenuItem(
+                  value: UserRole.werka,
+                  child: Text(l10n.roleLabelForCode('werka')),
+                ),
                 DropdownMenuItem(
                   value: UserRole.supplier,
-                  child: Text('Ta\'minotchi'),
+                  child: Text(l10n.roleLabelForCode('supplier')),
                 ),
                 DropdownMenuItem(
                   value: UserRole.customer,
-                  child: Text('Haridor'),
+                  child: Text(l10n.roleLabelForCode('customer')),
                 ),
-                DropdownMenuItem(value: UserRole.admin, child: Text('Admin')),
+                DropdownMenuItem(
+                  value: UserRole.admin,
+                  child: Text(l10n.roleLabelForCode('admin')),
+                ),
               ],
               onChanged: (value) {
                 if (value != null) {
@@ -511,7 +537,9 @@ class _AdminRoleEditorSheetState extends State<_AdminRoleEditorSheet> {
                     }
                   });
                 },
-                title: Text(capability.label),
+                title: Text(
+                  l10n.adminCapabilityLabel(capability.code, capability.label),
+                ),
                 subtitle: Text(capability.code),
               ),
             const SizedBox(height: 12),
@@ -530,7 +558,7 @@ class _AdminRoleEditorSheetState extends State<_AdminRoleEditorSheet> {
                       );
                     }
                   : null,
-              child: const Text('Saqlash'),
+              child: Text(l10n.save),
             ),
           ],
         ),
@@ -550,6 +578,7 @@ class _RoleAssignmentSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return SafeArea(
       top: false,
       child: ListView(
@@ -557,7 +586,7 @@ class _RoleAssignmentSheet extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
         children: [
           Text(
-            '${principal.name} uchun role',
+            l10n.adminRoleForPrincipal(principal.name),
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 12),
@@ -568,8 +597,9 @@ class _RoleAssignmentSheet extends StatelessWidget {
                     ? Icons.admin_panel_settings_outlined
                     : Icons.verified_user_outlined,
               ),
-              title: Text(role.label),
-              subtitle: Text(userRoleLabel(role.baseRole)),
+              title: Text(_roleDefinitionLabel(context, role)),
+              subtitle:
+                  Text(l10n.roleLabelForCode(userRoleToJson(role.baseRole))),
               onTap: () {
                 Navigator.of(context).pop(
                   AdminRoleAssignment(
@@ -709,6 +739,26 @@ String _roleIdFromLabel(String value) {
       .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
       .replaceAll(RegExp(r'^_+|_+$'), '');
   return normalized.isEmpty ? 'custom_role' : normalized;
+}
+
+String _roleDefinitionLabel(BuildContext context, AdminRoleDefinition role) {
+  if (!role.system) {
+    return role.label;
+  }
+  return context.l10n.systemRoleLabel(role.id, role.label);
+}
+
+String _capabilityLabel(
+  AppLocalizations l10n,
+  String code,
+  List<AdminCapability> capabilities,
+) {
+  final fallback = capabilities
+          .where((capability) => capability.code == code)
+          .map((capability) => capability.label)
+          .letFirstOrNull() ??
+      code;
+  return l10n.adminCapabilityLabel(code, fallback);
 }
 
 extension _FirstOrNull<T> on Iterable<T> {

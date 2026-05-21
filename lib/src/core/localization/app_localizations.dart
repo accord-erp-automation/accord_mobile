@@ -610,6 +610,231 @@ class AppLocalizations {
   String get adminSettingsTitle =>
       _t('Admin sozlamalari', 'Admin settings', 'Настройки администратора');
   String get adminActivityTitle => _t('Harakatlar', 'Activity', 'Активность');
+  String get adminActivityNavTitle => _t('Faoliyat', 'Activity', 'Активность');
+  String get adminDrawerSections => _t('Bo‘limlar', 'Sections', 'Разделы');
+  String get adminHomeNavTitle => _t('Uy', 'Home', 'Главная');
+  String get adminUsersTitle => _t('Foydalanuvchilar', 'Users', 'Пользователи');
+  String get adminProductsTitle => _t('Mahsulotlar', 'Products', 'Товары');
+  String get adminRolesTitle => _t('Rollar', 'Roles', 'Роли');
+  String get adminRolesAssignTab => _t('Biriktirish', 'Assign', 'Назначить');
+  String get adminNewRole => _t('Yangi role', 'New role', 'Новая роль');
+  String get adminRoleNameLabel =>
+      _t('Role nomi', 'Role name', 'Название роли');
+  String get adminBaseRoleLabel =>
+      _t('Asosiy role', 'Base role', 'Базовая роль');
+  String get adminSystemRoleKind => _t('tizim', 'system', 'система');
+  String get adminCustomRoleKind => _t('maxsus', 'custom', 'пользовательская');
+  String get adminDefaultRole =>
+      _t('Standart role', 'Default role', 'Роль по умолчанию');
+  String get adminRoleSaved =>
+      _t('Role saqlandi', 'Role saved', 'Роль сохранена');
+  String get adminRoleSaveFailed =>
+      _t('Role saqlanmadi', 'Role was not saved', 'Роль не сохранена');
+  String get adminRoleAssigned =>
+      _t('Role biriktirildi', 'Role assigned', 'Роль назначена');
+  String get adminRoleAssignFailed =>
+      _t('Role biriktirilmadi', 'Role was not assigned', 'Роль не назначена');
+  String adminRoleForPrincipal(String name) => _t(
+        '$name uchun role',
+        'Role for $name',
+        'Роль для $name',
+      );
+  String adminRoleKindLabel(bool system) =>
+      system ? adminSystemRoleKind : adminCustomRoleKind;
+  String roleLabelForCode(String code) {
+    switch (code) {
+      case 'admin':
+        return adminRoleName;
+      case 'werka':
+        return werkaRoleName;
+      case 'customer':
+        return customerRoleName;
+      case 'supplier':
+        return supplierRoleName;
+      default:
+        return code;
+    }
+  }
+
+  String systemRoleLabel(String id, String fallback) {
+    switch (id.trim().toLowerCase()) {
+      case 'admin':
+        return adminRoleName;
+      case 'werka':
+        return werkaRoleName;
+      case 'customer':
+        return customerRoleName;
+      case 'supplier':
+        return supplierRoleName;
+      default:
+        return fallback;
+    }
+  }
+
+  String adminCapabilityLabel(String code, String fallback) {
+    switch (code) {
+      case 'admin.access':
+        return _t('Admin panel', 'Admin panel', 'Панель администратора');
+      case 'role.capability.read':
+        return _t(
+          'Role huquqlarini ko‘rish',
+          'Role capability catalog read',
+          'Просмотр каталога прав ролей',
+        );
+      case 'role.capability.manage':
+        return _t(
+          'Role huquqlarini boshqarish',
+          'Role capability manage',
+          'Управление правами ролей',
+        );
+      case 'admin.settings.read':
+        return _t(
+          'Admin sozlamalarini ko‘rish',
+          'Admin settings read',
+          'Просмотр настроек администратора',
+        );
+      case 'admin.settings.manage':
+        return _t(
+          'Admin sozlamalarini boshqarish',
+          'Admin settings manage',
+          'Управление настройками администратора',
+        );
+      case 'werka.access':
+        return _t(
+            'Omborchi oynasi', 'Werka workspace', 'Рабочее место кладовщика');
+      case 'supplier.access':
+        return _t(
+          'Ta\'minotchi oynasi',
+          'Supplier workspace',
+          'Рабочее место поставщика',
+        );
+      case 'customer.access':
+        return _t(
+          'Haridor oynasi',
+          'Customer workspace',
+          'Рабочее место покупателя',
+        );
+      case 'push.token.manage':
+        return _t(
+          'Push token boshqarish',
+          'Push token manage',
+          'Управление push-токенами',
+        );
+      case 'supplier.avatar.manage':
+        return _t(
+          'Ta\'minotchi avatarini boshqarish',
+          'Supplier avatar manage',
+          'Управление аватаром поставщика',
+        );
+      case 'catalog.item.read':
+        return _t(
+          'Katalog mahsulotlarini ko‘rish',
+          'Catalog item read',
+          'Просмотр товаров каталога',
+        );
+      case 'catalog.item.create':
+        return _t(
+          'Katalog mahsulot yaratish',
+          'Catalog item create',
+          'Создание товара каталога',
+        );
+      case 'catalog.item_group.read':
+        return _t(
+          'Mahsulot guruhlarini ko‘rish',
+          'Catalog item group read',
+          'Просмотр групп товаров',
+        );
+      case 'catalog.item_group.manage':
+        return _t(
+          'Mahsulot guruhlarini boshqarish',
+          'Catalog item group manage',
+          'Управление группами товаров',
+        );
+      case 'catalog.item.bulk_move':
+        return _t(
+          'Mahsulotlarni guruhlar orasida ko‘chirish',
+          'Catalog item bulk move',
+          'Массовый перенос товаров между группами',
+        );
+      case 'party.supplier.read':
+        return _t(
+          'Ta\'minotchilar ro‘yxatini ko‘rish',
+          'Supplier directory read',
+          'Просмотр справочника поставщиков',
+        );
+      case 'party.supplier.manage':
+        return _t(
+          'Ta\'minotchilarni boshqarish',
+          'Supplier directory manage',
+          'Управление поставщиками',
+        );
+      case 'party.supplier.item.assign':
+        return _t(
+          'Ta\'minotchiga mahsulot biriktirish',
+          'Supplier item assign',
+          'Назначение товаров поставщику',
+        );
+      case 'party.supplier.code.manage':
+        return _t(
+          'Ta\'minotchi kodini boshqarish',
+          'Supplier code manage',
+          'Управление кодом поставщика',
+        );
+      case 'party.customer.read':
+        return _t(
+          'Haridorlar ro‘yxatini ko‘rish',
+          'Customer directory read',
+          'Просмотр справочника покупателей',
+        );
+      case 'party.customer.manage':
+        return _t(
+          'Haridorlarni boshqarish',
+          'Customer directory manage',
+          'Управление покупателями',
+        );
+      case 'party.customer.item.assign':
+        return _t(
+          'Haridorga mahsulot biriktirish',
+          'Customer item assign',
+          'Назначение товаров покупателю',
+        );
+      case 'party.customer.code.manage':
+        return _t(
+          'Haridor kodini boshqarish',
+          'Customer code manage',
+          'Управление кодом покупателя',
+        );
+      case 'admin.activity.read':
+        return _t(
+          'Admin harakatlarini ko‘rish',
+          'Admin activity read',
+          'Просмотр активности администратора',
+        );
+      case 'werka.code.manage':
+        return _t(
+          'Omborchi kodini boshqarish',
+          'Werka code manage',
+          'Управление кодом кладовщика',
+        );
+      case 'gscale.catalog.read':
+        return _t(
+          'GScale katalogini ko‘rish',
+          'GScale catalog read',
+          'Просмотр каталога GScale',
+        );
+      case 'gscale.print':
+        return _t('GScale chop etish', 'GScale print', 'Печать GScale');
+      case 'rps.batch.manage':
+        return _t(
+          'RPS batch boshqarish',
+          'RPS batch manage',
+          'Управление batch RPS',
+        );
+      default:
+        return fallback;
+    }
+  }
+
   String get adminNoActivity =>
       _t('Hali harakat yo‘q.', 'No activity yet.', 'Активности пока нет.');
   String get adminCreateTitle => _t('Qo‘shish', 'Create', 'Создать');
