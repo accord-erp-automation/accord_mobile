@@ -68,7 +68,7 @@ void main() {
       expect(find.textContaining('Role capability catalog read'), findsNothing);
       expect(find.text('Scale operator'), findsOneWidget);
 
-      await tester.tap(find.byKey(const ValueKey('admin-role-details-admin')));
+      await tester.tap(find.byKey(const ValueKey('admin-role-card-admin')));
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Role huquqlarini ko‘rish'), findsOneWidget);
