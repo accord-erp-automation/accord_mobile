@@ -618,6 +618,8 @@ class AppLocalizations {
   String get adminRolesTitle => _t('Rollar', 'Roles', 'Роли');
   String get adminRolesAssignTab => _t('Biriktirish', 'Assign', 'Назначить');
   String get adminNewRole => _t('Yangi role', 'New role', 'Новая роль');
+  String get adminEditRole =>
+      _t('Roleni tahrirlash', 'Edit role', 'Редактировать роль');
   String get adminRoleNameLabel =>
       _t('Role nomi', 'Role name', 'Название роли');
   String get adminBaseRoleLabel =>

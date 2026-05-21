@@ -80,13 +80,17 @@ class _AdminRolesScreenState extends State<AdminRolesScreen>
     );
   }
 
-  Future<void> _openRoleEditor(_AdminRolesData data) async {
+  Future<void> _openRoleEditor(
+    _AdminRolesData data, {
+    AdminRoleDefinition? initialRole,
+  }) async {
     final role = await showModalBottomSheet<AdminRoleDefinition>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      builder: (context) => _AdminRoleEditorSheet(data: data),
+      builder: (context) =>
+          _AdminRoleEditorSheet(data: data, role: initialRole),
     );
     if (role == null || !mounted) {
       return;
@@ -193,6 +197,8 @@ class _AdminRolesScreenState extends State<AdminRolesScreen>
                       bottomPadding: bottomPadding,
                       onRefresh: _reload,
                       onCreateRole: () => _openRoleEditor(data),
+                      onEditRole: (role) =>
+                          _openRoleEditor(data, initialRole: role),
                     ),
                     _AssignmentsTab(
                       data: data,
@@ -238,12 +244,14 @@ class _RolesTab extends StatefulWidget {
     required this.bottomPadding,
     required this.onRefresh,
     required this.onCreateRole,
+    required this.onEditRole,
   });
 
   final _AdminRolesData data;
   final double bottomPadding;
   final Future<void> Function() onRefresh;
   final VoidCallback onCreateRole;
+  final ValueChanged<AdminRoleDefinition> onEditRole;
 
   @override
   State<_RolesTab> createState() => _RolesTabState();
@@ -282,6 +290,9 @@ class _RolesTabState extends State<_RolesTab> {
                           expanded ? widget.data.roles[index].id : null;
                     });
                   },
+                  onEdit: widget.data.roles[index].system
+                      ? null
+                      : () => widget.onEditRole(widget.data.roles[index]),
                   slot: M3SegmentedListGeometry.standaloneListSlotForIndex(
                     index,
                     widget.data.roles.length,
@@ -301,6 +312,7 @@ class _RoleDefinitionTile extends StatelessWidget {
     required this.capabilities,
     required this.expanded,
     required this.onExpandedChanged,
+    required this.onEdit,
     required this.slot,
   });
 
@@ -308,6 +320,7 @@ class _RoleDefinitionTile extends StatelessWidget {
   final List<AdminCapability> capabilities;
   final bool expanded;
   final ValueChanged<bool> onExpandedChanged;
+  final VoidCallback? onEdit;
   final M3SegmentVerticalSlot slot;
 
   @override
@@ -342,6 +355,13 @@ class _RoleDefinitionTile extends StatelessWidget {
                     style: theme.textTheme.titleMedium,
                   ),
                 ),
+                if (onEdit != null)
+                  IconButton(
+                    key: ValueKey('admin-role-edit-${role.id}'),
+                    tooltip: l10n.adminEditRole,
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit_outlined),
+                  ),
                 IconButton(
                   key: ValueKey('admin-role-details-${role.id}'),
                   tooltip: expanded
@@ -496,9 +516,10 @@ class _RoleAssignmentTile extends StatelessWidget {
 }
 
 class _AdminRoleEditorSheet extends StatefulWidget {
-  const _AdminRoleEditorSheet({required this.data});
+  const _AdminRoleEditorSheet({required this.data, this.role});
 
   final _AdminRolesData data;
+  final AdminRoleDefinition? role;
 
   @override
   State<_AdminRoleEditorSheet> createState() => _AdminRoleEditorSheetState();
@@ -507,6 +528,16 @@ class _AdminRoleEditorSheet extends StatefulWidget {
 class _AdminRoleEditorSheetState extends State<_AdminRoleEditorSheet> {
   final TextEditingController _labelController = TextEditingController();
   final Set<String> _capabilityCodes = <String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    final role = widget.role;
+    if (role != null) {
+      _labelController.text = role.label;
+      _capabilityCodes.addAll(role.capabilityCodes);
+    }
+  }
 
   @override
   void dispose() {
@@ -533,7 +564,9 @@ class _AdminRoleEditorSheetState extends State<_AdminRoleEditorSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    l10n.adminNewRole,
+                    widget.role == null
+                        ? l10n.adminNewRole
+                        : l10n.adminEditRole,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
@@ -590,9 +623,10 @@ class _AdminRoleEditorSheetState extends State<_AdminRoleEditorSheet> {
   }
 
   void _save() {
+    final existingRole = widget.role;
     Navigator.of(context).pop(
       AdminRoleDefinition(
-        id: _roleIdFromLabel(_labelController.text),
+        id: existingRole?.id ?? _roleIdFromLabel(_labelController.text),
         label: _labelController.text.trim(),
         baseRole: null,
         capabilityCodes: _capabilityCodes.toList(growable: false),

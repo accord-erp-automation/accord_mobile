@@ -149,6 +149,54 @@ void main() {
     }, createHttpClient: (_) => client);
   });
 
+  testWidgets('admin role screen edits an existing custom role',
+      (tester) async {
+    final seenRequests = <String>[];
+    final seenBodies = <String>[];
+    final client = _AdminRolesHttpClient(seenRequests, seenBodies);
+
+    await HttpOverrides.runZoned(() async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light(AppThemeVariant.earthy),
+          locale: const Locale('uz'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const AdminRolesScreen(),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('admin-role-edit-catalog_reader')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Roleni tahrirlash'), findsOneWidget);
+      await tester.enterText(find.byType(TextField).at(0), 'Catalog operator');
+      await tester.pump();
+      await tester.tap(find.text('GScale chop etish'));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('admin-role-save-action')));
+      await tester.pumpAndSettle();
+
+      expect(seenRequests, contains('PUT /v1/mobile/admin/roles'));
+      expect(seenBodies.last, contains('"id":"catalog_reader"'));
+      expect(seenBodies.last, contains('"label":"Catalog operator"'));
+      expect(seenBodies.last, contains('"catalog.item.read"'));
+      expect(seenBodies.last, contains('"gscale.print"'));
+      expect(seenBodies.last, isNot(contains('"base_role"')));
+      expect(find.text('Role saqlandi'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 1900));
+      expect(tester.takeException(), isNull);
+    }, createHttpClient: (_) => client);
+  });
+
   testWidgets('admin role assignments save selected system user role',
       (tester) async {
     final seenRequests = <String>[];
