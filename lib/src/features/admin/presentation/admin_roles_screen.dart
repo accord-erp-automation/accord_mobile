@@ -235,7 +235,7 @@ class _AdminRoleTabs extends StatelessWidget {
   }
 }
 
-class _RolesTab extends StatelessWidget {
+class _RolesTab extends StatefulWidget {
   const _RolesTab({
     required this.data,
     required this.bottomPadding,
@@ -249,17 +249,24 @@ class _RolesTab extends StatelessWidget {
   final VoidCallback onCreateRole;
 
   @override
+  State<_RolesTab> createState() => _RolesTabState();
+}
+
+class _RolesTabState extends State<_RolesTab> {
+  String? _expandedRoleId;
+
+  @override
   Widget build(BuildContext context) {
     return AppRefreshIndicator(
-      onRefresh: onRefresh,
+      onRefresh: widget.onRefresh,
       allowRefreshOnShortContent: true,
       child: ListView(
         physics: const TopRefreshScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(12, 12, 12, bottomPadding),
+        padding: EdgeInsets.fromLTRB(12, 12, 12, widget.bottomPadding),
         children: [
           SmoothAppear(
             child: FilledButton.icon(
-              onPressed: onCreateRole,
+              onPressed: widget.onCreateRole,
               icon: const Icon(Icons.add_rounded),
               label: Text(context.l10n.adminNewRole),
             ),
@@ -267,13 +274,20 @@ class _RolesTab extends StatelessWidget {
           const SizedBox(height: 12),
           M3SegmentSpacedColumn(
             children: [
-              for (int index = 0; index < data.roles.length; index++)
+              for (int index = 0; index < widget.data.roles.length; index++)
                 _RoleDefinitionTile(
-                  role: data.roles[index],
-                  capabilities: data.capabilities,
+                  role: widget.data.roles[index],
+                  capabilities: widget.data.capabilities,
+                  expanded: _expandedRoleId == widget.data.roles[index].id,
+                  onExpandedChanged: (expanded) {
+                    setState(() {
+                      _expandedRoleId =
+                          expanded ? widget.data.roles[index].id : null;
+                    });
+                  },
                   slot: M3SegmentedListGeometry.standaloneListSlotForIndex(
                     index,
-                    data.roles.length,
+                    widget.data.roles.length,
                   ),
                 ),
             ],
@@ -284,34 +298,30 @@ class _RolesTab extends StatelessWidget {
   }
 }
 
-class _RoleDefinitionTile extends StatefulWidget {
+class _RoleDefinitionTile extends StatelessWidget {
   const _RoleDefinitionTile({
     required this.role,
     required this.capabilities,
+    required this.expanded,
+    required this.onExpandedChanged,
     required this.slot,
   });
 
   final AdminRoleDefinition role;
   final List<AdminCapability> capabilities;
+  final bool expanded;
+  final ValueChanged<bool> onExpandedChanged;
   final M3SegmentVerticalSlot slot;
-
-  @override
-  State<_RoleDefinitionTile> createState() => _RoleDefinitionTileState();
-}
-
-class _RoleDefinitionTileState extends State<_RoleDefinitionTile>
-    with SingleTickerProviderStateMixin {
-  bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
-    final capabilityLabels = widget.role.capabilityCodes
-        .map((code) => _capabilityLabel(l10n, code, widget.capabilities))
+    final capabilityLabels = role.capabilityCodes
+        .map((code) => _capabilityLabel(l10n, code, capabilities))
         .toList(growable: false);
     return M3SegmentFilledSurface(
-      slot: widget.slot,
+      slot: slot,
       cornerRadius: M3SegmentedListGeometry.cornerLarge,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
@@ -321,7 +331,7 @@ class _RoleDefinitionTileState extends State<_RoleDefinitionTile>
             Row(
               children: [
                 Icon(
-                  widget.role.system
+                  role.system
                       ? Icons.admin_panel_settings_outlined
                       : Icons.verified_user_outlined,
                   size: 24,
@@ -329,20 +339,18 @@ class _RoleDefinitionTileState extends State<_RoleDefinitionTile>
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    _roleDefinitionLabel(context, widget.role),
+                    _roleDefinitionLabel(context, role),
                     style: theme.textTheme.titleMedium,
                   ),
                 ),
                 IconButton(
-                  key: ValueKey('admin-role-details-${widget.role.id}'),
-                  tooltip: _expanded
+                  key: ValueKey('admin-role-details-${role.id}'),
+                  tooltip: expanded
                       ? l10n.adminRoleDetailsHide
                       : l10n.adminRoleDetailsShow,
-                  onPressed: () {
-                    setState(() => _expanded = !_expanded);
-                  },
+                  onPressed: () => onExpandedChanged(!expanded),
                   icon: AnimatedRotation(
-                    turns: _expanded ? 0.5 : 0,
+                    turns: expanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 180),
                     curve: Curves.easeOutCubic,
                     child: const Icon(Icons.keyboard_arrow_down_rounded),
@@ -354,7 +362,7 @@ class _RoleDefinitionTileState extends State<_RoleDefinitionTile>
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOutCubic,
               alignment: Alignment.topCenter,
-              child: _expanded
+              child: expanded
                   ? Padding(
                       padding: const EdgeInsets.only(left: 36, right: 4),
                       child: Column(
@@ -362,7 +370,7 @@ class _RoleDefinitionTileState extends State<_RoleDefinitionTile>
                         children: [
                           const SizedBox(height: 6),
                           Text(
-                            '${l10n.roleLabelForCode(userRoleToJson(widget.role.baseRole))} • ${l10n.adminRoleKindLabel(widget.role.system)}',
+                            '${l10n.roleLabelForCode(userRoleToJson(role.baseRole))} • ${l10n.adminRoleKindLabel(role.system)}',
                             style: theme.textTheme.bodySmall,
                           ),
                           if (capabilityLabels.isNotEmpty) ...[

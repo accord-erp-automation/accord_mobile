@@ -73,6 +73,13 @@ void main() {
 
       expect(find.textContaining('Role huquqlarini ko‘rish'), findsOneWidget);
 
+      await tester
+          .tap(find.byKey(const ValueKey('admin-role-details-scale_operator')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Role huquqlarini ko‘rish'), findsNothing);
+      expect(find.text('GScale chop etish'), findsOneWidget);
+
       await tester.tap(find.widgetWithText(FilledButton, 'Yangi role'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).at(0), 'Catalog reader');
