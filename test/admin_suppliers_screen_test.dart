@@ -94,6 +94,8 @@ void main() {
         ),
         findsOneWidget,
       );
+      expect(find.textContaining('Item yaratuvchi'), findsOneWidget);
+      expect(find.textContaining('Customer'), findsNothing);
       expect(tester.takeException(), isNull);
       await tester.pump(const Duration(milliseconds: 2200));
       await tester.pumpAndSettle();
@@ -140,6 +142,16 @@ class _AdminUsersHttpClient implements HttpClient {
             'system': false,
           },
         ];
+      case 'GET /v1/mobile/admin/role-assignments':
+        body = createdCustomer
+            ? const [
+                {
+                  'principal_role': 'customer',
+                  'principal_ref': 'CUS-1',
+                  'role_id': 'item_creator',
+                },
+              ]
+            : const [];
       case 'POST /v1/mobile/admin/customers':
         createdCustomer = true;
         body = const {

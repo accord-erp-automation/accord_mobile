@@ -45,6 +45,7 @@ class _AdminSuppliersScreenState extends State<AdminSuppliersScreen> {
   int _supplierOffset = 0;
   int _customerOffset = 0;
   String _searchQuery = '';
+  Map<String, String> _assignedRoleLabels = const <String, String>{};
 
   @override
   void initState() {
@@ -108,16 +109,21 @@ class _AdminSuppliersScreenState extends State<AdminSuppliersScreen> {
       _safeLoadAdminSettings(),
       _safeLoadAdminSuppliers(limit: _pageSize, offset: 0),
       _safeLoadAdminCustomers(limit: _pageSize, offset: 0),
+      _safeLoadAdminRoles(),
+      _safeLoadAdminRoleAssignments(),
     ]);
 
     final settings = results[0] as AdminSettings;
     final suppliers = results[1] as List<AdminSupplier>;
     final customers = results[2] as List<CustomerDirectoryEntry>;
+    final roles = results[3] as List<AdminRoleDefinition>;
+    final assignments = results[4] as List<AdminRoleAssignment>;
+    final assignedRoleLabels = _buildAssignedRoleLabels(roles, assignments);
 
     final items = <AdminUserListEntry>[
-      ..._werkaItem(settings),
-      ..._mapSuppliers(suppliers),
-      ..._mapCustomers(customers),
+      ..._werkaItem(settings, assignedRoleLabels),
+      ..._mapSuppliers(suppliers, assignedRoleLabels),
+      ..._mapCustomers(customers, assignedRoleLabels),
     ];
     final supplierHasMore = suppliers.length == _pageSize;
     final supplierOffset = suppliers.length;
@@ -135,6 +141,7 @@ class _AdminSuppliersScreenState extends State<AdminSuppliersScreen> {
       _customerHasMore = customerHasMore;
       _supplierOffset = supplierOffset;
       _customerOffset = customerOffset;
+      _assignedRoleLabels = assignedRoleLabels;
       _initialLoading = false;
       _loadingMore = false;
     });
@@ -217,14 +224,14 @@ class _AdminSuppliersScreenState extends State<AdminSuppliersScreen> {
 
     setState(() {
       if (shouldLoadSuppliers) {
-        _items.addAll(_mapSuppliers(suppliers));
+        _items.addAll(_mapSuppliers(suppliers, _assignedRoleLabels));
         _supplierOffset += suppliers.length;
         if (suppliers.length < _pageSize) {
           _supplierHasMore = false;
         }
       }
       if (shouldLoadCustomers) {
-        _items.addAll(_mapCustomers(customers));
+        _items.addAll(_mapCustomers(customers, _assignedRoleLabels));
         _customerOffset += customers.length;
         if (customers.length < _pageSize) {
           _customerHasMore = false;
@@ -286,7 +293,55 @@ class _AdminSuppliersScreenState extends State<AdminSuppliersScreen> {
     }
   }
 
-  List<AdminUserListEntry> _werkaItem(AdminSettings settings) {
+  Future<List<AdminRoleDefinition>> _safeLoadAdminRoles() async {
+    try {
+      return await MobileApi.instance.adminRoles();
+    } catch (error) {
+      debugPrint('admin roles failed: $error');
+      return const <AdminRoleDefinition>[];
+    }
+  }
+
+  Future<List<AdminRoleAssignment>> _safeLoadAdminRoleAssignments() async {
+    try {
+      return await MobileApi.instance.adminRoleAssignments();
+    } catch (error) {
+      debugPrint('admin role assignments failed: $error');
+      return const <AdminRoleAssignment>[];
+    }
+  }
+
+  Map<String, String> _buildAssignedRoleLabels(
+    List<AdminRoleDefinition> roles,
+    List<AdminRoleAssignment> assignments,
+  ) {
+    final roleLabelsById = <String, String>{
+      for (final role in roles) role.id: role.label,
+    };
+    return <String, String>{
+      for (final assignment in assignments)
+        if ((roleLabelsById[assignment.roleId] ?? '').trim().isNotEmpty)
+          _principalKey(assignment.principalRole, assignment.principalRef):
+              roleLabelsById[assignment.roleId]!,
+    };
+  }
+
+  String _assignedRoleLabel(
+    Map<String, String> labels,
+    UserRole role,
+    String ref,
+  ) {
+    return labels[_principalKey(role, ref)] ?? '';
+  }
+
+  String _principalKey(UserRole role, String ref) {
+    return '${userRoleToJson(role)}:${ref.trim()}';
+  }
+
+  List<AdminUserListEntry> _werkaItem(
+    AdminSettings settings,
+    Map<String, String> assignedRoleLabels,
+  ) {
     if (settings.werkaName.trim().isEmpty &&
         settings.werkaPhone.trim().isEmpty) {
       return const <AdminUserListEntry>[];
@@ -299,11 +354,19 @@ class _AdminSuppliersScreenState extends State<AdminSuppliersScreen> {
             : settings.werkaName.trim(),
         phone: settings.werkaPhone.trim(),
         kind: AdminUserKind.werka,
+        roleLabelOverride: _assignedRoleLabel(
+          assignedRoleLabels,
+          UserRole.werka,
+          'werka',
+        ),
       ),
     ];
   }
 
-  List<AdminUserListEntry> _mapSuppliers(List<AdminSupplier> suppliers) {
+  List<AdminUserListEntry> _mapSuppliers(
+    List<AdminSupplier> suppliers,
+    Map<String, String> assignedRoleLabels,
+  ) {
     return suppliers
         .map(
           (item) => AdminUserListEntry(
@@ -312,13 +375,20 @@ class _AdminSuppliersScreenState extends State<AdminSuppliersScreen> {
             phone: item.phone,
             kind: AdminUserKind.supplier,
             blocked: item.blocked,
+            roleLabelOverride: _assignedRoleLabel(
+              assignedRoleLabels,
+              UserRole.supplier,
+              item.ref,
+            ),
           ),
         )
         .toList();
   }
 
   List<AdminUserListEntry> _mapCustomers(
-      List<CustomerDirectoryEntry> customers) {
+    List<CustomerDirectoryEntry> customers,
+    Map<String, String> assignedRoleLabels,
+  ) {
     return customers
         .map(
           (item) => AdminUserListEntry(
@@ -326,6 +396,11 @@ class _AdminSuppliersScreenState extends State<AdminSuppliersScreen> {
             name: item.name,
             phone: item.phone,
             kind: AdminUserKind.customer,
+            roleLabelOverride: _assignedRoleLabel(
+              assignedRoleLabels,
+              UserRole.customer,
+              item.ref,
+            ),
           ),
         )
         .toList();
@@ -369,6 +444,7 @@ class _AdminSuppliersScreenState extends State<AdminSuppliersScreen> {
         _customerHasMore = cache.customerHasMore;
         _supplierOffset = cache.supplierOffset;
         _customerOffset = cache.customerOffset;
+        _assignedRoleLabels = cache.assignedRoleLabels;
         _initialLoading = false;
         _loadingMore = false;
         _loadingAll = false;
@@ -385,6 +461,9 @@ class _AdminSuppliersScreenState extends State<AdminSuppliersScreen> {
       customerHasMore: _customerHasMore,
       supplierOffset: _supplierOffset,
       customerOffset: _customerOffset,
+      assignedRoleLabels: Map<String, String>.unmodifiable(
+        _assignedRoleLabels,
+      ),
     );
   }
 
@@ -516,6 +595,7 @@ class _AdminSuppliersCache {
     required this.customerHasMore,
     required this.supplierOffset,
     required this.customerOffset,
+    required this.assignedRoleLabels,
   });
 
   final List<AdminUserListEntry> items;
@@ -523,4 +603,5 @@ class _AdminSuppliersCache {
   final bool customerHasMore;
   final int supplierOffset;
   final int customerOffset;
+  final Map<String, String> assignedRoleLabels;
 }

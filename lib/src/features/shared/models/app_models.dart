@@ -1365,6 +1365,7 @@ class AdminUserListEntry {
     required this.phone,
     required this.kind,
     this.blocked = false,
+    this.roleLabelOverride,
   });
 
   final String id;
@@ -1372,12 +1373,19 @@ class AdminUserListEntry {
   final String phone;
   final AdminUserKind kind;
   final bool blocked;
+  final String? roleLabelOverride;
 
-  String get roleLabel => kind == AdminUserKind.werka
-      ? 'Werka'
-      : kind == AdminUserKind.customer
-          ? 'Customer'
-          : 'Supplier';
+  String get roleLabel {
+    final override = roleLabelOverride?.trim() ?? '';
+    if (override.isNotEmpty) {
+      return override;
+    }
+    return kind == AdminUserKind.werka
+        ? 'Werka'
+        : kind == AdminUserKind.customer
+            ? 'Customer'
+            : 'Supplier';
+  }
 }
 
 DispatchStatus parseDispatchStatus(String raw) {
