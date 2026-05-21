@@ -31,7 +31,7 @@ void main() {
     AppSession.instance.profile = null;
   });
 
-  testWidgets('admin user create screen creates customers from one tabbed page',
+  testWidgets('admin user create screen picks role from bottom sheet',
       (tester) async {
     final seenRequests = <String>[];
     final client = _AdminUserCreateHttpClient(seenRequests);
@@ -54,13 +54,17 @@ void main() {
 
       await tester.pumpAndSettle();
 
+      expect(find.text('Role tanlash'), findsOneWidget);
       expect(find.text('Omborchi'), findsOneWidget);
-      expect(find.text('Haridor'), findsOneWidget);
-      expect(find.text('Ta’minotchi'), findsOneWidget);
+      expect(find.byType(TabBar), findsNothing);
       expect(seenRequests, contains('GET /v1/mobile/admin/settings'));
 
-      await tester.tap(find.text('Haridor'));
+      await tester.tap(find.text('Omborchi').first);
       await tester.pumpAndSettle();
+      expect(find.text('Role tanlang'), findsOneWidget);
+      await tester.tap(find.text('Haridor').last);
+      await tester.pumpAndSettle();
+
       await tester.enterText(find.byType(TextField).at(0), 'Ali Market');
       await tester.enterText(find.byType(TextField).at(1), '+998900001111');
       await tester.tap(find.widgetWithText(FilledButton, 'Haridor qo‘shish'));

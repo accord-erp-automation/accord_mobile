@@ -4,6 +4,7 @@ import '../../../core/widgets/shell/app_loading_indicator.dart';
 import '../../../core/widgets/shell/app_retry_state.dart';
 import '../../../core/widgets/shell/app_shell.dart';
 import '../../shared/models/app_models.dart';
+import '../../werka/presentation/widgets/m3_picker_sheet.dart';
 import 'widgets/admin_dock.dart';
 import 'widgets/admin_top_notice.dart';
 import 'dart:async';
@@ -11,8 +12,47 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class AdminUserCreateScreen extends StatelessWidget {
+class AdminUserCreateScreen extends StatefulWidget {
   const AdminUserCreateScreen({super.key});
+
+  @override
+  State<AdminUserCreateScreen> createState() => _AdminUserCreateScreenState();
+}
+
+class _AdminUserCreateScreenState extends State<AdminUserCreateScreen> {
+  _AdminUserCreateKind _kind = _AdminUserCreateKind.werka;
+
+  Future<void> _openRolePicker() async {
+    final picked = await showModalBottomSheet<_AdminUserCreateKind>(
+      context: context,
+      isDismissible: true,
+      enableDrag: true,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.32),
+      sheetAnimationStyle: kM3PickerSheetAnimation,
+      builder: (context) {
+        return M3PickerSheet<_AdminUserCreateKind>(
+          title: 'Role tanlang',
+          hintText: 'Role qidiring',
+          items: _AdminUserCreateKind.values,
+          itemTitle: (kind) => kind.label,
+          itemSubtitle: (kind) => kind.subtitle,
+          matchesQuery: (kind, query) {
+            final normalized = query.trim().toLowerCase();
+            return kind.label.toLowerCase().contains(normalized) ||
+                kind.subtitle.toLowerCase().contains(normalized);
+          },
+          onSelected: (kind) => Navigator.of(context).pop(kind),
+        );
+      },
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    setState(() => _kind = picked);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,28 +63,130 @@ class AdminUserCreateScreen extends StatelessWidget {
       nativeTitleTextStyle: AppTheme.werkaNativeAppBarTitleStyle(context),
       bottom: const AdminDock(activeTab: AdminDockTab.settings),
       contentPadding: EdgeInsets.zero,
-      child: const DefaultTabController(
-        length: 3,
-        child: Column(
-          children: [
-            TabBar(
-              tabs: [
-                Tab(text: 'Omborchi'),
-                Tab(text: 'Haridor'),
-                Tab(text: 'Ta’minotchi'),
-              ],
+      child: Column(
+        children: [
+          _RoleSelector(
+            kind: _kind,
+            onTap: _openRolePicker,
+          ),
+          Expanded(
+            child: switch (_kind) {
+              _AdminUserCreateKind.werka => const _WerkaCreateTab(),
+              _AdminUserCreateKind.customer => const _CustomerCreateTab(),
+              _AdminUserCreateKind.supplier => const _SupplierCreateTab(),
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+enum _AdminUserCreateKind {
+  werka,
+  customer,
+  supplier;
+
+  String get label {
+    return switch (this) {
+      _AdminUserCreateKind.werka => 'Omborchi',
+      _AdminUserCreateKind.customer => 'Haridor',
+      _AdminUserCreateKind.supplier => 'Ta’minotchi',
+    };
+  }
+
+  String get subtitle {
+    return switch (this) {
+      _AdminUserCreateKind.werka => 'Warehouse worker account',
+      _AdminUserCreateKind.customer => 'Mahsulot qabul qiluvchi haridor',
+      _AdminUserCreateKind.supplier => 'Mahsulot yuboruvchi ta’minotchi',
+    };
+  }
+}
+
+class _RoleSelector extends StatelessWidget {
+  const _RoleSelector({
+    required this.kind,
+    required this.onTap,
+  });
+
+  final _AdminUserCreateKind kind;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Role tanlash',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
             ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  _WerkaCreateTab(),
-                  _CustomerCreateTab(),
-                  _SupplierCreateTab(),
-                ],
+          ),
+          const SizedBox(height: 6),
+          Material(
+            color: scheme.surfaceContainer,
+            borderRadius: BorderRadius.circular(14),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: onTap,
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 58),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: scheme.outlineVariant),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.admin_panel_settings_outlined,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            kind.label,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            kind.subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Icon(
+                      Icons.expand_more_rounded,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
