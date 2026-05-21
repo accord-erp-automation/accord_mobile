@@ -89,7 +89,9 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('Katalog mahsulotlarini ko‘rish'));
       await tester.pump();
-      await tester.tap(find.widgetWithText(FilledButton, 'Saqlash'));
+      expect(find.widgetWithText(FilledButton, 'Saqlash'), findsNothing);
+      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('admin-role-save-action')));
       await tester.pumpAndSettle();
 
       expect(seenRequests, contains('PUT /v1/mobile/admin/roles'));

@@ -520,16 +520,30 @@ class _AdminRoleEditorSheetState extends State<_AdminRoleEditorSheet> {
     final l10n = context.l10n;
     final canSave =
         _labelController.text.trim().isNotEmpty && _capabilityCodes.isNotEmpty;
+    final maxHeight = MediaQuery.sizeOf(context).height * 0.82;
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 0, 20, bottom + 20),
-      child: SingleChildScrollView(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxHeight),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              l10n.adminNewRole,
-              style: Theme.of(context).textTheme.titleLarge,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.adminNewRole,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                IconButton.filledTonal(
+                  key: const ValueKey('admin-role-save-action'),
+                  tooltip: l10n.save,
+                  onPressed: canSave ? _save : null,
+                  icon: const Icon(Icons.check_rounded),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             TextField(
@@ -541,43 +555,48 @@ class _AdminRoleEditorSheetState extends State<_AdminRoleEditorSheet> {
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 12),
-            for (final capability in widget.data.capabilities)
-              CheckboxListTile(
-                value: _capabilityCodes.contains(capability.code),
-                onChanged: (checked) {
-                  setState(() {
-                    if (checked == true) {
-                      _capabilityCodes.add(capability.code);
-                    } else {
-                      _capabilityCodes.remove(capability.code);
-                    }
-                  });
-                },
-                title: Text(
-                  l10n.adminCapabilityLabel(capability.code, capability.label),
-                ),
-                subtitle: Text(capability.code),
-              ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: canSave
-                  ? () {
-                      Navigator.of(context).pop(
-                        AdminRoleDefinition(
-                          id: _roleIdFromLabel(_labelController.text),
-                          label: _labelController.text.trim(),
-                          baseRole: null,
-                          capabilityCodes:
-                              _capabilityCodes.toList(growable: false),
-                          system: false,
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                children: [
+                  for (final capability in widget.data.capabilities)
+                    CheckboxListTile(
+                      value: _capabilityCodes.contains(capability.code),
+                      onChanged: (checked) {
+                        setState(() {
+                          if (checked == true) {
+                            _capabilityCodes.add(capability.code);
+                          } else {
+                            _capabilityCodes.remove(capability.code);
+                          }
+                        });
+                      },
+                      title: Text(
+                        l10n.adminCapabilityLabel(
+                          capability.code,
+                          capability.label,
                         ),
-                      );
-                    }
-                  : null,
-              child: Text(l10n.save),
+                      ),
+                      subtitle: Text(capability.code),
+                    ),
+                ],
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _save() {
+    Navigator.of(context).pop(
+      AdminRoleDefinition(
+        id: _roleIdFromLabel(_labelController.text),
+        label: _labelController.text.trim(),
+        baseRole: null,
+        capabilityCodes: _capabilityCodes.toList(growable: false),
+        system: false,
       ),
     );
   }
