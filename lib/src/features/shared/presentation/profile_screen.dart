@@ -339,6 +339,9 @@ class _ProfileScreenState extends State<ProfileScreen>
         final l10n = context.l10n;
         final current = profile;
         final role = current.role;
+        final shellKind = _profileShellKindForHomeRoute(
+          AppSession.instance.homeRoute,
+        );
         final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
         final bottomPadding = bottomInset + 136.0;
         final subtitle = role == UserRole.supplier
@@ -362,29 +365,31 @@ class _ProfileScreenState extends State<ProfileScreen>
           subtitle: '',
           nativeTopBar: true,
           animateOnEnter: role != UserRole.customer,
-          drawer: role == UserRole.werka
-              ? WerkaNavigationDrawer(
-                  selectedIndex: 3,
-                  onNavigate: _openWerkaDrawerRoute,
-                )
-              : role == UserRole.supplier
-                  ? SupplierNavigationDrawer(
-                      selectedIndex: 3,
-                      onNavigate: _openSupplierDrawerRoute,
-                    )
-                  : role == UserRole.customer
-                      ? CustomerNavigationDrawer(
-                          selectedIndex: 2,
-                          onNavigate: _openCustomerDrawerRoute,
-                        )
-                      : null,
-          bottom: role == UserRole.supplier
-              ? const SupplierDock(activeTab: null, showPrimaryFab: false)
-              : role == UserRole.werka
-                  ? const WerkaDock(activeTab: null, showPrimaryFab: false)
-                  : role == UserRole.customer
-                      ? const CustomerDock(activeTab: null)
-                      : const AdminDock(activeTab: null, showPrimaryFab: false),
+          drawer: switch (shellKind) {
+            _ProfileShellKind.werka => WerkaNavigationDrawer(
+                selectedIndex: 3,
+                onNavigate: _openWerkaDrawerRoute,
+              ),
+            _ProfileShellKind.supplier => SupplierNavigationDrawer(
+                selectedIndex: 3,
+                onNavigate: _openSupplierDrawerRoute,
+              ),
+            _ProfileShellKind.customer => CustomerNavigationDrawer(
+                selectedIndex: 2,
+                onNavigate: _openCustomerDrawerRoute,
+              ),
+            _ProfileShellKind.admin || _ProfileShellKind.none => null,
+          },
+          bottom: switch (shellKind) {
+            _ProfileShellKind.supplier =>
+              const SupplierDock(activeTab: null, showPrimaryFab: false),
+            _ProfileShellKind.werka =>
+              const WerkaDock(activeTab: null, showPrimaryFab: false),
+            _ProfileShellKind.customer => const CustomerDock(activeTab: null),
+            _ProfileShellKind.admin =>
+              const AdminDock(activeTab: null, showPrimaryFab: false),
+            _ProfileShellKind.none => null,
+          },
           contentPadding: const EdgeInsets.fromLTRB(12, 0, 14, 0),
           child: AppRefreshIndicator(
             onRefresh: _refreshProfile,
@@ -687,6 +692,24 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
     Navigator.of(context).pushReplacementNamed(route);
   }
+}
+
+enum _ProfileShellKind {
+  supplier,
+  werka,
+  customer,
+  admin,
+  none,
+}
+
+_ProfileShellKind _profileShellKindForHomeRoute(String homeRoute) {
+  return switch (homeRoute) {
+    AppRoutes.supplierHome => _ProfileShellKind.supplier,
+    AppRoutes.werkaHome => _ProfileShellKind.werka,
+    AppRoutes.customerHome => _ProfileShellKind.customer,
+    AppRoutes.adminHome => _ProfileShellKind.admin,
+    _ => _ProfileShellKind.none,
+  };
 }
 
 class _ProfilePanel extends StatelessWidget {
