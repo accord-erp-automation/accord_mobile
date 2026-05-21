@@ -139,41 +139,56 @@ class AppNavigationBar extends StatelessWidget {
                       data: viewMetrics.copyWith(
                         padding: EdgeInsets.only(bottom: systemBottomInset),
                       ),
-                      child: _SelectionAwareNavigationBarTheme(
-                        enabled: barSelectionVisible,
-                        height: height,
-                        child: NavigationBar(
-                          height: height,
-                          selectedIndex: barSelectedIndex,
-                          labelBehavior:
-                              NavigationDestinationLabelBehavior.alwaysShow,
-                          onDestinationSelected: (index) {
-                            final destination = barDestinations[index];
-                            final originalIndex =
-                                destinations.indexOf(destination);
-                            onDestinationSelected(originalIndex);
-                          },
-                          destinations: List<NavigationDestination>.generate(
-                            barDestinations.length,
-                            (index) {
-                              final destination = barDestinations[index];
-                              return NavigationDestination(
-                                label: destination.label,
-                                tooltip:
-                                    destination.onLongPress == null ? null : '',
-                                icon: _AppNavigationDestinationIcon(
-                                  destination: destination,
-                                  selected: false,
+                      child: barDestinations.length == 1
+                          ? _SingleDestinationNavigationBar(
+                              destination: barDestinations.single,
+                              selected: barSelectionVisible,
+                              height: height,
+                              onTap: () {
+                                final originalIndex = destinations
+                                    .indexOf(barDestinations.single);
+                                onDestinationSelected(originalIndex);
+                              },
+                            )
+                          : _SelectionAwareNavigationBarTheme(
+                              enabled: barSelectionVisible,
+                              height: height,
+                              child: NavigationBar(
+                                height: height,
+                                selectedIndex: barSelectedIndex,
+                                labelBehavior:
+                                    NavigationDestinationLabelBehavior
+                                        .alwaysShow,
+                                onDestinationSelected: (index) {
+                                  final destination = barDestinations[index];
+                                  final originalIndex =
+                                      destinations.indexOf(destination);
+                                  onDestinationSelected(originalIndex);
+                                },
+                                destinations:
+                                    List<NavigationDestination>.generate(
+                                  barDestinations.length,
+                                  (index) {
+                                    final destination = barDestinations[index];
+                                    return NavigationDestination(
+                                      label: destination.label,
+                                      tooltip: destination.onLongPress == null
+                                          ? null
+                                          : '',
+                                      icon: _AppNavigationDestinationIcon(
+                                        destination: destination,
+                                        selected: false,
+                                      ),
+                                      selectedIcon:
+                                          _AppNavigationDestinationIcon(
+                                        destination: destination,
+                                        selected: true,
+                                      ),
+                                    );
+                                  },
                                 ),
-                                selectedIcon: _AppNavigationDestinationIcon(
-                                  destination: destination,
-                                  selected: true,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
+                              ),
+                            ),
                     ),
                   ),
                 ),
@@ -245,6 +260,77 @@ class _SelectionAwareNavigationBarTheme extends StatelessWidget {
         }),
       ),
       child: child,
+    );
+  }
+}
+
+class _SingleDestinationNavigationBar extends StatelessWidget {
+  const _SingleDestinationNavigationBar({
+    required this.destination,
+    required this.selected,
+    required this.height,
+    required this.onTap,
+  });
+
+  final AppNavigationDestination destination;
+  final bool selected;
+  final double height;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final labelStyle = theme.textTheme.labelMedium?.copyWith(
+      color: scheme.onSecondaryContainer,
+    );
+    return Material(
+      color: NavigationBarTheme.of(context).backgroundColor ??
+          scheme.surfaceContainer,
+      child: SizedBox(
+        height: height,
+        child: Center(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(28),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 4,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    width: 56,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? scheme.secondaryContainer
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    alignment: Alignment.center,
+                    child: _AppNavigationDestinationIcon(
+                      destination: destination,
+                      selected: selected,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    destination.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: labelStyle,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

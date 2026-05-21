@@ -56,6 +56,9 @@ void main() {
 
       expect(find.text('Item qo‘shish'), findsOneWidget);
       expect(find.text('GScale'), findsOneWidget);
+      expect(find.text('Uy'), findsOneWidget);
+      expect(find.text('Foydalanuvchilar'), findsNothing);
+      expect(find.text('Faoliyat'), findsNothing);
       expect(find.text('Jami users'), findsNothing);
       expect(seenRequests, isEmpty);
     }, createHttpClient: (_) => _RecordingHttpClient(seenRequests));

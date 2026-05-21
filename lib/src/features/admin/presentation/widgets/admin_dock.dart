@@ -43,49 +43,40 @@ class AdminDock extends StatelessWidget {
         ProfileRouteOverlayNotifier.instance,
       ]),
       builder: (context, _) {
+        final destinations = _visibleDestinations(
+          homeLabel: homeLabel,
+          usersLabel: usersLabel,
+          createLabel: createLabel,
+          activityLabel: activityLabel,
+        );
         final effectiveShowPrimaryFab = showPrimaryFab &&
-            !ProfileRouteOverlayNotifier.instance.obscuresDockPrimaryFab;
-        final bool selectionVisible = activeTab != null;
-        final int selectedIndex = switch (activeTab) {
-          AdminDockTab.home => 0,
-          AdminDockTab.suppliers => 1,
-          AdminDockTab.settings => 2,
-          AdminDockTab.activity => 3,
-          null => 0,
-        };
+            !ProfileRouteOverlayNotifier.instance.obscuresDockPrimaryFab &&
+            destinations.any((destination) => destination.primary);
+        final selectedIndex = destinations.indexWhere(
+          (destination) => destination.tab == activeTab,
+        );
+        final bool selectionVisible = selectedIndex >= 0;
+        final effectiveSelectedIndex = selectedIndex >= 0 ? selectedIndex : 0;
 
         return ValueListenableBuilder<bool>(
           valueListenable: adminCreateHubMenuOpen,
           builder: (context, menuOpen, _) {
             void handleSelection(int index) {
-              if (index == 0) {
-                if (activeTab == AdminDockTab.home) return;
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  AppRoutes.adminHome,
-                  (route) => false,
-                );
+              if (index < 0 || index >= destinations.length) {
                 return;
               }
-              if (index == 1) {
-                if (activeTab == AdminDockTab.suppliers) return;
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  AppRoutes.adminSuppliers,
-                  (route) => false,
-                );
-                return;
-              }
-              if (index == 2) {
+              final destination = destinations[index];
+              if (destination.primary) {
                 showAdminCreateHubSheet(context);
                 return;
               }
-              if (index == 3) {
-                if (activeTab == AdminDockTab.activity) return;
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  AppRoutes.adminActivity,
-                  (route) => false,
-                );
+              if (activeTab == destination.tab) {
                 return;
               }
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                destination.routeName,
+                (route) => false,
+              );
             }
 
             final useNativeDock = NativeDockBridge.isSupportedPlatform &&
@@ -97,53 +88,24 @@ class AdminDock extends StatelessWidget {
                   compact: compact,
                   tightToEdges: tightToEdges,
                   items: [
-                    NativeDockItem(
-                      id: 'admin-home',
-                      label: homeLabel,
-                      iconCodePoint: Icons.home_outlined.codePoint,
-                      selectedIconCodePoint: Icons.home_rounded.codePoint,
-                      active: activeTab == AdminDockTab.home,
-                      primary: false,
-                      showBadge: false,
-                      routeName: AppRoutes.adminHome,
-                      replaceStack: true,
-                      onTap: () => handleSelection(0),
-                    ),
-                    NativeDockItem(
-                      id: 'admin-suppliers',
-                      label: usersLabel,
-                      iconCodePoint: Icons.groups_outlined.codePoint,
-                      selectedIconCodePoint: Icons.groups_rounded.codePoint,
-                      active: activeTab == AdminDockTab.suppliers,
-                      primary: false,
-                      showBadge: false,
-                      routeName: AppRoutes.adminSuppliers,
-                      replaceStack: true,
-                      onTap: () => handleSelection(1),
-                    ),
-                    if (!menuOpen && effectiveShowPrimaryFab)
-                      NativeDockItem(
-                        id: 'admin-create',
-                        label: createLabel,
-                        iconCodePoint: Icons.add_rounded.codePoint,
-                        selectedIconCodePoint: Icons.add_rounded.codePoint,
-                        active: activeTab == AdminDockTab.settings,
-                        primary: true,
-                        showBadge: false,
-                        onTap: () => handleSelection(2),
-                      ),
-                    NativeDockItem(
-                      id: 'admin-activity',
-                      label: activityLabel,
-                      iconCodePoint: Icons.history_outlined.codePoint,
-                      selectedIconCodePoint: Icons.history_rounded.codePoint,
-                      active: activeTab == AdminDockTab.activity,
-                      primary: false,
-                      showBadge: false,
-                      routeName: AppRoutes.adminActivity,
-                      replaceStack: true,
-                      onTap: () => handleSelection(3),
-                    ),
+                    for (var i = 0; i < destinations.length; i++)
+                      if (!destinations[i].primary ||
+                          (!menuOpen && effectiveShowPrimaryFab))
+                        NativeDockItem(
+                          id: destinations[i].id,
+                          label: destinations[i].label,
+                          iconCodePoint: destinations[i].icon.codePoint,
+                          selectedIconCodePoint:
+                              destinations[i].selectedIcon.codePoint,
+                          active: activeTab == destinations[i].tab,
+                          primary: destinations[i].primary,
+                          showBadge: false,
+                          routeName: destinations[i].primary
+                              ? null
+                              : destinations[i].routeName,
+                          replaceStack: !destinations[i].primary,
+                          onTap: () => handleSelection(i),
+                        ),
                   ],
                 ),
               );
@@ -155,31 +117,18 @@ class AdminDock extends StatelessWidget {
               child: AppNavigationBar(
                 height: compact ? 60 : 64,
                 selectionVisible: selectionVisible,
-                selectedIndex: selectedIndex,
+                selectedIndex: effectiveSelectedIndex,
                 primaryVisible: !menuOpen && effectiveShowPrimaryFab,
-                destinations: [
-                  AppNavigationDestination(
-                    label: homeLabel,
-                    icon: const Icon(Icons.home_outlined),
-                    selectedIcon: const Icon(Icons.home_rounded),
-                  ),
-                  AppNavigationDestination(
-                    label: usersLabel,
-                    icon: const Icon(Icons.groups_outlined),
-                    selectedIcon: const Icon(Icons.groups_rounded),
-                  ),
-                  AppNavigationDestination(
-                    label: createLabel,
-                    icon: const Icon(Icons.add_rounded),
-                    selectedIcon: const Icon(Icons.add_rounded),
-                    isPrimary: true,
-                  ),
-                  AppNavigationDestination(
-                    label: activityLabel,
-                    icon: const Icon(Icons.history_outlined),
-                    selectedIcon: const Icon(Icons.history_rounded),
-                  ),
-                ],
+                destinations: destinations
+                    .map(
+                      (destination) => AppNavigationDestination(
+                        label: destination.label,
+                        icon: Icon(destination.icon),
+                        selectedIcon: Icon(destination.selectedIcon),
+                        isPrimary: destination.primary,
+                      ),
+                    )
+                    .toList(growable: false),
                 onDestinationSelected: handleSelection,
               ),
             );
@@ -188,4 +137,70 @@ class AdminDock extends StatelessWidget {
       },
     );
   }
+}
+
+class _AdminDockDestination {
+  const _AdminDockDestination({
+    required this.id,
+    required this.tab,
+    required this.label,
+    required this.icon,
+    required this.selectedIcon,
+    required this.routeName,
+    this.primary = false,
+  });
+
+  final String id;
+  final AdminDockTab tab;
+  final String label;
+  final IconData icon;
+  final IconData selectedIcon;
+  final String routeName;
+  final bool primary;
+}
+
+List<_AdminDockDestination> _visibleDestinations({
+  required String homeLabel,
+  required String usersLabel,
+  required String createLabel,
+  required String activityLabel,
+}) {
+  final candidates = [
+    _AdminDockDestination(
+      id: 'admin-home',
+      tab: AdminDockTab.home,
+      label: homeLabel,
+      icon: Icons.home_outlined,
+      selectedIcon: Icons.home_rounded,
+      routeName: AppRoutes.adminHome,
+    ),
+    _AdminDockDestination(
+      id: 'admin-suppliers',
+      tab: AdminDockTab.suppliers,
+      label: usersLabel,
+      icon: Icons.groups_outlined,
+      selectedIcon: Icons.groups_rounded,
+      routeName: AppRoutes.adminSuppliers,
+    ),
+    _AdminDockDestination(
+      id: 'admin-create',
+      tab: AdminDockTab.settings,
+      label: createLabel,
+      icon: Icons.add_rounded,
+      selectedIcon: Icons.add_rounded,
+      routeName: AppRoutes.adminCreateHub,
+      primary: true,
+    ),
+    _AdminDockDestination(
+      id: 'admin-activity',
+      tab: AdminDockTab.activity,
+      label: activityLabel,
+      icon: Icons.history_outlined,
+      selectedIcon: Icons.history_rounded,
+      routeName: AppRoutes.adminActivity,
+    ),
+  ];
+  return candidates
+      .where((destination) => AppRouter.canOpenRoute(destination.routeName))
+      .toList(growable: false);
 }
