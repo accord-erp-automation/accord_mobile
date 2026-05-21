@@ -22,8 +22,12 @@ Future<List<GScaleCatalogWarehouse>> fetchGScaleItemWarehouses({
   UserRole? role,
 }) async {
   final client = api ?? MobileApi.instance;
-  final activeRole = role ?? AppSession.instance.profile?.role;
-  if (activeRole == UserRole.admin) {
+  final profile = AppSession.instance.profile;
+  final canReadAdminCatalog = role == UserRole.admin ||
+      (role == null && profile?.hasCapability('catalog.item.read') == true);
+  final canReadGScaleCatalog = role == UserRole.werka ||
+      (role == null && profile?.hasCapability('gscale.catalog.read') == true);
+  if (canReadAdminCatalog) {
     final items = await client.adminItemsPage(query: itemCode, limit: 50);
     final exactItems = items.where((item) {
       return item.code.trim().toLowerCase() == itemCode.trim().toLowerCase();
@@ -43,10 +47,10 @@ Future<List<GScaleCatalogWarehouse>> fetchGScaleItemWarehouses({
       query: query,
       limit: limit,
       api: client,
-      role: activeRole,
+      role: role,
     );
   }
-  if (activeRole == UserRole.werka) {
+  if (canReadGScaleCatalog) {
     final items = await client.gscaleItemsPage(
       query: itemCode,
       limit: 50,
@@ -63,7 +67,7 @@ Future<List<GScaleCatalogWarehouse>> fetchGScaleItemWarehouses({
       query: query,
       limit: limit,
       api: client,
-      role: activeRole,
+      role: role,
     );
   }
   throw Exception('GScale omborlari faqat admin yoki werka uchun mavjud');
@@ -76,15 +80,19 @@ Future<List<GScaleCatalogWarehouse>> fetchGScaleDefaultWarehouses({
   UserRole? role,
 }) async {
   final client = api ?? MobileApi.instance;
-  final activeRole = role ?? AppSession.instance.profile?.role;
-  if (activeRole == UserRole.admin) {
+  final profile = AppSession.instance.profile;
+  final canReadAdminSettings = role == UserRole.admin ||
+      (role == null && profile?.hasCapability('admin.settings.read') == true);
+  final canReadGScaleCatalog = role == UserRole.werka ||
+      (role == null && profile?.hasCapability('gscale.catalog.read') == true);
+  if (canReadAdminSettings) {
     final settings = await client.adminSettings();
     return gscaleWarehousesFromDefault(
       settings.defaultTargetWarehouse,
       query: query,
     ).take(limit).toList();
   }
-  if (activeRole == UserRole.werka) {
+  if (canReadGScaleCatalog) {
     final items = await client.gscaleItemsPage(limit: 200);
     return gscaleWarehousesFromSupplierItems(items, query: query)
         .take(limit)

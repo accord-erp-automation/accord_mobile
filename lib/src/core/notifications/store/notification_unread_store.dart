@@ -167,7 +167,7 @@ class NotificationUnreadStore extends ChangeNotifier {
     if (current == null) {
       return null;
     }
-    return '${current.role.name}:${current.ref}';
+    return '${current.accessRole?.name ?? 'custom'}:${current.ref}';
   }
 
   Future<void> _persist() async {

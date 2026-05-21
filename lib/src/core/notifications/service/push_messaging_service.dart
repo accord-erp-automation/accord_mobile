@@ -94,7 +94,8 @@ class PushMessagingService {
       if (profile == null) {
         return;
       }
-      if (targetRole.isNotEmpty && targetRole != profile.role.name) {
+      final accessRole = profile.accessRole;
+      if (targetRole.isNotEmpty && targetRole != accessRole?.name) {
         return;
       }
       if (targetRef.isNotEmpty && targetRef != profile.ref) {
@@ -122,13 +123,13 @@ class PushMessagingService {
         profile: profile,
         ids: [record.id],
       );
-      if (profile.role == UserRole.customer &&
+      if (accessRole == UserRole.customer &&
           record.status == DispatchStatus.pending) {
         CustomerDeliveryRuntimeStore.instance.recordIncoming(record);
       }
-      RefreshHub.instance.emit(profile.role.name);
+      RefreshHub.instance.emit(accessRole?.name ?? 'custom');
       await LocalNotificationService.instance.showDispatchNotification(
-        role: profile.role,
+        role: accessRole ?? profile.role,
         record: record,
       );
     });

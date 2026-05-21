@@ -66,7 +66,8 @@ void main() {
     expect(AppSession.instance.homeRoute, AppRoutes.adminHome);
   });
 
-  test('admin catalog capabilities win over shared gscale capabilities', () async {
+  test('admin catalog capabilities win over shared gscale capabilities',
+      () async {
     await AppSession.instance.setSession(
       token: 'token',
       profile: const SessionProfile(
@@ -87,6 +88,8 @@ void main() {
 
     expect(AppSession.instance.homeRoute, AppRoutes.adminHome);
     expect(AppSession.instance.can('gscale.print'), isTrue);
+    expect(AppSession.instance.profile?.accessRole, isNull);
+    expect(AppSession.instance.profile?.isCapabilityOnlyProfile, isTrue);
   });
 
   test('gscale only capabilities still open gscale mode', () async {
@@ -104,6 +107,8 @@ void main() {
     );
 
     expect(AppSession.instance.homeRoute, AppRoutes.gscaleMode);
+    expect(AppSession.instance.profile?.accessRole, isNull);
+    expect(AppSession.instance.profile?.isCapabilityOnlyProfile, isTrue);
   });
 
   test('empty capability profile falls back to default role access', () {

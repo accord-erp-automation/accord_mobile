@@ -104,8 +104,8 @@ class AppSession {
     final previousProfile = this.profile;
     final previousKey = previousProfile == null
         ? ''
-        : '${previousProfile.role.name}:${previousProfile.ref}';
-    final nextKey = '${profile.role.name}:${profile.ref}';
+        : '${previousProfile.accessRole?.name ?? 'custom'}:${previousProfile.ref}';
+    final nextKey = '${profile.accessRole?.name ?? 'custom'}:${profile.ref}';
     if (previousKey.isNotEmpty && previousKey != nextKey) {
       await AppRuntimeReset.instance.resetSessionScopedState(
         previousProfile: previousProfile,

@@ -858,6 +858,40 @@ class SessionProfile {
     return codes.any(hasCapability);
   }
 
+  bool get hasExplicitCapabilities => capabilities.isNotEmpty;
+
+  bool get hasWorkspaceAccess {
+    return hasAnyCapability(const [
+      'admin.access',
+      'werka.access',
+      'supplier.access',
+      'customer.access',
+    ]);
+  }
+
+  bool get isCapabilityOnlyProfile {
+    return hasExplicitCapabilities && !hasWorkspaceAccess;
+  }
+
+  UserRole? get accessRole {
+    if (!hasExplicitCapabilities) {
+      return role;
+    }
+    if (hasCapability('admin.access')) {
+      return UserRole.admin;
+    }
+    if (hasCapability('werka.access')) {
+      return UserRole.werka;
+    }
+    if (hasCapability('supplier.access')) {
+      return UserRole.supplier;
+    }
+    if (hasCapability('customer.access')) {
+      return UserRole.customer;
+    }
+    return null;
+  }
+
   SessionProfile copyWith({
     UserRole? role,
     String? displayName,

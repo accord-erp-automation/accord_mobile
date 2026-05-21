@@ -1141,12 +1141,7 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
           showScanIcon: true,
           pageSize: _catalogPickerPageSize,
           cacheKey: 'gscale:items',
-          loadPage: (query, offset, limit) =>
-              MobileApi.instance.gscaleItemsPage(
-            query: query,
-            offset: offset,
-            limit: limit,
-          ),
+          loadPage: _loadGScaleCatalogItems,
           itemTitle: (item) => item.name,
           itemSubtitle: (item) => item.code,
           onSelected: (item) => Navigator.of(context).pop(item),
@@ -1160,6 +1155,33 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
       itemCode: option.code,
       itemName: option.name.trim().isEmpty ? option.code : option.name.trim(),
     ));
+  }
+
+  Future<List<SupplierItem>> _loadGScaleCatalogItems(
+    String query,
+    int offset,
+    int limit,
+  ) {
+    final profile = AppSession.instance.profile;
+    if (profile?.hasCapability('gscale.catalog.read') == true) {
+      return MobileApi.instance.gscaleItemsPage(
+        query: query,
+        offset: offset,
+        limit: limit,
+      );
+    }
+    if (profile?.hasCapability('catalog.item.read') == true) {
+      return MobileApi.instance.adminItemsPage(
+        query: query,
+        offset: offset,
+        limit: limit,
+      );
+    }
+    return MobileApi.instance.gscaleItemsPage(
+      query: query,
+      offset: offset,
+      limit: limit,
+    );
   }
 
   Future<void> _openWarehousePicker() async {

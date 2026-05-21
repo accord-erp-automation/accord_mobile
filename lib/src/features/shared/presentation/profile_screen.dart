@@ -338,19 +338,20 @@ class _ProfileScreenState extends State<ProfileScreen>
       builder: (context, _) {
         final l10n = context.l10n;
         final current = profile;
-        final role = current.role;
         final shellKind = _profileShellKindForHomeRoute(
           AppSession.instance.homeRoute,
         );
         final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
         final bottomPadding = bottomInset + 136.0;
-        final subtitle = role == UserRole.supplier
-            ? l10n.supplierAccount
-            : role == UserRole.werka
-                ? l10n.werkaAccount
-                : role == UserRole.customer
-                    ? l10n.customerAccount
-                    : l10n.adminAccount;
+        final subtitle = current.isCapabilityOnlyProfile
+            ? 'Role asosidagi account'
+            : current.accessRole == UserRole.supplier
+                ? l10n.supplierAccount
+                : current.accessRole == UserRole.werka
+                    ? l10n.werkaAccount
+                    : current.accessRole == UserRole.customer
+                        ? l10n.customerAccount
+                        : l10n.adminAccount;
         final bool hasPin = SecurityController.instance.hasPinForCurrentUser;
         final bool biometricEnabled =
             SecurityController.instance.biometricEnabledForCurrentUser;
@@ -364,7 +365,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           title: l10n.profileTitle,
           subtitle: '',
           nativeTopBar: true,
-          animateOnEnter: role != UserRole.customer,
+          animateOnEnter: current.accessRole != UserRole.customer,
           drawer: switch (shellKind) {
             _ProfileShellKind.werka => WerkaNavigationDrawer(
                 selectedIndex: 3,

@@ -38,7 +38,7 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
     super.initState();
     _accountKey = _currentAccountKey();
     final profile = AppSession.instance.profile;
-    if (profile?.role == UserRole.customer &&
+    if (profile?.accessRole == UserRole.customer &&
         widget.receiptID.startsWith('MAT-DN-')) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) {
@@ -114,7 +114,7 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
     if (profile == null) {
       return '';
     }
-    return '${profile.role.name}:${profile.ref}';
+    return '${profile.accessRole?.name ?? 'custom'}:${profile.ref}';
   }
 
   Future<bool?> _showActionConfirmDialog({
@@ -331,7 +331,7 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final role = AppSession.instance.profile?.role;
+    final role = AppSession.instance.profile?.accessRole;
     final bottomPadding = MediaQuery.viewPaddingOf(context).bottom + 136.0;
     if (_accountKey != _currentAccountKey()) {
       WidgetsBinding.instance.addPostFrameCallback((_) {

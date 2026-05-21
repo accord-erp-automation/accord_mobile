@@ -68,7 +68,7 @@ class NotificationHiddenStore extends ChangeNotifier {
     if (current == null) {
       return null;
     }
-    return '${current.role.name}:${current.ref}';
+    return '${current.accessRole?.name ?? 'custom'}:${current.ref}';
   }
 
   Future<void> clearAll() async {

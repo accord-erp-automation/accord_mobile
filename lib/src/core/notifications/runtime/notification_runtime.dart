@@ -66,16 +66,17 @@ class _NotificationRuntimeState extends State<NotificationRuntime>
       return;
     }
     final profile = AppSession.instance.profile;
+    final accessRole = profile?.accessRole;
     if (profile == null ||
-        (profile.role != UserRole.supplier &&
-            profile.role != UserRole.werka &&
-            profile.role != UserRole.customer)) {
+        (accessRole != UserRole.supplier &&
+            accessRole != UserRole.werka &&
+            accessRole != UserRole.customer)) {
       return;
     }
 
     _polling = true;
     try {
-      final userKey = '${profile.role.name}:${profile.ref}';
+      final userKey = '${accessRole!.name}:${profile.ref}';
       if (_lastUserKey.isNotEmpty && _lastUserKey != userKey) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove('$_snapshotPrefix:$_lastUserKey');
@@ -116,7 +117,7 @@ class _NotificationRuntimeState extends State<NotificationRuntime>
             ids: [record.id],
           );
           await LocalNotificationService.instance.showDispatchNotification(
-            role: profile.role,
+            role: accessRole,
             record: record,
           );
         }
@@ -142,7 +143,7 @@ class _NotificationRuntimeState extends State<NotificationRuntime>
   Future<List<DispatchRecord>> _loadCanonicalRecords(
     SessionProfile profile,
   ) async {
-    switch (profile.role) {
+    switch (profile.accessRole) {
       case UserRole.supplier:
         await SupplierStore.instance.refreshHistory();
         return SupplierStore.instance.historyItems;
@@ -153,6 +154,7 @@ class _NotificationRuntimeState extends State<NotificationRuntime>
         await CustomerStore.instance.refresh();
         return CustomerStore.instance.historyItems;
       case UserRole.admin:
+      case null:
         return const <DispatchRecord>[];
     }
   }
@@ -162,7 +164,8 @@ class _NotificationRuntimeState extends State<NotificationRuntime>
     DispatchRecord record, {
     required bool hadPrevious,
   }) {
-    if (profile.role == UserRole.supplier) {
+    final accessRole = profile.accessRole;
+    if (accessRole == UserRole.supplier) {
       if (record.eventType == 'werka_unannounced_pending') {
         return true;
       }
@@ -174,7 +177,7 @@ class _NotificationRuntimeState extends State<NotificationRuntime>
       return true;
     }
 
-    if (profile.role == UserRole.werka) {
+    if (accessRole == UserRole.werka) {
       if (record.eventType == 'supplier_ack') {
         return true;
       }
@@ -189,7 +192,7 @@ class _NotificationRuntimeState extends State<NotificationRuntime>
       return true;
     }
 
-    if (profile.role == UserRole.customer) {
+    if (accessRole == UserRole.customer) {
       return !hadPrevious;
     }
 

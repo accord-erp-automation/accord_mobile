@@ -117,7 +117,7 @@ class SearchActivityStore {
     if (profile == null) {
       return 'guest';
     }
-    return '${profile.role.name}:${profile.ref.trim().toLowerCase()}';
+    return '${profile.accessRole?.name ?? 'custom'}:${profile.ref.trim().toLowerCase()}';
   }
 
   String _prefsKey(String scope) => '$_itemCountsPrefix:$scope';
