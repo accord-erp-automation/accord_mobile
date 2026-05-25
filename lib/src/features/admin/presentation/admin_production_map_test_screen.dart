@@ -1,3 +1,4 @@
+import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/shell/app_shell.dart';
@@ -342,6 +343,20 @@ class _AdminProductionMapTestScreenState
     final floatingOffset = _floatingNodeOffset;
     final floatingWidth = MediaQuery.sizeOf(context).width - 48;
     return AppShell(
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_rounded),
+        onPressed: () {
+          final nav = Navigator.of(context);
+          if (nav.canPop()) {
+            nav.pop();
+          } else {
+            nav.pushNamedAndRemoveUntil(
+              AppRoutes.adminHome,
+              (route) => false,
+            );
+          }
+        },
+      ),
       title: 'Production map test',
       subtitle: '',
       nativeTopBar: true,
@@ -479,27 +494,6 @@ class _AdminProductionMapTestScreenState
                         ),
                     ],
                   ],
-                ),
-                const SizedBox(height: 12),
-                _SurfacePanel(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Edges',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      for (final edge in edges)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 3),
-                          child: Text(
-                            '${edge.from} -> ${edge.to}',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ),
-                    ],
-                  ),
                 ),
               ],
             ),

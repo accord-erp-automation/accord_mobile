@@ -70,7 +70,10 @@ class AdminDock extends StatelessWidget {
                 showAdminCreateHubSheet(context);
                 return;
               }
-              if (activeTab == destination.tab) {
+              final currentRoute = ModalRoute.of(context)?.settings.name;
+              if (activeTab == destination.tab &&
+                  !(destination.tab == AdminDockTab.home &&
+                      currentRoute != AppRoutes.adminHome)) {
                 return;
               }
               Navigator.of(context).pushNamedAndRemoveUntil(
