@@ -878,23 +878,7 @@ class _MapNodeVisual extends StatelessWidget {
   }
 
   BorderRadius _shapeFor(String kind) {
-    return switch (kind) {
-      'formula' => const BorderRadius.only(
-          topLeft: Radius.circular(28),
-          topRight: Radius.circular(12),
-          bottomLeft: Radius.circular(12),
-          bottomRight: Radius.circular(28),
-        ),
-      'task' => BorderRadius.circular(18),
-      'wait' => BorderRadius.circular(28),
-      'output' => const BorderRadius.only(
-          topLeft: Radius.circular(12),
-          topRight: Radius.circular(28),
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(12),
-        ),
-      _ => BorderRadius.circular(14),
-    };
+    return BorderRadius.circular(28);
   }
 }
 
