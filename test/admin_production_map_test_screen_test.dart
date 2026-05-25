@@ -93,6 +93,7 @@ void main() {
     final dragStart = tester.getCenter(find.text('Rezkaga yuborish'));
     final gesture = await tester.startGesture(dragStart);
     await tester.pump(const Duration(milliseconds: 1000));
+    expect(find.text('Rezkaga yuborish'), findsNWidgets(2));
     await gesture.moveBy(const Offset(0, -120));
     await tester.pump(const Duration(milliseconds: 100));
     await gesture.moveBy(const Offset(0, -120));

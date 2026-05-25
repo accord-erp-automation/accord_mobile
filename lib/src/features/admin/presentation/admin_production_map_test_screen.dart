@@ -56,8 +56,11 @@ class _AdminProductionMapTestScreenState
   ProductionMapProgram? program;
   bool saving = false;
   int _nextNodeIndex = 1;
+  final _editorStackKey = GlobalKey();
   String? _draggingNodeID;
   double? _dragStartY;
+  Offset? _floatingNodeOffset;
+  Offset _floatingTouchOffset = Offset.zero;
 
   Future<void> _save() async {
     setState(() => saving = true);
@@ -214,23 +217,58 @@ class _AdminProductionMapTestScreenState
     });
   }
 
-  void _moveNodeToIndex(String nodeID, int targetIndex) {
-    final oldIndex = nodes.indexWhere((node) => node.id == nodeID);
-    if (oldIndex <= 0 || oldIndex >= nodes.length - 1) {
+  ProductionMapNode? get _floatingNode {
+    final nodeID = _draggingNodeID;
+    if (nodeID == null) {
+      return null;
+    }
+    for (final node in nodes) {
+      if (node.id == nodeID) {
+        return node;
+      }
+    }
+    return null;
+  }
+
+  Offset? _localDragPosition(Offset globalPosition) {
+    final context = _editorStackKey.currentContext;
+    if (context == null) {
+      return null;
+    }
+    final box = context.findRenderObject() as RenderBox?;
+    return box?.globalToLocal(globalPosition);
+  }
+
+  void _startFloatingDrag(
+    String nodeID,
+    LongPressStartDetails details,
+  ) {
+    final index = nodes.indexWhere((node) => node.id == nodeID);
+    if (index <= 0 || index >= nodes.length - 1) {
       return;
     }
-    _reorderNode(oldIndex, targetIndex);
+    final localPosition = _localDragPosition(details.globalPosition);
+    if (localPosition == null) {
+      return;
+    }
+    setState(() {
+      _draggingNodeID = nodeID;
+      _dragStartY = details.globalPosition.dy;
+      _floatingTouchOffset = details.localPosition;
+      _floatingNodeOffset = localPosition - _floatingTouchOffset;
+    });
   }
 
-  void _startFloatingDrag(String nodeID) {
-    _draggingNodeID = nodeID;
-    _dragStartY = null;
-  }
-
-  void _updateFloatingDrag(DragUpdateDetails details) {
+  void _updateFloatingDrag(LongPressMoveUpdateDetails details) {
     final nodeID = _draggingNodeID;
     if (nodeID == null) {
       return;
+    }
+    final localPosition = _localDragPosition(details.globalPosition);
+    if (localPosition != null) {
+      setState(() {
+        _floatingNodeOffset = localPosition - _floatingTouchOffset;
+      });
     }
     final startY = _dragStartY;
     if (startY == null) {
@@ -251,15 +289,21 @@ class _AdminProductionMapTestScreenState
     }
   }
 
-  void _endFloatingDrag(DraggableDetails details) {
-    _draggingNodeID = null;
-    _dragStartY = null;
+  void _endFloatingDrag(LongPressEndDetails details) {
+    setState(() {
+      _draggingNodeID = null;
+      _dragStartY = null;
+      _floatingNodeOffset = null;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final bottomPadding = MediaQuery.viewPaddingOf(context).bottom + 136.0;
+    final floatingNode = _floatingNode;
+    final floatingOffset = _floatingNodeOffset;
+    final floatingWidth = MediaQuery.sizeOf(context).width - 48;
     return AppShell(
       title: 'Production map test',
       subtitle: '',
@@ -270,174 +314,200 @@ class _AdminProductionMapTestScreenState
       bottom: const AdminDock(activeTab: AdminDockTab.home),
       child: ColoredBox(
         color: scheme.surface,
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(12, 12, 12, bottomPadding),
+        child: Stack(
+          key: _editorStackKey,
+          clipBehavior: Clip.none,
           children: [
-            _SurfacePanel(
-              child: Column(
-                children: [
-                  _InfoLine(
-                    label: 'Map ID',
-                    value: mapID,
-                    onTap: _editMapInfo,
-                  ),
-                  const SizedBox(height: 6),
-                  _InfoLine(
-                    label: 'Mahsulot',
-                    value: productCode,
-                    onTap: _editMapInfo,
-                  ),
-                  const SizedBox(height: 6),
-                  _InfoLine(
-                    label: 'Nomi',
-                    value: mapTitle,
-                    onTap: _editMapInfo,
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
+            ListView(
+              padding: EdgeInsets.fromLTRB(12, 12, 12, bottomPadding),
+              children: [
+                _SurfacePanel(
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: _PlainActionButton(
-                          label: 'Location',
-                          icon: Icons.account_tree_rounded,
-                          onTap: () => _addNode('task'),
-                          tonal: true,
-                        ),
+                      _InfoLine(
+                        label: 'Map ID',
+                        value: mapID,
+                        onTap: _editMapInfo,
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _PlainActionButton(
-                          label: 'Formula',
-                          icon: Icons.functions_rounded,
-                          onTap: () => _addNode('formula'),
-                          tonal: true,
-                        ),
+                      const SizedBox(height: 6),
+                      _InfoLine(
+                        label: 'Mahsulot',
+                        value: productCode,
+                        onTap: _editMapInfo,
+                      ),
+                      const SizedBox(height: 6),
+                      _InfoLine(
+                        label: 'Nomi',
+                        value: mapTitle,
+                        onTap: _editMapInfo,
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _PlainActionButton(
+                              label: 'Location',
+                              icon: Icons.account_tree_rounded,
+                              onTap: () => _addNode('task'),
+                              tonal: true,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _PlainActionButton(
+                              label: 'Formula',
+                              icon: Icons.functions_rounded,
+                              onTap: () => _addNode('formula'),
+                              tonal: true,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _PlainActionButton(
+                              label: 'Material',
+                              icon: Icons.inventory_2_rounded,
+                              onTap: () => _addNode('material'),
+                              tonal: true,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _PlainActionButton(
+                              label: 'Wait',
+                              icon: Icons.hourglass_bottom_rounded,
+                              onTap: () => _addNode('wait'),
+                              tonal: true,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _PlainActionButton(
+                              label: 'Output',
+                              icon: Icons.flag_rounded,
+                              onTap: () => _addNode('output'),
+                              tonal: true,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _PlainActionButton(
+                              label: saving ? 'Saqlanyapti' : 'Save + compile',
+                              icon: Icons.check_rounded,
+                              onTap: saving ? null : _save,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Row(
+                ),
+                const SizedBox(height: 12),
+                _SurfacePanel(
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: _PlainActionButton(
-                          label: 'Material',
-                          icon: Icons.inventory_2_rounded,
-                          onTap: () => _addNode('material'),
-                          tonal: true,
+                      for (var i = 0; i < nodes.length; i++) ...[
+                        Opacity(
+                          opacity: _draggingNodeID == nodes[i].id ? 0.24 : 1,
+                          child: _MapNodeRow(
+                            node: nodes[i],
+                            onTap: () => _editNode(i),
+                            onDelete: nodes[i].kind == 'start' ||
+                                    nodes[i].kind == 'end'
+                                ? null
+                                : () => _deleteNode(i),
+                            canDrag: nodes[i].kind != 'start' &&
+                                nodes[i].kind != 'end',
+                            onLongPressStart: (details) =>
+                                _startFloatingDrag(nodes[i].id, details),
+                            onLongPressMoveUpdate: _updateFloatingDrag,
+                            onLongPressEnd: _endFloatingDrag,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _PlainActionButton(
-                          label: 'Wait',
-                          icon: Icons.hourglass_bottom_rounded,
-                          onTap: () => _addNode('wait'),
-                          tonal: true,
-                        ),
-                      ),
+                        if (i < nodes.length - 1)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                      ],
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Row(
+                ),
+                const SizedBox(height: 12),
+                _SurfacePanel(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: _PlainActionButton(
-                          label: 'Output',
-                          icon: Icons.flag_rounded,
-                          onTap: () => _addNode('output'),
-                          tonal: true,
-                        ),
+                      Text(
+                        'Edges',
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _PlainActionButton(
-                          label: saving ? 'Saqlanyapti' : 'Save + compile',
-                          icon: Icons.check_rounded,
-                          onTap: saving ? null : _save,
+                      const SizedBox(height: 8),
+                      for (final edge in edges)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 3),
+                          child: Text(
+                            '${edge.from} -> ${edge.to}',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
                         ),
-                      ),
                     ],
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            _SurfacePanel(
-              child: Column(
-                children: [
-                  for (var i = 0; i < nodes.length; i++) ...[
-                    _MapNodeRow(
-                      node: nodes[i],
-                      onTap: () => _editNode(i),
-                      onDelete:
-                          nodes[i].kind == 'start' || nodes[i].kind == 'end'
-                              ? null
-                              : () => _deleteNode(i),
-                      canDrag:
-                          nodes[i].kind != 'start' && nodes[i].kind != 'end',
-                      onAcceptDraggedNode: (nodeID) =>
-                          _moveNodeToIndex(nodeID, i),
-                      onDragStarted: () => _startFloatingDrag(nodes[i].id),
-                      onDragUpdate: _updateFloatingDrag,
-                      onDragEnd: _endFloatingDrag,
-                    ),
-                    if (i < nodes.length - 1)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          color: scheme.onSurfaceVariant,
-                        ),
+                ),
+                const SizedBox(height: 12),
+                _SurfacePanel(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Compiled program',
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            _SurfacePanel(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Edges', style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 8),
-                  for (final edge in edges)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 3),
-                      child: Text(
-                        '${edge.from} -> ${edge.to}',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            _SurfacePanel(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Compiled program',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  if (program == null)
-                    Text(
-                      'Save bosilganda RS server JSON mapni tekshiradi va operation code ro‘yxatiga aylantiradi.',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    )
-                  else
-                    for (final operation in program!.operations)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 5),
-                        child: Text(
-                          '${operation.order}. ${operation.opCode} (${operation.nodeId})',
+                      const SizedBox(height: 8),
+                      if (program == null)
+                        Text(
+                          'Save bosilganda RS server JSON mapni tekshiradi va operation code ro‘yxatiga aylantiradi.',
                           style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ),
-                ],
-              ),
+                        )
+                      else
+                        for (final operation in program!.operations)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            child: Text(
+                              '${operation.order}. ${operation.opCode} (${operation.nodeId})',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                    ],
+                  ),
+                ),
+              ],
             ),
+            if (floatingNode != null && floatingOffset != null)
+              Positioned(
+                left: floatingOffset.dx.clamp(12, 48).toDouble(),
+                top: floatingOffset.dy,
+                width: floatingWidth,
+                child: IgnorePointer(
+                  child: _MapNodeVisual(
+                    node: floatingNode,
+                    onTap: () {},
+                    onDelete: null,
+                    floating: true,
+                    highlighted: false,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -590,66 +660,36 @@ class _MapNodeRow extends StatelessWidget {
     required this.onTap,
     required this.onDelete,
     required this.canDrag,
-    required this.onAcceptDraggedNode,
-    required this.onDragStarted,
-    required this.onDragUpdate,
-    required this.onDragEnd,
+    required this.onLongPressStart,
+    required this.onLongPressMoveUpdate,
+    required this.onLongPressEnd,
   });
 
   final ProductionMapNode node;
   final VoidCallback onTap;
   final VoidCallback? onDelete;
   final bool canDrag;
-  final ValueChanged<String> onAcceptDraggedNode;
-  final VoidCallback onDragStarted;
-  final DragUpdateCallback onDragUpdate;
-  final DragEndCallback onDragEnd;
+  final GestureLongPressStartCallback onLongPressStart;
+  final GestureLongPressMoveUpdateCallback onLongPressMoveUpdate;
+  final GestureLongPressEndCallback onLongPressEnd;
 
   @override
   Widget build(BuildContext context) {
-    final content = DragTarget<String>(
-      onWillAcceptWithDetails: (details) => details.data != node.id,
-      onAcceptWithDetails: (details) => onAcceptDraggedNode(details.data),
-      builder: (context, candidateData, rejectedData) {
-        return AnimatedScale(
-          duration: const Duration(milliseconds: 120),
-          scale: candidateData.isEmpty ? 1 : 1.025,
-          child: _MapNodeVisual(
-            node: node,
-            onTap: onTap,
-            onDelete: onDelete,
-            floating: false,
-            highlighted: candidateData.isNotEmpty,
-          ),
-        );
-      },
+    final content = _MapNodeVisual(
+      node: node,
+      onTap: onTap,
+      onDelete: onDelete,
+      floating: false,
+      highlighted: false,
     );
     if (!canDrag) {
       return content;
     }
-    return LongPressDraggable<String>(
-      data: node.id,
-      dragAnchorStrategy: childDragAnchorStrategy,
-      onDragStarted: onDragStarted,
-      onDragUpdate: onDragUpdate,
-      onDragEnd: onDragEnd,
-      feedback: SizedBox(
-        width: MediaQuery.sizeOf(context).width - 48,
-        child: Material(
-          color: Colors.transparent,
-          child: _MapNodeVisual(
-            node: node,
-            onTap: () {},
-            onDelete: null,
-            floating: true,
-            highlighted: false,
-          ),
-        ),
-      ),
-      childWhenDragging: Opacity(
-        opacity: 0.28,
-        child: content,
-      ),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onLongPressStart: onLongPressStart,
+      onLongPressMoveUpdate: onLongPressMoveUpdate,
+      onLongPressEnd: onLongPressEnd,
       child: content,
     );
   }
