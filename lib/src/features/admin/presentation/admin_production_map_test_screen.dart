@@ -56,7 +56,6 @@ class _AdminProductionMapTestScreenState
     const ProductionMapEdge(from: 'rezka_task', to: 'end'),
   ];
 
-  ProductionMapProgram? program;
   bool saving = false;
   int _nextNodeIndex = 1;
   final _editorStackKey = GlobalKey();
@@ -68,7 +67,7 @@ class _AdminProductionMapTestScreenState
   Future<void> _save() async {
     setState(() => saving = true);
     try {
-      final saved = await MobileApi.instance.adminSaveProductionMap(
+      await MobileApi.instance.adminSaveProductionMap(
         ProductionMapDefinition(
           id: mapID,
           productCode: productCode,
@@ -80,7 +79,6 @@ class _AdminProductionMapTestScreenState
       if (!mounted) {
         return;
       }
-      setState(() => program = saved.program);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Map saqlandi va compiled bo‘ldi')),
       );
@@ -502,33 +500,6 @@ class _AdminProductionMapTestScreenState
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _SurfacePanel(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Compiled program',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      if (program == null)
-                        Text(
-                          'Save bosilganda RS server JSON mapni tekshiradi va operation code ro‘yxatiga aylantiradi.',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        )
-                      else
-                        for (final operation in program!.operations)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 5),
-                            child: Text(
-                              '${operation.order}. ${operation.opCode} (${operation.nodeId})',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ),
                     ],
                   ),
                 ),
