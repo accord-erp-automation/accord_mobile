@@ -55,6 +55,7 @@ class _AdminProductionMapTestScreenState
 
   ProductionMapProgram? program;
   bool saving = false;
+  int _nextNodeIndex = 1;
 
   Future<void> _save() async {
     setState(() => saving = true);
@@ -89,21 +90,85 @@ class _AdminProductionMapTestScreenState
     }
   }
 
-  void _addWaitNode() {
-    final id = 'wait_${nodes.length}';
+  void _addNode(String kind) {
+    final id = '${kind}_${_nextNodeIndex++}';
     setState(() {
       nodes.insert(
         nodes.length - 1,
-        ProductionMapNode(
+        _newNode(id, kind),
+      );
+      _rebuildLinearEdges();
+    });
+  }
+
+  ProductionMapNode _newNode(String id, String kind) {
+    return switch (kind) {
+      'material' => ProductionMapNode(
+          id: id,
+          kind: 'material',
+          title: 'Material tanlash',
+          itemCode: 'CPP',
+        ),
+      'formula' => ProductionMapNode(
+          id: id,
+          kind: 'formula',
+          title: 'Hisob kitob',
+          formula: const ProductionFormula(
+            target: 'result_kg',
+            expression: 'order_qty',
+          ),
+        ),
+      'wait' => ProductionMapNode(
           id: id,
           kind: 'wait',
           title: 'Material kutish',
         ),
-      );
-      final last = edges.removeLast();
-      edges
-        ..add(ProductionMapEdge(from: last.from, to: id))
-        ..add(ProductionMapEdge(from: id, to: last.to));
+      'output' => ProductionMapNode(
+          id: id,
+          kind: 'output',
+          title: 'Natija chiqarish',
+          itemCode: _sampleProductCode,
+        ),
+      _ => ProductionMapNode(
+          id: id,
+          kind: 'task',
+          title: 'Yangi location',
+          roleCode: 'worker',
+        ),
+    };
+  }
+
+  void _rebuildLinearEdges() {
+    edges
+      ..clear()
+      ..addAll([
+        for (var i = 0; i < nodes.length - 1; i++)
+          ProductionMapEdge(from: nodes[i].id, to: nodes[i + 1].id),
+      ]);
+  }
+
+  Future<void> _editNode(int index) async {
+    final node = nodes[index];
+    final edited = await showModalBottomSheet<ProductionMapNode>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _NodeEditSheet(node: node),
+    );
+    if (edited == null || !mounted) {
+      return;
+    }
+    setState(() => nodes[index] = edited);
+  }
+
+  void _deleteNode(int index) {
+    final node = nodes[index];
+    if (node.kind == 'start' || node.kind == 'end') {
+      return;
+    }
+    setState(() {
+      nodes.removeAt(index);
+      _rebuildLinearEdges();
     });
   }
 
@@ -140,9 +205,53 @@ class _AdminProductionMapTestScreenState
                     children: [
                       Expanded(
                         child: _PlainActionButton(
-                          label: 'Wait node',
+                          label: 'Location',
+                          icon: Icons.account_tree_rounded,
+                          onTap: () => _addNode('task'),
+                          tonal: true,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _PlainActionButton(
+                          label: 'Formula',
+                          icon: Icons.functions_rounded,
+                          onTap: () => _addNode('formula'),
+                          tonal: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _PlainActionButton(
+                          label: 'Material',
+                          icon: Icons.inventory_2_rounded,
+                          onTap: () => _addNode('material'),
+                          tonal: true,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _PlainActionButton(
+                          label: 'Wait',
                           icon: Icons.hourglass_bottom_rounded,
-                          onTap: _addWaitNode,
+                          onTap: () => _addNode('wait'),
+                          tonal: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _PlainActionButton(
+                          label: 'Output',
+                          icon: Icons.flag_rounded,
+                          onTap: () => _addNode('output'),
                           tonal: true,
                         ),
                       ),
@@ -164,7 +273,14 @@ class _AdminProductionMapTestScreenState
               child: Column(
                 children: [
                   for (var i = 0; i < nodes.length; i++) ...[
-                    _MapNodeRow(node: nodes[i]),
+                    _MapNodeRow(
+                      node: nodes[i],
+                      onTap: () => _editNode(i),
+                      onDelete:
+                          nodes[i].kind == 'start' || nodes[i].kind == 'end'
+                              ? null
+                              : () => _deleteNode(i),
+                    ),
                     if (i < nodes.length - 1)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6),
@@ -350,50 +466,87 @@ class _InfoLine extends StatelessWidget {
 }
 
 class _MapNodeRow extends StatelessWidget {
-  const _MapNodeRow({required this.node});
+  const _MapNodeRow({
+    required this.node,
+    required this.onTap,
+    required this.onDelete,
+  });
 
   final ProductionMapNode node;
+  final VoidCallback onTap;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: _colorFor(node.kind, scheme),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: scheme.surface.withValues(alpha: 0.55),
-              child: Icon(_iconFor(node.kind), size: 19),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    node.title,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+    return Semantics(
+      button: true,
+      label: '${node.title} node',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: _colorFor(node.kind, scheme),
+            borderRadius: _shapeFor(node.kind),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: scheme.surface.withValues(alpha: 0.55),
+                  child: Icon(_iconFor(node.kind), size: 19),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        node.title,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _subtitleFor(node),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _subtitleFor(node),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  _labelFor(node.kind),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (onDelete != null) ...[
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onDelete,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 20,
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ],
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -407,6 +560,18 @@ class _MapNodeRow extends StatelessWidget {
       'output' => Icons.inventory_2_rounded,
       'end' => Icons.flag_rounded,
       _ => Icons.play_arrow_rounded,
+    };
+  }
+
+  String _labelFor(String kind) {
+    return switch (kind) {
+      'material' => 'material',
+      'formula' => 'formula',
+      'task' => 'location',
+      'wait' => 'wait',
+      'output' => 'output',
+      'end' => 'end',
+      _ => 'start',
     };
   }
 
@@ -432,5 +597,175 @@ class _MapNodeRow extends StatelessWidget {
       'output' => scheme.primaryContainer,
       _ => scheme.surfaceContainerHighest,
     };
+  }
+
+  BorderRadius _shapeFor(String kind) {
+    return switch (kind) {
+      'formula' => const BorderRadius.only(
+          topLeft: Radius.circular(28),
+          topRight: Radius.circular(12),
+          bottomLeft: Radius.circular(12),
+          bottomRight: Radius.circular(28),
+        ),
+      'task' => BorderRadius.circular(18),
+      'wait' => BorderRadius.circular(28),
+      'output' => const BorderRadius.only(
+          topLeft: Radius.circular(12),
+          topRight: Radius.circular(28),
+          bottomLeft: Radius.circular(28),
+          bottomRight: Radius.circular(12),
+        ),
+      _ => BorderRadius.circular(14),
+    };
+  }
+}
+
+class _NodeEditSheet extends StatefulWidget {
+  const _NodeEditSheet({required this.node});
+
+  final ProductionMapNode node;
+
+  @override
+  State<_NodeEditSheet> createState() => _NodeEditSheetState();
+}
+
+class _NodeEditSheetState extends State<_NodeEditSheet> {
+  late final TextEditingController _title;
+  late final TextEditingController _itemCode;
+  late final TextEditingController _roleCode;
+  late final TextEditingController _formulaTarget;
+  late final TextEditingController _formulaExpression;
+
+  @override
+  void initState() {
+    super.initState();
+    final formula = widget.node.formula;
+    _title = TextEditingController(text: widget.node.title);
+    _itemCode = TextEditingController(text: widget.node.itemCode);
+    _roleCode = TextEditingController(text: widget.node.roleCode);
+    _formulaTarget = TextEditingController(text: formula?.target ?? '');
+    _formulaExpression = TextEditingController(text: formula?.expression ?? '');
+  }
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _itemCode.dispose();
+    _roleCode.dispose();
+    _formulaTarget.dispose();
+    _formulaExpression.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final viewInsets = MediaQuery.viewInsetsOf(context).bottom;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(bottom: viewInsets),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainer,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+            children: [
+              Center(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: scheme.onSurfaceVariant.withValues(alpha: 0.45),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: const SizedBox(width: 44, height: 4),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Node sozlash',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+              ),
+              const SizedBox(height: 14),
+              _SheetField(label: 'Nomi', controller: _title),
+              if (widget.node.kind == 'material' ||
+                  widget.node.kind == 'task' ||
+                  widget.node.kind == 'output') ...[
+                const SizedBox(height: 10),
+                _SheetField(label: 'Mahsulot code', controller: _itemCode),
+              ],
+              if (widget.node.kind == 'task') ...[
+                const SizedBox(height: 10),
+                _SheetField(label: 'Vazifa / role code', controller: _roleCode),
+              ],
+              if (widget.node.kind == 'formula') ...[
+                const SizedBox(height: 10),
+                _SheetField(
+                    label: 'Formula target', controller: _formulaTarget),
+                const SizedBox(height: 10),
+                _SheetField(
+                  label: 'Formula',
+                  controller: _formulaExpression,
+                ),
+              ],
+              const SizedBox(height: 16),
+              _PlainActionButton(
+                label: 'Saqlash',
+                icon: Icons.check_rounded,
+                onTap: _save,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _save() {
+    final title = _title.text.trim();
+    final formulaTarget = _formulaTarget.text.trim();
+    final formulaExpression = _formulaExpression.text.trim();
+    Navigator.of(context).pop(
+      ProductionMapNode(
+        id: widget.node.id,
+        kind: widget.node.kind,
+        title: title.isEmpty ? widget.node.title : title,
+        itemCode: _itemCode.text.trim(),
+        roleCode: _roleCode.text.trim(),
+        x: widget.node.x,
+        y: widget.node.y,
+        formula: widget.node.kind == 'formula'
+            ? ProductionFormula(
+                target: formulaTarget.isEmpty ? 'result' : formulaTarget,
+                expression:
+                    formulaExpression.isEmpty ? 'order_qty' : formulaExpression,
+              )
+            : null,
+      ),
+    );
+  }
+}
+
+class _SheetField extends StatelessWidget {
+  const _SheetField({
+    required this.label,
+    required this.controller,
+  });
+
+  final String label;
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    );
   }
 }
