@@ -117,7 +117,8 @@ class _AdminProductionMapTestScreenState
       nativeTopBar: true,
       nativeTitleTextStyle: AppTheme.werkaNativeAppBarTitleStyle(context),
       contentPadding: EdgeInsets.zero,
-      bottom: const AdminDock(activeTab: null),
+      animateOnEnter: false,
+      bottom: const AdminDock(activeTab: AdminDockTab.home),
       child: ColoredBox(
         color: scheme.surface,
         child: ListView(
@@ -137,19 +138,20 @@ class _AdminProductionMapTestScreenState
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      FilledButton.icon(
-                        onPressed: _addWaitNode,
-                        icon: const Icon(Icons.hourglass_bottom_rounded),
-                        label: const Text('Wait node'),
+                      Expanded(
+                        child: _PlainActionButton(
+                          label: 'Wait node',
+                          icon: Icons.hourglass_bottom_rounded,
+                          onTap: _addWaitNode,
+                          tonal: true,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: FilledButton.icon(
-                          onPressed: saving ? null : _save,
-                          icon: const Icon(Icons.check_rounded),
-                          label: Text(
-                            saving ? 'Saqlanyapti' : 'Save + compile',
-                          ),
+                        child: _PlainActionButton(
+                          label: saving ? 'Saqlanyapti' : 'Save + compile',
+                          icon: Icons.check_rounded,
+                          onTap: saving ? null : _save,
                         ),
                       ),
                     ],
@@ -221,6 +223,67 @@ class _AdminProductionMapTestScreenState
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PlainActionButton extends StatelessWidget {
+  const _PlainActionButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.tonal = false,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback? onTap;
+  final bool tonal;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final enabled = onTap != null;
+    final background = tonal ? scheme.secondaryContainer : scheme.primary;
+    final foreground = tonal ? scheme.onSecondaryContainer : scheme.onPrimary;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Opacity(
+          opacity: enabled ? 1 : 0.48,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: foreground, size: 20),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: foreground,
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
