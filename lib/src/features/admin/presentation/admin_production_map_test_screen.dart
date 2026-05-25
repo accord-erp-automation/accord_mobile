@@ -15,9 +15,9 @@ class AdminProductionMapTestScreen extends StatefulWidget {
 
 class _AdminProductionMapTestScreenState
     extends State<AdminProductionMapTestScreen> {
-  static const _sampleMapID = 'hotlunch-test';
-  static const _sampleProductCode = 'HOTLUNCH';
-  static const _sampleTitle = 'Hotlunch test map';
+  String mapID = 'hotlunch-test';
+  String productCode = 'HOTLUNCH';
+  String mapTitle = 'Hotlunch test map';
 
   final nodes = <ProductionMapNode>[
     const ProductionMapNode(
@@ -56,15 +56,17 @@ class _AdminProductionMapTestScreenState
   ProductionMapProgram? program;
   bool saving = false;
   int _nextNodeIndex = 1;
+  String? _draggingNodeID;
+  double? _dragStartY;
 
   Future<void> _save() async {
     setState(() => saving = true);
     try {
       final saved = await MobileApi.instance.adminSaveProductionMap(
         ProductionMapDefinition(
-          id: _sampleMapID,
-          productCode: _sampleProductCode,
-          title: _sampleTitle,
+          id: mapID,
+          productCode: productCode,
+          title: mapTitle,
           nodes: nodes,
           edges: edges,
         ),
@@ -127,7 +129,7 @@ class _AdminProductionMapTestScreenState
           id: id,
           kind: 'output',
           title: 'Natija chiqarish',
-          itemCode: _sampleProductCode,
+          itemCode: productCode,
         ),
       _ => ProductionMapNode(
           id: id,
@@ -145,6 +147,27 @@ class _AdminProductionMapTestScreenState
         for (var i = 0; i < nodes.length - 1; i++)
           ProductionMapEdge(from: nodes[i].id, to: nodes[i + 1].id),
       ]);
+  }
+
+  Future<void> _editMapInfo() async {
+    final edited = await showModalBottomSheet<_MapInfo>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _MapInfoSheet(
+        mapID: mapID,
+        productCode: productCode,
+        title: mapTitle,
+      ),
+    );
+    if (edited == null || !mounted) {
+      return;
+    }
+    setState(() {
+      mapID = edited.mapID;
+      productCode = edited.productCode;
+      mapTitle = edited.title;
+    });
   }
 
   Future<void> _editNode(int index) async {
@@ -172,6 +195,59 @@ class _AdminProductionMapTestScreenState
     });
   }
 
+  void _reorderNode(int oldIndex, int newIndex) {
+    if (oldIndex == 0 || oldIndex == nodes.length - 1) {
+      return;
+    }
+    var targetIndex = newIndex;
+    if (targetIndex > oldIndex) {
+      targetIndex -= 1;
+    }
+    targetIndex = targetIndex.clamp(1, nodes.length - 2);
+    if (oldIndex == targetIndex) {
+      return;
+    }
+    setState(() {
+      final node = nodes.removeAt(oldIndex);
+      nodes.insert(targetIndex, node);
+      _rebuildLinearEdges();
+    });
+  }
+
+  void _startNodeDrag(String nodeID, LongPressStartDetails details) {
+    final index = nodes.indexWhere((node) => node.id == nodeID);
+    if (index <= 0 || index >= nodes.length - 1) {
+      return;
+    }
+    _draggingNodeID = nodeID;
+    _dragStartY = details.globalPosition.dy;
+  }
+
+  void _moveDraggedNode(LongPressMoveUpdateDetails details) {
+    final nodeID = _draggingNodeID;
+    final startY = _dragStartY;
+    if (nodeID == null || startY == null) {
+      return;
+    }
+    final currentIndex = nodes.indexWhere((node) => node.id == nodeID);
+    if (currentIndex <= 0 || currentIndex >= nodes.length - 1) {
+      return;
+    }
+    final deltaY = details.globalPosition.dy - startY;
+    if (deltaY < -56 && currentIndex > 1) {
+      _reorderNode(currentIndex, currentIndex - 1);
+      _dragStartY = details.globalPosition.dy;
+    } else if (deltaY > 56 && currentIndex < nodes.length - 2) {
+      _reorderNode(currentIndex, currentIndex + 2);
+      _dragStartY = details.globalPosition.dy;
+    }
+  }
+
+  void _endNodeDrag(LongPressEndDetails details) {
+    _draggingNodeID = null;
+    _dragStartY = null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -192,14 +268,23 @@ class _AdminProductionMapTestScreenState
             _SurfacePanel(
               child: Column(
                 children: [
-                  const _InfoLine(label: 'Map ID', value: _sampleMapID),
-                  const SizedBox(height: 6),
-                  const _InfoLine(
-                    label: 'Mahsulot',
-                    value: _sampleProductCode,
+                  _InfoLine(
+                    label: 'Map ID',
+                    value: mapID,
+                    onTap: _editMapInfo,
                   ),
                   const SizedBox(height: 6),
-                  const _InfoLine(label: 'Nomi', value: _sampleTitle),
+                  _InfoLine(
+                    label: 'Mahsulot',
+                    value: productCode,
+                    onTap: _editMapInfo,
+                  ),
+                  const SizedBox(height: 6),
+                  _InfoLine(
+                    label: 'Nomi',
+                    value: mapTitle,
+                    onTap: _editMapInfo,
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -280,6 +365,18 @@ class _AdminProductionMapTestScreenState
                           nodes[i].kind == 'start' || nodes[i].kind == 'end'
                               ? null
                               : () => _deleteNode(i),
+                      onLongPressStart: nodes[i].kind == 'start' ||
+                              nodes[i].kind == 'end'
+                          ? null
+                          : (details) => _startNodeDrag(nodes[i].id, details),
+                      onLongPressMoveUpdate:
+                          nodes[i].kind == 'start' || nodes[i].kind == 'end'
+                              ? null
+                              : _moveDraggedNode,
+                      onLongPressEnd:
+                          nodes[i].kind == 'start' || nodes[i].kind == 'end'
+                              ? null
+                              : _endNodeDrag,
                     ),
                     if (i < nodes.length - 1)
                       Padding(
@@ -432,16 +529,18 @@ class _InfoLine extends StatelessWidget {
   const _InfoLine({
     required this.label,
     required this.value,
+    this.onTap,
   });
 
   final String label;
   final String value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    return Row(
+    final content = Row(
       children: [
         SizedBox(
           width: 88,
@@ -460,7 +559,24 @@ class _InfoLine extends StatelessWidget {
             ),
           ),
         ),
+        if (onTap != null)
+          Icon(
+            Icons.edit_rounded,
+            size: 16,
+            color: scheme.onSurfaceVariant,
+          ),
       ],
+    );
+    if (onTap == null) {
+      return content;
+    }
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: content,
+      ),
     );
   }
 }
@@ -470,11 +586,17 @@ class _MapNodeRow extends StatelessWidget {
     required this.node,
     required this.onTap,
     required this.onDelete,
+    required this.onLongPressStart,
+    required this.onLongPressMoveUpdate,
+    required this.onLongPressEnd,
   });
 
   final ProductionMapNode node;
   final VoidCallback onTap;
   final VoidCallback? onDelete;
+  final GestureLongPressStartCallback? onLongPressStart;
+  final GestureLongPressMoveUpdateCallback? onLongPressMoveUpdate;
+  final GestureLongPressEndCallback? onLongPressEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -486,6 +608,9 @@ class _MapNodeRow extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
+        onLongPressStart: onLongPressStart,
+        onLongPressMoveUpdate: onLongPressMoveUpdate,
+        onLongPressEnd: onLongPressEnd,
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: _colorFor(node.kind, scheme),
@@ -744,6 +869,119 @@ class _NodeEditSheetState extends State<_NodeEditSheet> {
                     formulaExpression.isEmpty ? 'order_qty' : formulaExpression,
               )
             : null,
+      ),
+    );
+  }
+}
+
+class _MapInfo {
+  const _MapInfo({
+    required this.mapID,
+    required this.productCode,
+    required this.title,
+  });
+
+  final String mapID;
+  final String productCode;
+  final String title;
+}
+
+class _MapInfoSheet extends StatefulWidget {
+  const _MapInfoSheet({
+    required this.mapID,
+    required this.productCode,
+    required this.title,
+  });
+
+  final String mapID;
+  final String productCode;
+  final String title;
+
+  @override
+  State<_MapInfoSheet> createState() => _MapInfoSheetState();
+}
+
+class _MapInfoSheetState extends State<_MapInfoSheet> {
+  late final TextEditingController _mapID;
+  late final TextEditingController _productCode;
+  late final TextEditingController _title;
+
+  @override
+  void initState() {
+    super.initState();
+    _mapID = TextEditingController(text: widget.mapID);
+    _productCode = TextEditingController(text: widget.productCode);
+    _title = TextEditingController(text: widget.title);
+  }
+
+  @override
+  void dispose() {
+    _mapID.dispose();
+    _productCode.dispose();
+    _title.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final viewInsets = MediaQuery.viewInsetsOf(context).bottom;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(bottom: viewInsets),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainer,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+            children: [
+              Center(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: scheme.onSurfaceVariant.withValues(alpha: 0.45),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: const SizedBox(width: 44, height: 4),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Map sozlash',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+              ),
+              const SizedBox(height: 14),
+              _SheetField(label: 'Map ID', controller: _mapID),
+              const SizedBox(height: 10),
+              _SheetField(label: 'Mahsulot code', controller: _productCode),
+              const SizedBox(height: 10),
+              _SheetField(label: 'Nomi', controller: _title),
+              const SizedBox(height: 16),
+              _PlainActionButton(
+                label: 'Saqlash',
+                icon: Icons.check_rounded,
+                onTap: _save,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _save() {
+    final mapID = _mapID.text.trim();
+    final productCode = _productCode.text.trim();
+    final title = _title.text.trim();
+    Navigator.of(context).pop(
+      _MapInfo(
+        mapID: mapID.isEmpty ? widget.mapID : mapID,
+        productCode: productCode.isEmpty ? widget.productCode : productCode,
+        title: title.isEmpty ? widget.title : title,
       ),
     );
   }

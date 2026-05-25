@@ -48,7 +48,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Yangi location'), findsOneWidget);
 
-    await tester.scrollUntilVisible(find.text('Yangi location'), 240);
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -260));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Yangi location'));
     await tester.pumpAndSettle();
@@ -59,5 +59,49 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Rezka location'), findsOneWidget);
+  });
+
+  testWidgets('production map page edits product and reorders nodes',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(useMaterial3: true),
+        locale: const Locale('uz'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const AdminProductionMapTestScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('HOTLUNCH'));
+    await tester.pumpAndSettle();
+    expect(find.text('Map sozlash'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).at(1), 'OPP');
+    await tester.tap(find.text('Saqlash'));
+    await tester.pumpAndSettle();
+    expect(find.text('OPP'), findsOneWidget);
+
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -180));
+    await tester.pumpAndSettle();
+    final dragStart = tester.getCenter(find.text('Rezkaga yuborish'));
+    final gesture = await tester.startGesture(dragStart);
+    await tester.pump(const Duration(milliseconds: 1000));
+    await gesture.moveBy(const Offset(0, -120));
+    await tester.pump(const Duration(milliseconds: 100));
+    await gesture.moveBy(const Offset(0, -120));
+    await tester.pump(const Duration(milliseconds: 100));
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    final rezkaTop = tester.getTopLeft(find.text('Rezkaga yuborish')).dy;
+    final cppTop = tester.getTopLeft(find.text('CPP hisob')).dy;
+    expect(rezkaTop, lessThan(cppTop));
   });
 }
