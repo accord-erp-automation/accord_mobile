@@ -135,107 +135,153 @@ class _AdminProductionMapTestScreenState
       nativeTitleTextStyle: AppTheme.werkaNativeAppBarTitleStyle(context),
       contentPadding: EdgeInsets.zero,
       bottom: const AdminDock(activeTab: null),
-      child: ListView(
-        padding: EdgeInsets.fromLTRB(12, 4, 12, bottomPadding),
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _Field(controller: mapID, label: 'Map ID'),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _Field(controller: productCode, label: 'Product code'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          _Field(controller: title, label: 'Map nomi'),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              FilledButton.icon(
-                onPressed: _addWaitNode,
-                icon: const Icon(Icons.hourglass_bottom_rounded),
-                label: const Text('Wait node'),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: saving ? null : _save,
-                  icon: saving
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: AppLoadingIndicator(size: 18, glyphSize: 14),
-                        )
-                      : const Icon(Icons.check_rounded),
-                  label: Text(saving ? 'Saqlanyapti' : 'Save + compile'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            height: 320,
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: scheme.outlineVariant),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: InteractiveViewer(
-              minScale: 0.5,
-              maxScale: 2.5,
-              boundaryMargin: const EdgeInsets.all(220),
-              child: SizedBox(
-                width: 840,
-                height: 360,
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: _MapEdgePainter(
-                          nodes: nodes,
-                          edges: edges,
-                          color: scheme.outline,
+      child: ColoredBox(
+        color: scheme.surface,
+        child: ListView(
+          padding: EdgeInsets.fromLTRB(12, 12, 12, bottomPadding),
+          children: [
+            _SurfacePanel(
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _Field(controller: mapID, label: 'Map ID'),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _Field(
+                          controller: productCode,
+                          label: 'Product code',
                         ),
                       ),
-                    ),
-                    for (final node in nodes)
-                      Positioned(
-                        left: node.x,
-                        top: node.y,
-                        child: _MapNodeCard(node: node),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  _Field(controller: title, label: 'Map nomi'),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      FilledButton.icon(
+                        onPressed: _addWaitNode,
+                        icon: const Icon(Icons.hourglass_bottom_rounded),
+                        label: const Text('Wait node'),
                       ),
-                  ],
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: saving ? null : _save,
+                          icon: saving
+                              ? const SizedBox.square(
+                                  dimension: 18,
+                                  child: AppLoadingIndicator(
+                                    size: 18,
+                                    glyphSize: 14,
+                                  ),
+                                )
+                              : const Icon(Icons.check_rounded),
+                          label: Text(
+                            saving ? 'Saqlanyapti' : 'Save + compile',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              height: 320,
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: scheme.outlineVariant),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 2.5,
+                boundaryMargin: const EdgeInsets.all(220),
+                child: SizedBox(
+                  width: 840,
+                  height: 360,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: _MapEdgePainter(
+                            nodes: nodes,
+                            edges: edges,
+                            color: scheme.outline,
+                          ),
+                        ),
+                      ),
+                      for (final node in nodes)
+                        Positioned(
+                          left: node.x,
+                          top: node.y,
+                          child: _MapNodeCard(node: node),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Compiled program',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          if (program == null)
-            Text(
-              'Save bosilganda RS server JSON mapni tekshiradi va operation code ro‘yxatiga aylantiradi.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            )
-          else
-            ...program!.operations.map(
-              (operation) => ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: CircleAvatar(
-                  radius: 16,
-                  child: Text(operation.order.toString()),
-                ),
-                title: Text(operation.opCode),
-                subtitle: Text(operation.nodeId),
+            const SizedBox(height: 12),
+            _SurfacePanel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Compiled program',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  if (program == null)
+                    Text(
+                      'Save bosilganda RS server JSON mapni tekshiradi va operation code ro‘yxatiga aylantiradi.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    )
+                  else
+                    ...program!.operations.map(
+                      (operation) => ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(
+                          radius: 16,
+                          child: Text(operation.order.toString()),
+                        ),
+                        title: Text(operation.opCode),
+                        subtitle: Text(operation.nodeId),
+                      ),
+                    ),
+                ],
               ),
             ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SurfacePanel extends StatelessWidget {
+  const _SurfacePanel({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: child,
       ),
     );
   }
@@ -252,11 +298,24 @@ class _Field extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return TextField(
       controller: controller,
+      style: TextStyle(color: scheme.onSurface),
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: TextStyle(color: scheme.onSurfaceVariant),
+        filled: true,
+        fillColor: scheme.surfaceContainerHighest,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: scheme.outlineVariant),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide(color: scheme.primary, width: 1.6),
+        ),
       ),
     );
   }
