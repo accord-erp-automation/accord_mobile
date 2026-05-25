@@ -527,7 +527,7 @@ class _AdminProductionMapTestScreenState
   }
 }
 
-class _PlainActionButton extends StatelessWidget {
+class _PlainActionButton extends StatefulWidget {
   const _PlainActionButton({
     required this.label,
     required this.icon,
@@ -541,44 +541,63 @@ class _PlainActionButton extends StatelessWidget {
   final bool tonal;
 
   @override
+  State<_PlainActionButton> createState() => _PlainActionButtonState();
+}
+
+class _PlainActionButtonState extends State<_PlainActionButton> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final enabled = onTap != null;
-    final background = tonal ? scheme.secondaryContainer : scheme.primary;
-    final foreground = tonal ? scheme.onSecondaryContainer : scheme.onPrimary;
+    final enabled = widget.onTap != null;
+    final background =
+        widget.tonal ? scheme.secondaryContainer : scheme.primary;
+    final foreground =
+        widget.tonal ? scheme.onSecondaryContainer : scheme.onPrimary;
     return Semantics(
       button: true,
       enabled: enabled,
-      label: label,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Opacity(
-          opacity: enabled ? 1 : 0.48,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: background,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, color: foreground, size: 20),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: foreground,
-                            fontWeight: FontWeight.w800,
-                          ),
+      label: widget.label,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOutCubic,
+        scale: _pressed ? 0.985 : 1,
+        child: Material(
+          color: background,
+          borderRadius: BorderRadius.circular(18),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            splashColor: scheme.onPrimary.withValues(alpha: 0.12),
+            highlightColor: scheme.onPrimary.withValues(alpha: 0.08),
+            onTapDown: enabled ? (_) => setState(() => _pressed = true) : null,
+            onTapUp: enabled ? (_) => setState(() => _pressed = false) : null,
+            onTapCancel: enabled ? () => setState(() => _pressed = false) : null,
+            onTap: widget.onTap,
+            child: Opacity(
+              opacity: enabled ? 1 : 0.48,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(widget.icon, color: foreground, size: 20),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        widget.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: foreground,
+                              fontWeight: FontWeight.w800,
+                            ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
