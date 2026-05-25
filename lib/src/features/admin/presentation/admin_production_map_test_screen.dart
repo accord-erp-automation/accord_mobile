@@ -449,38 +449,36 @@ class _AdminProductionMapTestScreenState
                   ),
                 ),
                 const SizedBox(height: 12),
-                _SurfacePanel(
-                  child: Column(
-                    children: [
-                      for (var i = 0; i < nodes.length; i++) ...[
-                        Opacity(
-                          opacity: _draggingNodeID == nodes[i].id ? 0.24 : 1,
-                          child: _MapNodeRow(
-                            node: nodes[i],
-                            onTap: () => _editNode(i),
-                            onDelete: nodes[i].kind == 'start' ||
-                                    nodes[i].kind == 'end'
-                                ? null
-                                : () => _deleteNode(i),
-                            canDrag: nodes[i].kind != 'start' &&
-                                nodes[i].kind != 'end',
-                            onLongPressStart: (details) =>
-                                _startFloatingDrag(nodes[i].id, details),
-                            onLongPressMoveUpdate: _updateFloatingDrag,
-                            onLongPressEnd: _endFloatingDrag,
+                Column(
+                  children: [
+                    for (var i = 0; i < nodes.length; i++) ...[
+                      Opacity(
+                        opacity: _draggingNodeID == nodes[i].id ? 0.24 : 1,
+                        child: _MapNodeRow(
+                          node: nodes[i],
+                          onTap: () => _editNode(i),
+                          onDelete: nodes[i].kind == 'start' ||
+                                  nodes[i].kind == 'end'
+                              ? null
+                              : () => _deleteNode(i),
+                          canDrag: nodes[i].kind != 'start' &&
+                              nodes[i].kind != 'end',
+                          onLongPressStart: (details) =>
+                              _startFloatingDrag(nodes[i].id, details),
+                          onLongPressMoveUpdate: _updateFloatingDrag,
+                          onLongPressEnd: _endFloatingDrag,
+                        ),
+                      ),
+                      if (i < nodes.length - 1)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: scheme.onSurfaceVariant,
                           ),
                         ),
-                        if (i < nodes.length - 1)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            child: Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              color: scheme.onSurfaceVariant,
-                            ),
-                          ),
-                      ],
                     ],
-                  ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 _SurfacePanel(
