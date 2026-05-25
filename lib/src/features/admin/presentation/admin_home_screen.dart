@@ -291,6 +291,11 @@ List<_AdminHomeAction> _adminHomeActions(BuildContext context) {
       routeName: AppRoutes.adminRoles,
     ),
     const _AdminHomeAction(
+      title: 'Production map test',
+      icon: Icons.account_tree_rounded,
+      routeName: AppRoutes.adminProductionMapTest,
+    ),
+    const _AdminHomeAction(
       title: 'GScale',
       icon: Icons.scale_outlined,
       routeName: AppRoutes.gscaleMode,

@@ -163,6 +163,12 @@ List<_AdminDrawerDestination> _visibleAdminDrawerDestinations(
       label: l10n.adminRolesTitle,
       routeName: AppRoutes.adminRoles,
     ),
+    const _AdminDrawerDestination(
+      icon: Icons.account_tree_outlined,
+      selectedIcon: Icons.account_tree_rounded,
+      label: 'Production map',
+      routeName: AppRoutes.adminProductionMapTest,
+    ),
     _AdminDrawerDestination(
       icon: Icons.person_outline_rounded,
       selectedIcon: Icons.person_rounded,

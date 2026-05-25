@@ -99,6 +99,41 @@ extension MobileApiAdmin on MobileApi {
         .toList();
   }
 
+  Future<List<ProductionMapSaved>> adminProductionMaps() async {
+    final response = await _sendAuthorized(
+      () => http.get(
+        Uri.parse('$baseUrl/v1/mobile/admin/production-maps'),
+        headers: _headers(requireToken()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Admin production maps failed');
+    }
+    final List<dynamic> json = jsonDecode(response.body) as List<dynamic>;
+    return json
+        .map((item) => ProductionMapSaved.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<ProductionMapSaved> adminSaveProductionMap(
+    ProductionMapDefinition map,
+  ) async {
+    final response = await _sendAuthorized(
+      () => http.put(
+        Uri.parse('$baseUrl/v1/mobile/admin/production-maps'),
+        headers: _headers(requireToken())
+          ..['Content-Type'] = 'application/json',
+        body: jsonEncode(map.toJson()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Admin production map save failed');
+    }
+    return ProductionMapSaved.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
   Future<AdminRoleDefinition> adminUpsertRole(
     AdminRoleDefinition role,
   ) async {

@@ -1,0 +1,230 @@
+class ProductionMapDefinition {
+  const ProductionMapDefinition({
+    required this.id,
+    required this.productCode,
+    required this.title,
+    required this.nodes,
+    required this.edges,
+  });
+
+  final String id;
+  final String productCode;
+  final String title;
+  final List<ProductionMapNode> nodes;
+  final List<ProductionMapEdge> edges;
+
+  factory ProductionMapDefinition.fromJson(Map<String, dynamic> json) {
+    return ProductionMapDefinition(
+      id: json['id'] as String? ?? '',
+      productCode: json['product_code'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      nodes: (json['nodes'] as List<dynamic>? ?? const [])
+          .map((item) =>
+              ProductionMapNode.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false),
+      edges: (json['edges'] as List<dynamic>? ?? const [])
+          .map((item) =>
+              ProductionMapEdge.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'product_code': productCode,
+      'title': title,
+      'nodes': nodes.map((node) => node.toJson()).toList(growable: false),
+      'edges': edges.map((edge) => edge.toJson()).toList(growable: false),
+    };
+  }
+}
+
+class ProductionMapNode {
+  const ProductionMapNode({
+    required this.id,
+    required this.kind,
+    required this.title,
+    this.formula,
+    this.roleCode = '',
+    this.itemCode = '',
+    this.x = 0,
+    this.y = 0,
+  });
+
+  final String id;
+  final String kind;
+  final String title;
+  final ProductionFormula? formula;
+  final String roleCode;
+  final String itemCode;
+  final double x;
+  final double y;
+
+  ProductionMapNode copyWith({
+    String? id,
+    String? kind,
+    String? title,
+    ProductionFormula? formula,
+    String? roleCode,
+    String? itemCode,
+    double? x,
+    double? y,
+  }) {
+    return ProductionMapNode(
+      id: id ?? this.id,
+      kind: kind ?? this.kind,
+      title: title ?? this.title,
+      formula: formula ?? this.formula,
+      roleCode: roleCode ?? this.roleCode,
+      itemCode: itemCode ?? this.itemCode,
+      x: x ?? this.x,
+      y: y ?? this.y,
+    );
+  }
+
+  factory ProductionMapNode.fromJson(Map<String, dynamic> json) {
+    return ProductionMapNode(
+      id: json['id'] as String? ?? '',
+      kind: json['kind'] as String? ?? 'task',
+      title: json['title'] as String? ?? '',
+      formula: json['formula'] is Map<String, dynamic>
+          ? ProductionFormula.fromJson(json['formula'] as Map<String, dynamic>)
+          : null,
+      roleCode: json['role_code'] as String? ?? '',
+      itemCode: json['item_code'] as String? ?? '',
+      x: (json['x'] as num?)?.toDouble() ?? 0,
+      y: (json['y'] as num?)?.toDouble() ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'kind': kind,
+      'title': title,
+      if (formula != null) 'formula': formula!.toJson(),
+      if (roleCode.trim().isNotEmpty) 'role_code': roleCode.trim(),
+      if (itemCode.trim().isNotEmpty) 'item_code': itemCode.trim(),
+      'x': x,
+      'y': y,
+    };
+  }
+}
+
+class ProductionFormula {
+  const ProductionFormula({
+    required this.target,
+    required this.expression,
+  });
+
+  final String target;
+  final String expression;
+
+  factory ProductionFormula.fromJson(Map<String, dynamic> json) {
+    return ProductionFormula(
+      target: json['target'] as String? ?? '',
+      expression: json['expression'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'target': target,
+      'expression': expression,
+    };
+  }
+}
+
+class ProductionMapEdge {
+  const ProductionMapEdge({
+    required this.from,
+    required this.to,
+  });
+
+  final String from;
+  final String to;
+
+  factory ProductionMapEdge.fromJson(Map<String, dynamic> json) {
+    return ProductionMapEdge(
+      from: json['from'] as String? ?? '',
+      to: json['to'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'from': from,
+      'to': to,
+    };
+  }
+}
+
+class ProductionMapSaved {
+  const ProductionMapSaved({
+    required this.map,
+    required this.program,
+  });
+
+  final ProductionMapDefinition map;
+  final ProductionMapProgram program;
+
+  factory ProductionMapSaved.fromJson(Map<String, dynamic> json) {
+    return ProductionMapSaved(
+      map: ProductionMapDefinition.fromJson(
+        json['map'] as Map<String, dynamic>,
+      ),
+      program: ProductionMapProgram.fromJson(
+        json['program'] as Map<String, dynamic>,
+      ),
+    );
+  }
+}
+
+class ProductionMapProgram {
+  const ProductionMapProgram({
+    required this.mapId,
+    required this.productCode,
+    required this.operations,
+  });
+
+  final String mapId;
+  final String productCode;
+  final List<ProductionMapOperation> operations;
+
+  factory ProductionMapProgram.fromJson(Map<String, dynamic> json) {
+    return ProductionMapProgram(
+      mapId: json['map_id'] as String? ?? '',
+      productCode: json['product_code'] as String? ?? '',
+      operations: (json['operations'] as List<dynamic>? ?? const [])
+          .map((item) =>
+              ProductionMapOperation.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false),
+    );
+  }
+}
+
+class ProductionMapOperation {
+  const ProductionMapOperation({
+    required this.order,
+    required this.nodeId,
+    required this.opCode,
+    required this.args,
+  });
+
+  final int order;
+  final String nodeId;
+  final String opCode;
+  final Map<String, String> args;
+
+  factory ProductionMapOperation.fromJson(Map<String, dynamic> json) {
+    return ProductionMapOperation(
+      order: (json['order'] as num?)?.toInt() ?? 0,
+      nodeId: json['node_id'] as String? ?? '',
+      opCode: json['op_code'] as String? ?? '',
+      args: (json['args'] as Map<String, dynamic>? ?? const {}).map(
+        (key, value) => MapEntry(key, value?.toString() ?? ''),
+      ),
+    );
+  }
+}
