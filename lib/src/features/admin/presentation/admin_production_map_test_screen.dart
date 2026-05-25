@@ -214,19 +214,27 @@ class _AdminProductionMapTestScreenState
     });
   }
 
-  void _startNodeDrag(String nodeID, LongPressStartDetails details) {
-    final index = nodes.indexWhere((node) => node.id == nodeID);
-    if (index <= 0 || index >= nodes.length - 1) {
+  void _moveNodeToIndex(String nodeID, int targetIndex) {
+    final oldIndex = nodes.indexWhere((node) => node.id == nodeID);
+    if (oldIndex <= 0 || oldIndex >= nodes.length - 1) {
       return;
     }
-    _draggingNodeID = nodeID;
-    _dragStartY = details.globalPosition.dy;
+    _reorderNode(oldIndex, targetIndex);
   }
 
-  void _moveDraggedNode(LongPressMoveUpdateDetails details) {
+  void _startFloatingDrag(String nodeID) {
+    _draggingNodeID = nodeID;
+    _dragStartY = null;
+  }
+
+  void _updateFloatingDrag(DragUpdateDetails details) {
     final nodeID = _draggingNodeID;
+    if (nodeID == null) {
+      return;
+    }
     final startY = _dragStartY;
-    if (nodeID == null || startY == null) {
+    if (startY == null) {
+      _dragStartY = details.globalPosition.dy;
       return;
     }
     final currentIndex = nodes.indexWhere((node) => node.id == nodeID);
@@ -234,16 +242,16 @@ class _AdminProductionMapTestScreenState
       return;
     }
     final deltaY = details.globalPosition.dy - startY;
-    if (deltaY < -56 && currentIndex > 1) {
+    if (deltaY < -64 && currentIndex > 1) {
       _reorderNode(currentIndex, currentIndex - 1);
       _dragStartY = details.globalPosition.dy;
-    } else if (deltaY > 56 && currentIndex < nodes.length - 2) {
+    } else if (deltaY > 64 && currentIndex < nodes.length - 2) {
       _reorderNode(currentIndex, currentIndex + 2);
       _dragStartY = details.globalPosition.dy;
     }
   }
 
-  void _endNodeDrag(LongPressEndDetails details) {
+  void _endFloatingDrag(DraggableDetails details) {
     _draggingNodeID = null;
     _dragStartY = null;
   }
@@ -365,18 +373,13 @@ class _AdminProductionMapTestScreenState
                           nodes[i].kind == 'start' || nodes[i].kind == 'end'
                               ? null
                               : () => _deleteNode(i),
-                      onLongPressStart: nodes[i].kind == 'start' ||
-                              nodes[i].kind == 'end'
-                          ? null
-                          : (details) => _startNodeDrag(nodes[i].id, details),
-                      onLongPressMoveUpdate:
-                          nodes[i].kind == 'start' || nodes[i].kind == 'end'
-                              ? null
-                              : _moveDraggedNode,
-                      onLongPressEnd:
-                          nodes[i].kind == 'start' || nodes[i].kind == 'end'
-                              ? null
-                              : _endNodeDrag,
+                      canDrag:
+                          nodes[i].kind != 'start' && nodes[i].kind != 'end',
+                      onAcceptDraggedNode: (nodeID) =>
+                          _moveNodeToIndex(nodeID, i),
+                      onDragStarted: () => _startFloatingDrag(nodes[i].id),
+                      onDragUpdate: _updateFloatingDrag,
+                      onDragEnd: _endFloatingDrag,
                     ),
                     if (i < nodes.length - 1)
                       Padding(
@@ -586,17 +589,86 @@ class _MapNodeRow extends StatelessWidget {
     required this.node,
     required this.onTap,
     required this.onDelete,
-    required this.onLongPressStart,
-    required this.onLongPressMoveUpdate,
-    required this.onLongPressEnd,
+    required this.canDrag,
+    required this.onAcceptDraggedNode,
+    required this.onDragStarted,
+    required this.onDragUpdate,
+    required this.onDragEnd,
   });
 
   final ProductionMapNode node;
   final VoidCallback onTap;
   final VoidCallback? onDelete;
-  final GestureLongPressStartCallback? onLongPressStart;
-  final GestureLongPressMoveUpdateCallback? onLongPressMoveUpdate;
-  final GestureLongPressEndCallback? onLongPressEnd;
+  final bool canDrag;
+  final ValueChanged<String> onAcceptDraggedNode;
+  final VoidCallback onDragStarted;
+  final DragUpdateCallback onDragUpdate;
+  final DragEndCallback onDragEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final content = DragTarget<String>(
+      onWillAcceptWithDetails: (details) => details.data != node.id,
+      onAcceptWithDetails: (details) => onAcceptDraggedNode(details.data),
+      builder: (context, candidateData, rejectedData) {
+        return AnimatedScale(
+          duration: const Duration(milliseconds: 120),
+          scale: candidateData.isEmpty ? 1 : 1.025,
+          child: _MapNodeVisual(
+            node: node,
+            onTap: onTap,
+            onDelete: onDelete,
+            floating: false,
+            highlighted: candidateData.isNotEmpty,
+          ),
+        );
+      },
+    );
+    if (!canDrag) {
+      return content;
+    }
+    return LongPressDraggable<String>(
+      data: node.id,
+      dragAnchorStrategy: childDragAnchorStrategy,
+      onDragStarted: onDragStarted,
+      onDragUpdate: onDragUpdate,
+      onDragEnd: onDragEnd,
+      feedback: SizedBox(
+        width: MediaQuery.sizeOf(context).width - 48,
+        child: Material(
+          color: Colors.transparent,
+          child: _MapNodeVisual(
+            node: node,
+            onTap: () {},
+            onDelete: null,
+            floating: true,
+            highlighted: false,
+          ),
+        ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.28,
+        child: content,
+      ),
+      child: content,
+    );
+  }
+}
+
+class _MapNodeVisual extends StatelessWidget {
+  const _MapNodeVisual({
+    required this.node,
+    required this.onTap,
+    required this.onDelete,
+    required this.floating,
+    required this.highlighted,
+  });
+
+  final ProductionMapNode node;
+  final VoidCallback onTap;
+  final VoidCallback? onDelete;
+  final bool floating;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
@@ -608,13 +680,23 @@ class _MapNodeRow extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        onLongPressStart: onLongPressStart,
-        onLongPressMoveUpdate: onLongPressMoveUpdate,
-        onLongPressEnd: onLongPressEnd,
-        child: DecoratedBox(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
           decoration: BoxDecoration(
             color: _colorFor(node.kind, scheme),
             borderRadius: _shapeFor(node.kind),
+            border: highlighted
+                ? Border.all(color: scheme.primary, width: 2)
+                : null,
+            boxShadow: floating
+                ? [
+                    BoxShadow(
+                      color: scheme.shadow.withValues(alpha: 0.28),
+                      blurRadius: 18,
+                      offset: const Offset(0, 10),
+                    ),
+                  ]
+                : null,
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
