@@ -1,6 +1,8 @@
 import '../../../core/api/mobile_api.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/shell/app_shell.dart';
+import '../../shared/models/app_models.dart';
+import '../../werka/presentation/widgets/m3_picker_sheet.dart';
 import '../models/production_map_models.dart';
 import 'widgets/admin_dock.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +19,7 @@ class _AdminProductionMapTestScreenState
     extends State<AdminProductionMapTestScreen> {
   String mapID = 'hotlunch-test';
   String productCode = 'HOTLUNCH';
+  String productName = 'HOTLUNCH';
   String mapTitle = 'Hotlunch test map';
 
   final nodes = <ProductionMapNode>[
@@ -159,7 +162,6 @@ class _AdminProductionMapTestScreenState
       backgroundColor: Colors.transparent,
       builder: (context) => _MapInfoSheet(
         mapID: mapID,
-        productCode: productCode,
         title: mapTitle,
       ),
     );
@@ -168,8 +170,45 @@ class _AdminProductionMapTestScreenState
     }
     setState(() {
       mapID = edited.mapID;
-      productCode = edited.productCode;
       mapTitle = edited.title;
+    });
+  }
+
+  Future<void> _openProductPicker() async {
+    final picked = await showModalBottomSheet<SupplierItem>(
+      context: context,
+      isDismissible: true,
+      enableDrag: true,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.32),
+      sheetAnimationStyle: kM3PickerSheetAnimation,
+      builder: (context) {
+        return M3AsyncPickerSheet<SupplierItem>(
+          title: 'Mahsulot tanlang',
+          hintText: 'Mahsulot qidiring',
+          pageSize: 80,
+          cacheKey: 'production-map:items',
+          loadPage: (query, offset, limit) {
+            return MobileApi.instance.adminItemsPage(
+              query: query,
+              offset: offset,
+              limit: limit,
+            );
+          },
+          itemTitle: (item) => item.name.trim().isEmpty ? item.code : item.name,
+          itemSubtitle: (item) => item.code,
+          onSelected: (item) => Navigator.of(context).pop(item),
+        );
+      },
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    setState(() {
+      productCode = picked.code;
+      productName = picked.name.trim().isEmpty ? picked.code : picked.name;
     });
   }
 
@@ -332,8 +371,10 @@ class _AdminProductionMapTestScreenState
                       const SizedBox(height: 6),
                       _InfoLine(
                         label: 'Mahsulot',
-                        value: productCode,
-                        onTap: _editMapInfo,
+                        value: productName == productCode
+                            ? productCode
+                            : '$productName · $productCode',
+                        onTap: _openProductPicker,
                       ),
                       const SizedBox(height: 6),
                       _InfoLine(
@@ -999,24 +1040,20 @@ class _NodeEditSheetState extends State<_NodeEditSheet> {
 class _MapInfo {
   const _MapInfo({
     required this.mapID,
-    required this.productCode,
     required this.title,
   });
 
   final String mapID;
-  final String productCode;
   final String title;
 }
 
 class _MapInfoSheet extends StatefulWidget {
   const _MapInfoSheet({
     required this.mapID,
-    required this.productCode,
     required this.title,
   });
 
   final String mapID;
-  final String productCode;
   final String title;
 
   @override
@@ -1025,21 +1062,18 @@ class _MapInfoSheet extends StatefulWidget {
 
 class _MapInfoSheetState extends State<_MapInfoSheet> {
   late final TextEditingController _mapID;
-  late final TextEditingController _productCode;
   late final TextEditingController _title;
 
   @override
   void initState() {
     super.initState();
     _mapID = TextEditingController(text: widget.mapID);
-    _productCode = TextEditingController(text: widget.productCode);
     _title = TextEditingController(text: widget.title);
   }
 
   @override
   void dispose() {
     _mapID.dispose();
-    _productCode.dispose();
     _title.dispose();
     super.dispose();
   }
@@ -1079,8 +1113,6 @@ class _MapInfoSheetState extends State<_MapInfoSheet> {
               const SizedBox(height: 14),
               _SheetField(label: 'Map ID', controller: _mapID),
               const SizedBox(height: 10),
-              _SheetField(label: 'Mahsulot code', controller: _productCode),
-              const SizedBox(height: 10),
               _SheetField(label: 'Nomi', controller: _title),
               const SizedBox(height: 16),
               _PlainActionButton(
@@ -1097,12 +1129,10 @@ class _MapInfoSheetState extends State<_MapInfoSheet> {
 
   void _save() {
     final mapID = _mapID.text.trim();
-    final productCode = _productCode.text.trim();
     final title = _title.text.trim();
     Navigator.of(context).pop(
       _MapInfo(
         mapID: mapID.isEmpty ? widget.mapID : mapID,
-        productCode: productCode.isEmpty ? widget.productCode : productCode,
         title: title.isEmpty ? widget.title : title,
       ),
     );
