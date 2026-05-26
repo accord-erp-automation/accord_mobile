@@ -393,7 +393,7 @@ class _AdminProductionMapTestScreenState
   }
 
   void _resolveNodeOverlaps({required String anchorID}) {
-    for (var pass = 0; pass < 24; pass++) {
+    for (var pass = 0; pass < 80; pass++) {
       var moved = false;
       for (var a = 0; a < nodes.length; a++) {
         for (var b = a + 1; b < nodes.length; b++) {
@@ -413,9 +413,11 @@ class _AdminProductionMapTestScreenState
         }
       }
       if (!moved) {
+        _repackRemainingOverlaps(anchorID: anchorID);
         return;
       }
     }
+    _repackRemainingOverlaps(anchorID: anchorID);
   }
 
   Offset _overlapSeparation(ProductionMapNode a, ProductionMapNode b) {
@@ -443,6 +445,36 @@ class _AdminProductionMapTestScreenState
     final node = nodes[index];
     final position = _clampNodePosition(Offset(node.x, node.y) + delta);
     nodes[index] = node.copyWith(x: position.dx, y: position.dy);
+  }
+
+  void _repackRemainingOverlaps({required String anchorID}) {
+    for (var pass = 0; pass < nodes.length; pass++) {
+      var changed = false;
+      for (var i = 0; i < nodes.length; i++) {
+        final node = nodes[i];
+        if (node.id == anchorID || !_nodeOverlapsAny(node)) {
+          continue;
+        }
+        final position = _firstFreePosition(
+          Offset(node.x, node.y),
+          nodeID: node.id,
+        );
+        if (position.dx != node.x || position.dy != node.y) {
+          nodes[i] = node.copyWith(x: position.dx, y: position.dy);
+          changed = true;
+        }
+      }
+      if (!changed) {
+        return;
+      }
+    }
+  }
+
+  bool _nodeOverlapsAny(ProductionMapNode node) {
+    return _positionOverlapsAny(
+      Offset(node.x, node.y),
+      nodeID: node.id,
+    );
   }
 
   Offset _clampNodePosition(Offset position) {
