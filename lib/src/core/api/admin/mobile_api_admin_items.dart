@@ -50,6 +50,13 @@ extension MobileApiAdminItems on MobileApi {
     String query = '',
     String group = '',
   }) async {
+    if (await TestModeController.instance.isEnabled()) {
+      return TestModeDemoData.itemPage(
+        query: query,
+        group: group,
+        limit: 0,
+      );
+    }
     const pageSize = 200;
     final items = <SupplierItem>[];
     for (var offset = 0;; offset += pageSize) {
@@ -73,6 +80,14 @@ extension MobileApiAdminItems on MobileApi {
     int limit = 50,
     int offset = 0,
   }) async {
+    if (await TestModeController.instance.isEnabled()) {
+      return TestModeDemoData.itemPage(
+        query: query,
+        group: group,
+        limit: limit,
+        offset: offset,
+      );
+    }
     final response = await _sendAuthorized(
       () => http.get(
         Uri.parse('${MobileApi.baseUrl}/v1/mobile/admin/items').replace(

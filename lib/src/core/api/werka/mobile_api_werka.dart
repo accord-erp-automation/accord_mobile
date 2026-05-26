@@ -245,6 +245,13 @@ extension MobileApiWerka on MobileApi {
     int limit = 100,
     int offset = 0,
   }) async {
+    if (await TestModeController.instance.isEnabled()) {
+      return TestModeDemoData.itemPage(
+        query: query,
+        limit: limit,
+        offset: offset,
+      );
+    }
     final response = await _sendAuthorized(
       () => http.get(
         Uri.parse('$baseUrl/v1/mobile/werka/supplier-items').replace(

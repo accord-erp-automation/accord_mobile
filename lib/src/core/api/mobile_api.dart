@@ -7,6 +7,8 @@ import '../notifications/service/push_messaging_service.dart';
 import '../search/search_activity_store.dart';
 import '../search/search_normalizer.dart';
 import '../session/session.dart';
+import '../test_mode/test_mode_controller.dart';
+import '../test_mode/test_mode_demo_data.dart';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';

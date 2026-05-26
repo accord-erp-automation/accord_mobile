@@ -4,6 +4,9 @@ extension MobileApiAdmin on MobileApi {
   String get baseUrl => MobileApi.baseUrl;
 
   Future<AdminSettings> adminSettings() async {
+    if (await TestModeController.instance.isEnabled()) {
+      return TestModeDemoData.adminSettings;
+    }
     final response = await _sendAuthorized(
       () => http.get(
         Uri.parse('$baseUrl/v1/mobile/admin/settings'),
@@ -83,6 +86,9 @@ extension MobileApiAdmin on MobileApi {
   }
 
   Future<List<AdminRoleDefinition>> adminRoles() async {
+    if (await TestModeController.instance.isEnabled()) {
+      return TestModeDemoData.roles;
+    }
     final response = await _sendAuthorized(
       () => http.get(
         Uri.parse('$baseUrl/v1/mobile/admin/roles'),
@@ -174,6 +180,9 @@ extension MobileApiAdmin on MobileApi {
   }
 
   Future<List<AdminRoleAssignment>> adminRoleAssignments() async {
+    if (await TestModeController.instance.isEnabled()) {
+      return TestModeDemoData.roleAssignments;
+    }
     final response = await _sendAuthorized(
       () => http.get(
         Uri.parse('$baseUrl/v1/mobile/admin/role-assignments'),
@@ -210,6 +219,14 @@ extension MobileApiAdmin on MobileApi {
   }
 
   Future<AdminSuppliersPage> adminSuppliersPage() async {
+    if (await TestModeController.instance.isEnabled()) {
+      return AdminSuppliersPage(
+        summary: TestModeDemoData.supplierSummary,
+        suppliers: TestModeDemoData.suppliers,
+        customers: TestModeDemoData.customers,
+        settings: TestModeDemoData.adminSettings,
+      );
+    }
     final response = await _sendAuthorized(
       () => http.get(
         Uri.parse('$baseUrl/v1/mobile/admin/suppliers'),
@@ -228,6 +245,9 @@ extension MobileApiAdmin on MobileApi {
     int limit = 20,
     int offset = 0,
   }) async {
+    if (await TestModeController.instance.isEnabled()) {
+      return TestModeDemoData.supplierPage(limit: limit, offset: offset);
+    }
     final response = await _sendAuthorized(
       () => http.get(
         Uri.parse('$baseUrl/v1/mobile/admin/suppliers/list').replace(
@@ -249,6 +269,9 @@ extension MobileApiAdmin on MobileApi {
   }
 
   Future<AdminSupplierSummary> adminSupplierSummary() async {
+    if (await TestModeController.instance.isEnabled()) {
+      return TestModeDemoData.supplierSummary;
+    }
     final response = await _sendAuthorized(
       () => http.get(
         Uri.parse('$baseUrl/v1/mobile/admin/suppliers/summary'),
@@ -264,6 +287,9 @@ extension MobileApiAdmin on MobileApi {
   }
 
   Future<List<AdminSupplier>> adminInactiveSuppliers() async {
+    if (await TestModeController.instance.isEnabled()) {
+      return const <AdminSupplier>[];
+    }
     final response = await _sendAuthorized(
       () => http.get(
         Uri.parse('$baseUrl/v1/mobile/admin/suppliers/inactive'),
@@ -280,6 +306,9 @@ extension MobileApiAdmin on MobileApi {
   }
 
   Future<AdminSupplierDetail> adminSupplierDetail(String ref) async {
+    if (await TestModeController.instance.isEnabled()) {
+      return TestModeDemoData.supplierDetail(ref);
+    }
     final response = await _sendAuthorized(
       () => http.get(
         Uri.parse('$baseUrl/v1/mobile/admin/suppliers/detail')
@@ -296,6 +325,9 @@ extension MobileApiAdmin on MobileApi {
   }
 
   Future<AdminCustomerDetail> adminCustomerDetail(String ref) async {
+    if (await TestModeController.instance.isEnabled()) {
+      return TestModeDemoData.customerDetail(ref);
+    }
     final response = await _sendAuthorized(
       () => http.get(
         Uri.parse('$baseUrl/v1/mobile/admin/customers/detail')
@@ -411,6 +443,9 @@ extension MobileApiAdmin on MobileApi {
     int limit = 20,
     int offset = 0,
   }) async {
+    if (await TestModeController.instance.isEnabled()) {
+      return TestModeDemoData.customerPage(limit: limit, offset: offset);
+    }
     final response = await _sendAuthorized(
       () => http.get(
         Uri.parse('$baseUrl/v1/mobile/admin/customers/list').replace(

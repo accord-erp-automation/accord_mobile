@@ -120,6 +120,9 @@ extension MobileApiSupplierNotifications on MobileApi {
   }
 
   Future<List<SupplierItem>> supplierItems({String query = ''}) async {
+    if (await TestModeController.instance.isEnabled()) {
+      return TestModeDemoData.itemPage(query: query, limit: 0);
+    }
     final Uri uri = Uri.parse('$baseUrl/v1/mobile/supplier/items').replace(
       queryParameters: query.trim().isEmpty ? null : {'q': query},
     );

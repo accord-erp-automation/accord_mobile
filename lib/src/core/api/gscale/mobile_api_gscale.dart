@@ -7,6 +7,14 @@ extension MobileApiGScale on MobileApi {
     int limit = 80,
     int offset = 0,
   }) async {
+    if (await TestModeController.instance.isEnabled()) {
+      return TestModeDemoData.itemPage(
+        query: query,
+        group: group,
+        limit: limit,
+        offset: offset,
+      );
+    }
     final response = await _sendAuthorized(
       () => http.get(
         Uri.parse('${MobileApi.baseUrl}/v1/mobile/gscale/items').replace(

@@ -2,6 +2,9 @@ part of '../mobile_api.dart';
 
 extension MobileApiAdminItemGroups on MobileApi {
   Future<List<String>> adminItemGroups() async {
+    if (await TestModeController.instance.isEnabled()) {
+      return TestModeDemoData.itemGroups;
+    }
     final response = await _sendAuthorized(
       () => http.get(
         Uri.parse('${MobileApi.baseUrl}/v1/mobile/admin/item-groups'),
@@ -16,6 +19,9 @@ extension MobileApiAdminItemGroups on MobileApi {
   }
 
   Future<List<AdminItemGroupTreeEntry>> adminItemGroupTree() async {
+    if (await TestModeController.instance.isEnabled()) {
+      return TestModeDemoData.itemGroupTree;
+    }
     final response = await _sendAuthorized(
       () => http.get(
         Uri.parse('${MobileApi.baseUrl}/v1/mobile/admin/item-groups/tree'),
