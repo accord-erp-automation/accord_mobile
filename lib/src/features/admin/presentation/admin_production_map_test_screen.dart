@@ -339,26 +339,10 @@ class _AdminProductionMapTestScreenState
     }
     final node = nodes[index];
     setState(() {
-      final position = _nonOverlappingMovePosition(node, delta);
+      final position = _clampNodePosition(Offset(node.x, node.y) + delta);
       nodes[index] = node.copyWith(x: position.dx, y: position.dy);
+      _resolveNodeOverlaps(anchorID: nodeID);
     });
-  }
-
-  Offset _nonOverlappingMovePosition(ProductionMapNode node, Offset delta) {
-    final current = Offset(node.x, node.y);
-    final full = _clampNodePosition(current + delta);
-    if (!_positionOverlapsAny(full, nodeID: node.id)) {
-      return full;
-    }
-    final xOnly = _clampNodePosition(Offset(node.x + delta.dx, node.y));
-    if (!_positionOverlapsAny(xOnly, nodeID: node.id)) {
-      return xOnly;
-    }
-    final yOnly = _clampNodePosition(Offset(node.x, node.y + delta.dy));
-    if (!_positionOverlapsAny(yOnly, nodeID: node.id)) {
-      return yOnly;
-    }
-    return current;
   }
 
   ProductionMapNode _placeNode(
@@ -406,6 +390,59 @@ class _AdminProductionMapTestScreenState
       }
     }
     return origin;
+  }
+
+  void _resolveNodeOverlaps({required String anchorID}) {
+    for (var pass = 0; pass < 24; pass++) {
+      var moved = false;
+      for (var a = 0; a < nodes.length; a++) {
+        for (var b = a + 1; b < nodes.length; b++) {
+          final separation = _overlapSeparation(nodes[a], nodes[b]);
+          if (separation == Offset.zero) {
+            continue;
+          }
+          moved = true;
+          if (nodes[a].id == anchorID) {
+            _moveNodeByIndex(b, separation);
+          } else if (nodes[b].id == anchorID) {
+            _moveNodeByIndex(a, -separation);
+          } else {
+            _moveNodeByIndex(a, -separation / 2);
+            _moveNodeByIndex(b, separation / 2);
+          }
+        }
+      }
+      if (!moved) {
+        return;
+      }
+    }
+  }
+
+  Offset _overlapSeparation(ProductionMapNode a, ProductionMapNode b) {
+    final aRect = _collisionRectAt(Offset(a.x, a.y));
+    final bRect = _collisionRectAt(Offset(b.x, b.y));
+    if (!aRect.overlaps(bRect)) {
+      return Offset.zero;
+    }
+    final overlapX =
+        math.min(aRect.right - bRect.left, bRect.right - aRect.left);
+    final overlapY =
+        math.min(aRect.bottom - bRect.top, bRect.bottom - aRect.top);
+    if (overlapX <= 0 || overlapY <= 0) {
+      return Offset.zero;
+    }
+    if (overlapX <= overlapY) {
+      final direction = bRect.center.dx >= aRect.center.dx ? 1.0 : -1.0;
+      return Offset((overlapX + 0.5) * direction, 0);
+    }
+    final direction = bRect.center.dy >= aRect.center.dy ? 1.0 : -1.0;
+    return Offset(0, (overlapY + 0.5) * direction);
+  }
+
+  void _moveNodeByIndex(int index, Offset delta) {
+    final node = nodes[index];
+    final position = _clampNodePosition(Offset(node.x, node.y) + delta);
+    nodes[index] = node.copyWith(x: position.dx, y: position.dy);
   }
 
   Offset _clampNodePosition(Offset position) {
