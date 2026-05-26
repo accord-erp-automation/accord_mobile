@@ -3,6 +3,8 @@ LOCAL_API_URL ?= http://127.0.0.1:8081
 JDK_HOME ?= /usr/lib/jvm/java-17-openjdk
 APK_NAME ?= accord.apk
 ERP_ROOT ?= ../../erpnext_n1/erp
+MOCK_DIR ?= /tmp/accord_mobile_mock
+RUST_BACKEND_ROOT ?= ../accord_mobile_server_rs
 HOST_OS := $(shell uname -s)
 
 ifeq ($(HOST_OS),Darwin)
@@ -21,10 +23,17 @@ else
 RUN_BROWSER_FLAGS :=
 endif
 
+ifneq ($(filter oneni ami,$(MAKECMDGOALS)),)
+API_URL := $(LOCAL_API_URL)
+RUN_PREREQ := mock-backend
+else
+RUN_PREREQ := prepare-run
+endif
+
 # Release APKs: arm64-v8a only (typical phones); no universal/fat APK.
 FLUTTER_APK_RELEASE_FLAGS := --release --target-platform android-arm64
 
-.PHONY: run web analyze test deps backend-up backend-stop core-up core-stop remote-up remote-stop remote-url apk apk-remote run-remote android-sdk-setup domain-up domain-up-fast domain-url apk-domain run-domain bench-start bench-restart bench-stop bench-limit-start bench-limit-stop prepare-run run-local web-local
+.PHONY: run oneni ami web analyze test deps backend-up backend-stop mock-backend mock-stop core-up core-stop remote-up remote-stop remote-url apk apk-remote run-remote android-sdk-setup domain-up domain-up-fast domain-url apk-domain run-domain bench-start bench-restart bench-stop bench-limit-start bench-limit-stop prepare-run run-local web-local
 
 deps:
 	@flutter pub get
@@ -70,6 +79,47 @@ backend-stop:
 		echo "mobileapi pid file not found"; \
 	fi
 
+mock-backend:
+	@mkdir -p "$(MOCK_DIR)"
+	@if curl -fsS "$(LOCAL_API_URL)/healthz" >/dev/null 2>&1; then \
+		echo "mock backend already running: $(LOCAL_API_URL)"; \
+	else \
+		screen -S accord_mock_backend -X quit >/dev/null 2>&1 || true; \
+		screen -dmS accord_mock_backend bash -lc '\
+			cd "$(RUST_BACKEND_ROOT)" && \
+			env \
+			MOBILE_API_ADDR=127.0.0.1:8081 \
+			MOBILE_API_LOCAL_STORE_ALLOW_JSON_FALLBACK=1 \
+			MOBILE_API_SESSION_STORE_BACKEND=json \
+			MOBILE_API_SESSION_STORE_PATH="$(MOCK_DIR)/mobile_sessions.json" \
+			MOBILE_API_PROFILE_STORE_BACKEND=json \
+			MOBILE_API_PROFILE_STORE_PATH="$(MOCK_DIR)/mobile_profile_prefs.json" \
+			MOBILE_API_PUSH_TOKEN_STORE_BACKEND=json \
+			MOBILE_API_PUSH_TOKEN_STORE_PATH="$(MOCK_DIR)/mobile_push_tokens.json" \
+			MOBILE_API_ADMIN_SUPPLIER_STORE_BACKEND=json \
+			MOBILE_API_ADMIN_SUPPLIER_STORE_PATH="$(MOCK_DIR)/mobile_admin_suppliers.json" \
+			MOBILE_API_PRODUCTION_MAP_STORE_PATH="$(MOCK_DIR)/production_maps.json" \
+			MOBILE_API_ROLE_STORE_PATH="$(MOCK_DIR)/mobile_roles.json" \
+			RUST_LOG=info \
+			cargo run --bin accord_mobile_server_rs \
+			> "$(MOCK_DIR)/backend.log" 2>&1'; \
+		for i in $$(seq 1 60); do \
+			if curl -fsS "$(LOCAL_API_URL)/healthz" >/dev/null 2>&1; then \
+				echo "mock backend ready: $(LOCAL_API_URL)"; \
+				exit 0; \
+			fi; \
+			sleep 1; \
+		done; \
+		echo "mock backend start failed"; \
+		tail -120 "$(MOCK_DIR)/backend.log" 2>/dev/null || true; \
+		exit 1; \
+	fi
+
+mock-stop:
+	@screen -S accord_mock_backend -X quit >/dev/null 2>&1 || true
+	@lsof -tiTCP:8081 -sTCP:LISTEN | xargs -r kill >/dev/null 2>&1 || true
+	@echo "mock backend stopped"
+
 core-stop:
 	@./tools/runtime/stop_remote_core.sh
 
@@ -101,8 +151,14 @@ domain-url:
 remote-stop:
 	@./tools/runtime/stop_remote_core.sh
 
-run: prepare-run deps
+run: $(RUN_PREREQ) deps
 	@flutter run -d $(RUN_DEVICE) $(RUN_BROWSER_FLAGS) --dart-define=MOBILE_API_BASE_URL=$(API_URL) $(RUN_DART_DEFINES)
+
+oneni:
+	@:
+
+ami:
+	@:
 
 web: prepare-run deps
 	@flutter run -d chrome $(CHROME_WEB_BROWSER_FLAGS) --dart-define=MOBILE_API_BASE_URL=$(API_URL)
