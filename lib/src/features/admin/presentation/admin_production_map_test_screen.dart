@@ -400,7 +400,7 @@ class _AdminProductionMapTestScreenState
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom + 136.0;
+    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom + 92.0;
     return AppShell(
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_rounded),
@@ -425,129 +425,133 @@ class _AdminProductionMapTestScreenState
       bottom: const AdminDock(activeTab: AdminDockTab.home),
       child: ColoredBox(
         color: scheme.surface,
-        child: ListView(
+        child: Padding(
           padding: EdgeInsets.fromLTRB(12, 12, 12, bottomPadding),
-          children: [
-            _SurfacePanel(
-              child: Column(
-                children: [
-                  _InfoLine(
-                    label: 'Map ID',
-                    value: mapID,
-                    onTap: _editMapInfo,
-                  ),
-                  const SizedBox(height: 6),
-                  _InfoLine(
-                    label: 'Mahsulot',
-                    value: productName == productCode
-                        ? productCode
-                        : '$productName · $productCode',
-                    onTap: _openProductPicker,
-                  ),
-                  const SizedBox(height: 6),
-                  _InfoLine(
-                    label: 'Nomi',
-                    value: mapTitle,
-                    onTap: _editMapInfo,
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _PlainActionButton(
-                          label: 'Location',
-                          icon: Icons.account_tree_rounded,
-                          onTap: () => _addNode('task'),
-                          tonal: true,
+          child: Column(
+            children: [
+              _SurfacePanel(
+                child: Column(
+                  children: [
+                    _InfoLine(
+                      label: 'Map ID',
+                      value: mapID,
+                      onTap: _editMapInfo,
+                    ),
+                    const SizedBox(height: 6),
+                    _InfoLine(
+                      label: 'Mahsulot',
+                      value: productName == productCode
+                          ? productCode
+                          : '$productName · $productCode',
+                      onTap: _openProductPicker,
+                    ),
+                    const SizedBox(height: 6),
+                    _InfoLine(
+                      label: 'Nomi',
+                      value: mapTitle,
+                      onTap: _editMapInfo,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _PlainActionButton(
+                            label: 'Location',
+                            icon: Icons.account_tree_rounded,
+                            onTap: () => _addNode('task'),
+                            tonal: true,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _PlainActionButton(
-                          label: 'Formula',
-                          icon: Icons.functions_rounded,
-                          onTap: () => _addNode('formula'),
-                          tonal: true,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _PlainActionButton(
+                            label: 'Formula',
+                            icon: Icons.functions_rounded,
+                            onTap: () => _addNode('formula'),
+                            tonal: true,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _PlainActionButton(
-                          label: 'Condition',
-                          icon: Icons.call_split_rounded,
-                          onTap: () => _addNode('condition'),
-                          tonal: true,
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _PlainActionButton(
+                            label: 'Condition',
+                            icon: Icons.call_split_rounded,
+                            onTap: () => _addNode('condition'),
+                            tonal: true,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _PlainActionButton(
-                          label: 'Material',
-                          icon: Icons.inventory_2_rounded,
-                          onTap: () => _addNode('material'),
-                          tonal: true,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _PlainActionButton(
+                            label: 'Material',
+                            icon: Icons.inventory_2_rounded,
+                            onTap: () => _addNode('material'),
+                            tonal: true,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _PlainActionButton(
-                          label: 'Wait',
-                          icon: Icons.hourglass_bottom_rounded,
-                          onTap: () => _addNode('wait'),
-                          tonal: true,
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _PlainActionButton(
+                            label: 'Wait',
+                            icon: Icons.hourglass_bottom_rounded,
+                            onTap: () => _addNode('wait'),
+                            tonal: true,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _PlainActionButton(
-                          label: 'Output',
-                          icon: Icons.flag_rounded,
-                          onTap: () => _addNode('output'),
-                          tonal: true,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _PlainActionButton(
+                            label: 'Output',
+                            icon: Icons.flag_rounded,
+                            onTap: () => _addNode('output'),
+                            tonal: true,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _PlainActionButton(
-                          label: running ? 'Hisoblanmoqda' : 'Hisoblash',
-                          icon: Icons.play_arrow_rounded,
-                          onTap: running ? null : _run,
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _PlainActionButton(
+                            label: running ? 'Hisoblanmoqda' : 'Hisoblash',
+                            icon: Icons.play_arrow_rounded,
+                            onTap: running ? null : _run,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _PlainActionButton(
-                          label: saving ? 'Saqlanyapti' : 'Saqlash',
-                          icon: Icons.check_rounded,
-                          onTap: saving ? null : _save,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _PlainActionButton(
+                            label: saving ? 'Saqlanyapti' : 'Saqlash',
+                            icon: Icons.check_rounded,
+                            onTap: saving ? null : _save,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            _ProductionMapCanvas(
-              nodes: nodes,
-              edges: edges,
-              onNodeTap: (node) => _editNode(nodes.indexOf(node)),
-              onNodeDelete: (node) => _deleteNode(nodes.indexOf(node)),
-              onNodeMoved: _moveNode,
-            ),
-          ],
+              const SizedBox(height: 12),
+              Expanded(
+                child: _ProductionMapCanvas(
+                  nodes: nodes,
+                  edges: edges,
+                  onNodeTap: (node) => _editNode(nodes.indexOf(node)),
+                  onNodeDelete: (node) => _deleteNode(nodes.indexOf(node)),
+                  onNodeMoved: _moveNode,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -713,7 +717,7 @@ class _InfoLine extends StatelessWidget {
   }
 }
 
-class _ProductionMapCanvas extends StatelessWidget {
+class _ProductionMapCanvas extends StatefulWidget {
   const _ProductionMapCanvas({
     required this.nodes,
     required this.edges,
@@ -732,6 +736,27 @@ class _ProductionMapCanvas extends StatelessWidget {
   final void Function(String nodeID, Offset delta) onNodeMoved;
 
   @override
+  State<_ProductionMapCanvas> createState() => _ProductionMapCanvasState();
+}
+
+class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
+  late final TransformationController _transformController;
+
+  @override
+  void initState() {
+    super.initState();
+    _transformController = TransformationController(
+      Matrix4.diagonal3Values(0.42, 0.42, 1),
+    );
+  }
+
+  @override
+  void dispose() {
+    _transformController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return ClipRRect(
@@ -741,8 +766,7 @@ class _ProductionMapCanvas extends StatelessWidget {
           color: scheme.surfaceContainerLowest,
           border: Border.all(color: scheme.outlineVariant),
         ),
-        child: SizedBox(
-          height: 560,
+        child: SizedBox.expand(
           child: Stack(
             children: [
               Positioned.fill(
@@ -751,46 +775,50 @@ class _ProductionMapCanvas extends StatelessWidget {
                 ),
               ),
               InteractiveViewer(
+                transformationController: _transformController,
                 constrained: false,
                 minScale: 0.35,
                 maxScale: 2.4,
                 boundaryMargin: const EdgeInsets.all(420),
                 child: SizedBox(
-                  width: _canvasSize.width,
-                  height: _canvasSize.height,
+                  width: _ProductionMapCanvas._canvasSize.width,
+                  height: _ProductionMapCanvas._canvasSize.height,
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
                       Positioned(
                         left: 0,
                         top: 0,
-                        width: _canvasSize.width,
-                        height: _canvasSize.height,
+                        width: _ProductionMapCanvas._canvasSize.width,
+                        height: _ProductionMapCanvas._canvasSize.height,
                         child: CustomPaint(
-                          size: _canvasSize,
+                          size: _ProductionMapCanvas._canvasSize,
                           painter: _MapCanvasPainter(
-                            nodes: nodes,
-                            edges: edges,
-                            nodeSize: _nodeSize,
+                            nodes: widget.nodes,
+                            edges: widget.edges,
+                            nodeSize: _ProductionMapCanvas._nodeSize,
                             scheme: scheme,
                           ),
                         ),
                       ),
-                      for (final node in nodes)
+                      for (final node in widget.nodes)
                         Positioned(
                           left: node.x,
                           top: node.y,
-                          width: _nodeSize.width,
+                          width: _ProductionMapCanvas._nodeSize.width,
                           child: Listener(
-                            onPointerMove: (event) =>
-                                onNodeMoved(node.id, event.delta),
+                            onPointerMove: (event) {
+                              final scale = _transformController.value
+                                  .getMaxScaleOnAxis();
+                              widget.onNodeMoved(node.id, event.delta / scale);
+                            },
                             child: _MapNodeVisual(
                               node: node,
-                              onTap: () => onNodeTap(node),
+                              onTap: () => widget.onNodeTap(node),
                               onDelete:
                                   node.kind == 'start' || node.kind == 'end'
                                       ? null
-                                      : () => onNodeDelete(node),
+                                      : () => widget.onNodeDelete(node),
                               floating: false,
                               highlighted: false,
                             ),

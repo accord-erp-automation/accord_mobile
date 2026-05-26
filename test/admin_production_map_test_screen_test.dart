@@ -32,6 +32,7 @@ void main() {
 
   testWidgets('production map page can add and edit a location node',
       (tester) async {
+    await _usePhoneViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData(useMaterial3: true),
@@ -67,6 +68,7 @@ void main() {
 
   testWidgets('production map page edits product and moves nodes on canvas',
       (tester) async {
+    await _usePhoneViewport(tester);
     final seenRequests = <String>[];
     final client = _ProductionMapHttpClient(seenRequests);
 
@@ -107,6 +109,13 @@ void main() {
       expect(find.text('Katta partiyami?'), findsOneWidget);
     }, createHttpClient: (_) => client);
   });
+}
+
+Future<void> _usePhoneViewport(WidgetTester tester) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = const Size(430, 930);
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
 }
 
 class _ProductionMapHttpClient implements HttpClient {
