@@ -492,6 +492,7 @@ class AdminFabActionMenu extends StatefulWidget {
     required this.closedIcon,
     this.openIcon = Icons.close_rounded,
     this.alignEnd = true,
+    this.columns = 1,
   });
 
   final bool open;
@@ -502,6 +503,7 @@ class AdminFabActionMenu extends StatefulWidget {
   final IconData closedIcon;
   final IconData openIcon;
   final bool alignEnd;
+  final int columns;
 
   @override
   State<AdminFabActionMenu> createState() => _AdminFabActionMenuState();
@@ -636,26 +638,45 @@ class _AdminFabActionMenuState extends State<AdminFabActionMenu>
   @override
   Widget build(BuildContext context) {
     final actions = _menuActions();
+    final columns = widget.columns.clamp(1, 4).toInt();
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment:
           widget.alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
-        for (var i = 0; i < actions.length; i++) ...[
-          _AdminHubActionPill(
-            key: actions[i].key,
-            action: actions[i],
-            spatial: _spatialController,
-            effectsAnimation: _buildEffectsStagger(
-              actions[i],
-              _effectsController,
-            ),
-            overflowAlignment:
-                widget.alignEnd ? Alignment.centerRight : Alignment.centerLeft,
-            motionKey: ValueKey('admin-fab-menu-reveal-${actions[i].row}'),
-            onTap: widget.actions[i].enabled ? widget.actions[i].onTap : null,
+        for (var rowStart = 0;
+            rowStart < actions.length;
+            rowStart += columns) ...[
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var offset = 0; offset < columns; offset++)
+                if (rowStart + offset < actions.length) ...[
+                  _AdminHubActionPill(
+                    key: actions[rowStart + offset].key,
+                    action: actions[rowStart + offset],
+                    spatial: _spatialController,
+                    effectsAnimation: _buildEffectsStagger(
+                      actions[rowStart + offset],
+                      _effectsController,
+                    ),
+                    overflowAlignment: widget.alignEnd
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
+                    motionKey: ValueKey(
+                      'admin-fab-menu-reveal-${actions[rowStart + offset].row}',
+                    ),
+                    onTap: widget.actions[rowStart + offset].enabled
+                        ? widget.actions[rowStart + offset].onTap
+                        : null,
+                  ),
+                  if (offset != columns - 1 &&
+                      rowStart + offset + 1 < actions.length)
+                    const SizedBox(width: 8),
+                ],
+            ],
           ),
-          if (i != actions.length - 1) const SizedBox(height: 4),
+          if (rowStart + columns < actions.length) const SizedBox(height: 4),
         ],
         const SizedBox(height: _AdminCreateHubOverlayState._groupButtonGap),
         _AdminMorphFabButton(

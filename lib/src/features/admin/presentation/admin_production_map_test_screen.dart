@@ -802,6 +802,7 @@ class _AdminProductionMapTestScreenState
                   openLabel: 'Yopish',
                   closedIcon: Icons.tune_rounded,
                   alignEnd: false,
+                  columns: 2,
                 ),
               ),
             ],
