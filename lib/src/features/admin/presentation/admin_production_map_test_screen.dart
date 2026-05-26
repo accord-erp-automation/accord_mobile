@@ -58,6 +58,7 @@ class _AdminProductionMapTestScreenState
   ];
 
   bool saving = false;
+  bool running = false;
   int _nextNodeIndex = 1;
   final _editorStackKey = GlobalKey();
   String? _draggingNodeID;
@@ -93,6 +94,48 @@ class _AdminProductionMapTestScreenState
     } finally {
       if (mounted) {
         setState(() => saving = false);
+      }
+    }
+  }
+
+  Future<void> _run() async {
+    final qty = await showModalBottomSheet<double>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const _RunMapSheet(),
+    );
+    if (qty == null || qty <= 0 || !mounted) {
+      return;
+    }
+    setState(() => running = true);
+    try {
+      final result = await MobileApi.instance.adminRunProductionMap(
+        ProductionMapRunRequest(
+          mapId: mapID,
+          productCode: productCode,
+          orderQty: qty,
+        ),
+      );
+      if (!mounted) {
+        return;
+      }
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => _RunResultSheet(result: result),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Hisoblash bajarilmadi: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => running = false);
       }
     }
   }
@@ -453,7 +496,15 @@ class _AdminProductionMapTestScreenState
                           const SizedBox(width: 8),
                           Expanded(
                             child: _PlainActionButton(
-                              label: saving ? 'Saqlanyapti' : 'Save + compile',
+                              label: running ? 'Hisoblanmoqda' : 'Hisoblash',
+                              icon: Icons.play_arrow_rounded,
+                              onTap: running ? null : _run,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _PlainActionButton(
+                              label: saving ? 'Saqlanyapti' : 'Saqlash',
                               icon: Icons.check_rounded,
                               onTap: saving ? null : _save,
                             ),
@@ -472,10 +523,10 @@ class _AdminProductionMapTestScreenState
                         child: _MapNodeRow(
                           node: nodes[i],
                           onTap: () => _editNode(i),
-                          onDelete: nodes[i].kind == 'start' ||
-                                  nodes[i].kind == 'end'
-                              ? null
-                              : () => _deleteNode(i),
+                          onDelete:
+                              nodes[i].kind == 'start' || nodes[i].kind == 'end'
+                                  ? null
+                                  : () => _deleteNode(i),
                           canDrag: nodes[i].kind != 'start' &&
                               nodes[i].kind != 'end',
                           onLongPressStart: (details) =>
@@ -565,7 +616,8 @@ class _PlainActionButtonState extends State<_PlainActionButton> {
             highlightColor: scheme.onPrimary.withValues(alpha: 0.08),
             onTapDown: enabled ? (_) => setState(() => _pressed = true) : null,
             onTapUp: enabled ? (_) => setState(() => _pressed = false) : null,
-            onTapCancel: enabled ? () => setState(() => _pressed = false) : null,
+            onTapCancel:
+                enabled ? () => setState(() => _pressed = false) : null,
             onTap: widget.onTap,
             child: Opacity(
               opacity: enabled ? 1 : 0.48,
@@ -1102,6 +1154,163 @@ class _MapInfoSheetState extends State<_MapInfoSheet> {
         title: title.isEmpty ? widget.title : title,
       ),
     );
+  }
+}
+
+class _RunMapSheet extends StatefulWidget {
+  const _RunMapSheet();
+
+  @override
+  State<_RunMapSheet> createState() => _RunMapSheetState();
+}
+
+class _RunMapSheetState extends State<_RunMapSheet> {
+  final _qty = TextEditingController(text: '100');
+
+  @override
+  void dispose() {
+    _qty.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final viewInsets = MediaQuery.viewInsetsOf(context).bottom;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(bottom: viewInsets),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainer,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+            children: [
+              Center(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: scheme.onSurfaceVariant.withValues(alpha: 0.45),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: const SizedBox(width: 44, height: 4),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Production hisob',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _qty,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(
+                  labelText: 'Buyurtma miqdori',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _PlainActionButton(
+                label: 'Hisoblash',
+                icon: Icons.play_arrow_rounded,
+                onTap: _run,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _run() {
+    final qty = double.tryParse(_qty.text.trim().replaceAll(',', '.')) ?? 0;
+    if (qty <= 0) {
+      return;
+    }
+    Navigator.of(context).pop(qty);
+  }
+}
+
+class _RunResultSheet extends StatelessWidget {
+  const _RunResultSheet({required this.result});
+
+  final ProductionMapRunResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final variables = result.variables.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    return SafeArea(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainer,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+          children: [
+            Center(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: scheme.onSurfaceVariant.withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: const SizedBox(width: 44, height: 4),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'Run natijasi',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            for (final variable in variables)
+              ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.functions_rounded),
+                title: Text(variable.key),
+                trailing: Text(_formatQty(variable.value)),
+              ),
+            if (result.tasks.isNotEmpty) ...[
+              const Divider(height: 24),
+              for (final task in result.tasks)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.engineering_rounded),
+                  title: Text(task.title),
+                  subtitle: Text([
+                    if (task.roleCode.trim().isNotEmpty) task.roleCode,
+                    if (task.itemCode.trim().isNotEmpty) task.itemCode,
+                    task.taskKind,
+                  ].join(' · ')),
+                  trailing: Text(_formatQty(task.qty)),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatQty(double value) {
+    if (value == value.roundToDouble()) {
+      return value.toStringAsFixed(0);
+    }
+    return value.toStringAsFixed(3);
   }
 }
 

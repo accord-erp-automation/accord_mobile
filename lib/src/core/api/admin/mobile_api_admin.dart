@@ -111,7 +111,8 @@ extension MobileApiAdmin on MobileApi {
     }
     final List<dynamic> json = jsonDecode(response.body) as List<dynamic>;
     return json
-        .map((item) => ProductionMapSaved.fromJson(item as Map<String, dynamic>))
+        .map(
+            (item) => ProductionMapSaved.fromJson(item as Map<String, dynamic>))
         .toList();
   }
 
@@ -130,6 +131,25 @@ extension MobileApiAdmin on MobileApi {
       throw Exception('Admin production map save failed');
     }
     return ProductionMapSaved.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  Future<ProductionMapRunResult> adminRunProductionMap(
+    ProductionMapRunRequest input,
+  ) async {
+    final response = await _sendAuthorized(
+      () => http.post(
+        Uri.parse('$baseUrl/v1/mobile/admin/production-maps/run'),
+        headers: _headers(requireToken())
+          ..['Content-Type'] = 'application/json',
+        body: jsonEncode(input.toJson()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Admin production map run failed');
+    }
+    return ProductionMapRunResult.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
   }

@@ -59,7 +59,7 @@ void main() {
     expect(find.text('Node sozlash'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField).first, 'Rezka location');
-    await tester.tap(find.text('Saqlash'));
+    await tester.tap(find.text('Saqlash').last);
     await tester.pumpAndSettle();
 
     expect(find.text('Rezka location'), findsOneWidget);

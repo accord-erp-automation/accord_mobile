@@ -181,6 +181,90 @@ class ProductionMapSaved {
   }
 }
 
+class ProductionMapRunRequest {
+  const ProductionMapRunRequest({
+    required this.mapId,
+    required this.productCode,
+    required this.orderQty,
+  });
+
+  final String mapId;
+  final String productCode;
+  final double orderQty;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'map_id': mapId,
+      'product_code': productCode,
+      'order_qty': orderQty,
+    };
+  }
+}
+
+class ProductionTaskDraft {
+  const ProductionTaskDraft({
+    required this.order,
+    required this.nodeId,
+    required this.taskKind,
+    required this.title,
+    required this.roleCode,
+    required this.itemCode,
+    required this.qty,
+  });
+
+  final int order;
+  final String nodeId;
+  final String taskKind;
+  final String title;
+  final String roleCode;
+  final String itemCode;
+  final double qty;
+
+  factory ProductionTaskDraft.fromJson(Map<String, dynamic> json) {
+    return ProductionTaskDraft(
+      order: (json['order'] as num?)?.toInt() ?? 0,
+      nodeId: json['node_id'] as String? ?? '',
+      taskKind: json['task_kind'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      roleCode: json['role_code'] as String? ?? '',
+      itemCode: json['item_code'] as String? ?? '',
+      qty: (json['qty'] as num?)?.toDouble() ?? 0,
+    );
+  }
+}
+
+class ProductionMapRunResult {
+  const ProductionMapRunResult({
+    required this.mapId,
+    required this.productCode,
+    required this.orderQty,
+    required this.variables,
+    required this.tasks,
+  });
+
+  final String mapId;
+  final String productCode;
+  final double orderQty;
+  final Map<String, double> variables;
+  final List<ProductionTaskDraft> tasks;
+
+  factory ProductionMapRunResult.fromJson(Map<String, dynamic> json) {
+    return ProductionMapRunResult(
+      mapId: json['map_id'] as String? ?? '',
+      productCode: json['product_code'] as String? ?? '',
+      orderQty: (json['order_qty'] as num?)?.toDouble() ?? 0,
+      variables: (json['variables'] as Map<String, dynamic>? ?? const {}).map(
+        (key, value) => MapEntry(key, (value as num?)?.toDouble() ?? 0),
+      ),
+      tasks: (json['tasks'] as List<dynamic>? ?? const [])
+          .map((item) => ProductionTaskDraft.fromJson(
+                item as Map<String, dynamic>,
+              ))
+          .toList(growable: false),
+    );
+  }
+}
+
 class ProductionMapProgram {
   const ProductionMapProgram({
     required this.mapId,
