@@ -292,7 +292,7 @@ List<_AdminHomeAction> _adminHomeActions(BuildContext context) {
     ),
     const _AdminHomeAction(
       title: 'Production map test',
-      icon: Icons.account_tree_rounded,
+      icon: Icons.schema_rounded,
       routeName: AppRoutes.adminProductionMapTest,
     ),
     const _AdminHomeAction(
