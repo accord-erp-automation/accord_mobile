@@ -35,7 +35,7 @@ class LocalNotificationService {
       macOS: darwinSettings,
       linux: linuxSettings,
     );
-    await _plugin.initialize(settings);
+    await _plugin.initialize(settings: settings);
 
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
@@ -78,10 +78,10 @@ class LocalNotificationService {
     );
 
     await _plugin.show(
-      record.id.hashCode,
-      _title(role, record),
-      _body(role, record),
-      details,
+      id: record.id.hashCode,
+      title: _title(role, record),
+      body: _body(role, record),
+      notificationDetails: details,
     );
   }
 
