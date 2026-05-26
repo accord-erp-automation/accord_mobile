@@ -825,8 +825,11 @@ class _GridPaperPainter extends CustomPainter {
 }
 
 void _paintGrid(Canvas canvas, Size size, ColorScheme scheme) {
+  final gridColor = scheme.brightness == Brightness.dark
+      ? scheme.onSurface.withValues(alpha: 0.24)
+      : scheme.outlineVariant.withValues(alpha: 0.42);
   final paint = Paint()
-    ..color = scheme.outlineVariant.withValues(alpha: 0.42)
+    ..color = gridColor
     ..strokeWidth = 1;
   for (var x = 0.0; x <= size.width; x += 40) {
     canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
