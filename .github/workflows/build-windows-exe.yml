@@ -27,7 +27,7 @@ jobs:
         with:
           flutter-version: "3.44.0"
           channel: stable
-          cache: true
+          cache: false
 
       - name: Enable Windows desktop
         run: flutter config --enable-windows-desktop
