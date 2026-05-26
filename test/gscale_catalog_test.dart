@@ -41,6 +41,23 @@ void main() {
     expect(warehouses, hasLength(1));
     expect(warehouses.single.warehouse, 'Stores - CH');
   });
+
+  test('admin catalog item read wins over gscale catalog read', () {
+    const profile = SessionProfile(
+      role: UserRole.admin,
+      displayName: 'Admin',
+      legalName: '',
+      ref: 'admin',
+      phone: '',
+      avatarUrl: '',
+      capabilities: ['catalog.item.read', 'gscale.catalog.read'],
+    );
+
+    expect(
+      gscaleCatalogItemSourceForProfile(profile),
+      GScaleCatalogItemSource.adminItems,
+    );
+  });
 }
 
 CustomerItemOption _option({

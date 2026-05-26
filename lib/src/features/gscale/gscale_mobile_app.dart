@@ -1183,26 +1183,20 @@ class _OperatorDashboardPageState extends State<OperatorDashboardPage> {
     int offset,
     int limit,
   ) {
-    final profile = AppSession.instance.profile;
-    if (profile?.hasCapability('gscale.catalog.read') == true) {
-      return MobileApi.instance.gscaleItemsPage(
-        query: query,
-        offset: offset,
-        limit: limit,
-      );
+    switch (gscaleCatalogItemSourceForProfile(AppSession.instance.profile)) {
+      case GScaleCatalogItemSource.adminItems:
+        return MobileApi.instance.adminItemsPage(
+          query: query,
+          offset: offset,
+          limit: limit,
+        );
+      case GScaleCatalogItemSource.gscaleItems:
+        return MobileApi.instance.gscaleItemsPage(
+          query: query,
+          offset: offset,
+          limit: limit,
+        );
     }
-    if (profile?.hasCapability('catalog.item.read') == true) {
-      return MobileApi.instance.adminItemsPage(
-        query: query,
-        offset: offset,
-        limit: limit,
-      );
-    }
-    return MobileApi.instance.gscaleItemsPage(
-      query: query,
-      offset: offset,
-      limit: limit,
-    );
   }
 
   Future<void> _openWarehousePicker() async {

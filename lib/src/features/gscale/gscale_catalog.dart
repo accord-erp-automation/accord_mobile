@@ -14,6 +14,20 @@ class GScaleCatalogWarehouse {
   final String? company;
 }
 
+enum GScaleCatalogItemSource {
+  adminItems,
+  gscaleItems,
+}
+
+GScaleCatalogItemSource gscaleCatalogItemSourceForProfile(
+  SessionProfile? profile,
+) {
+  if (profile?.hasCapability('catalog.item.read') == true) {
+    return GScaleCatalogItemSource.adminItems;
+  }
+  return GScaleCatalogItemSource.gscaleItems;
+}
+
 Future<List<GScaleCatalogWarehouse>> fetchGScaleItemWarehouses({
   required String itemCode,
   String query = '',
