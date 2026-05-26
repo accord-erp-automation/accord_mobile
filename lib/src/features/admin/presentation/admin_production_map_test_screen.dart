@@ -737,7 +737,7 @@ class _AdminProductionMapTestScreenState
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom + 76.0;
+    final fabBottom = MediaQuery.viewPaddingOf(context).bottom + 92.0;
     return AppShell(
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_rounded),
@@ -762,51 +762,48 @@ class _AdminProductionMapTestScreenState
       bottom: const AdminDock(activeTab: AdminDockTab.home),
       child: ColoredBox(
         color: scheme.surface,
-        child: Padding(
-          padding: EdgeInsets.only(bottom: bottomPadding),
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: _ProductionMapCanvas(
-                  nodes: nodes,
-                  edges: edges,
-                  connectingFromNodeID: _connectingFromNodeID,
-                  connectionPreviewEnd: _connectionPreviewEnd,
-                  onNodeTap: (node) => _editNode(nodes.indexOf(node)),
-                  onNodeDelete: (node) => _deleteNode(nodes.indexOf(node)),
-                  onNodeMoved: _moveNode,
-                  onConnectionStart: _startConnection,
-                  onConnectionUpdate: _updateConnectionPreview,
-                  onConnectionEnd: _finishConnection,
-                  onConnectionCancel: _cancelConnection,
-                ),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: _ProductionMapCanvas(
+                nodes: nodes,
+                edges: edges,
+                connectingFromNodeID: _connectingFromNodeID,
+                connectionPreviewEnd: _connectionPreviewEnd,
+                onNodeTap: (node) => _editNode(nodes.indexOf(node)),
+                onNodeDelete: (node) => _deleteNode(nodes.indexOf(node)),
+                onNodeMoved: _moveNode,
+                onConnectionStart: _startConnection,
+                onConnectionUpdate: _updateConnectionPreview,
+                onConnectionEnd: _finishConnection,
+                onConnectionCancel: _cancelConnection,
               ),
-              if (_mapToolsMenuOpen)
-                Positioned.fill(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _closeMapToolsMenu,
-                    child: ColoredBox(
-                      color: scheme.scrim.withValues(alpha: 0.16),
-                    ),
+            ),
+            if (_mapToolsMenuOpen)
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _closeMapToolsMenu,
+                  child: ColoredBox(
+                    color: scheme.scrim.withValues(alpha: 0.16),
                   ),
                 ),
-              Positioned(
-                left: 16,
-                bottom: 16,
-                child: AdminFabActionMenu(
-                  open: _mapToolsMenuOpen,
-                  actions: _mapToolActions(),
-                  onToggle: _toggleMapToolsMenu,
-                  closedLabel: 'Map sozlamalari',
-                  openLabel: 'Yopish',
-                  closedIcon: Icons.tune_rounded,
-                  alignEnd: false,
-                  columns: 2,
-                ),
               ),
-            ],
-          ),
+            Positioned(
+              left: 16,
+              bottom: fabBottom,
+              child: AdminFabActionMenu(
+                open: _mapToolsMenuOpen,
+                actions: _mapToolActions(),
+                onToggle: _toggleMapToolsMenu,
+                closedLabel: 'Map sozlamalari',
+                openLabel: 'Yopish',
+                closedIcon: Icons.tune_rounded,
+                alignEnd: false,
+                columns: 2,
+              ),
+            ),
+          ],
         ),
       ),
     );
