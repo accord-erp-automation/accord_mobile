@@ -400,7 +400,7 @@ class _AdminProductionMapTestScreenState
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom + 92.0;
+    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom + 136.0;
     return AppShell(
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_rounded),
@@ -726,7 +726,7 @@ class _ProductionMapCanvas extends StatefulWidget {
     required this.onNodeMoved,
   });
 
-  static const _canvasSize = Size(1180, 900);
+  static const _minCanvasSize = Size(1180, 900);
   static const _nodeSize = Size(260, 82);
 
   final List<ProductionMapNode> nodes;
@@ -746,7 +746,7 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
   void initState() {
     super.initState();
     _transformController = TransformationController(
-      Matrix4.diagonal3Values(0.42, 0.42, 1),
+      Matrix4.diagonal3Values(0.72, 0.72, 1),
     );
   }
 
@@ -759,6 +759,7 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final canvasSize = _canvasSizeFor(widget.nodes);
     return ClipRRect(
       borderRadius: BorderRadius.circular(22),
       child: DecoratedBox(
@@ -779,20 +780,20 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
                 constrained: false,
                 minScale: 0.35,
                 maxScale: 2.4,
-                boundaryMargin: const EdgeInsets.all(420),
+                boundaryMargin: const EdgeInsets.all(760),
                 child: SizedBox(
-                  width: _ProductionMapCanvas._canvasSize.width,
-                  height: _ProductionMapCanvas._canvasSize.height,
+                  width: canvasSize.width,
+                  height: canvasSize.height,
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
                       Positioned(
                         left: 0,
                         top: 0,
-                        width: _ProductionMapCanvas._canvasSize.width,
-                        height: _ProductionMapCanvas._canvasSize.height,
+                        width: canvasSize.width,
+                        height: canvasSize.height,
                         child: CustomPaint(
-                          size: _ProductionMapCanvas._canvasSize,
+                          size: canvasSize,
                           painter: _MapCanvasPainter(
                             nodes: widget.nodes,
                             edges: widget.edges,
@@ -833,6 +834,22 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
         ),
       ),
     );
+  }
+
+  Size _canvasSizeFor(List<ProductionMapNode> nodes) {
+    var maxX = _ProductionMapCanvas._minCanvasSize.width;
+    var maxY = _ProductionMapCanvas._minCanvasSize.height;
+    for (final node in nodes) {
+      final right = node.x + _ProductionMapCanvas._nodeSize.width + 320;
+      final bottom = node.y + _ProductionMapCanvas._nodeSize.height + 360;
+      if (right > maxX) {
+        maxX = right;
+      }
+      if (bottom > maxY) {
+        maxY = bottom;
+      }
+    }
+    return Size(maxX, maxY);
   }
 }
 
