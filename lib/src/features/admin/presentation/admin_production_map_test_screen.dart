@@ -754,8 +754,13 @@ class _ProductionMapCanvas extends StatelessWidget {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  Positioned.fill(
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    width: _canvasSize.width,
+                    height: _canvasSize.height,
                     child: CustomPaint(
+                      size: _canvasSize,
                       painter: _MapCanvasPainter(
                         nodes: nodes,
                         edges: edges,
