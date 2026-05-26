@@ -49,4 +49,20 @@ void main() {
     expect(AppRouter.canOpenRoute(AppRoutes.adminSettings), isFalse);
     expect(AppRouter.canOpenRoute(AppRoutes.supplierHome), isFalse);
   });
+
+  test('production map route opens with production map capability', () {
+    AppSession.instance.token = 'token';
+    AppSession.instance.profile = const SessionProfile(
+      role: UserRole.werka,
+      displayName: 'Production mapper',
+      legalName: '',
+      ref: 'werka',
+      phone: '',
+      avatarUrl: '',
+      capabilities: ['production.map.manage'],
+    );
+
+    expect(AppRouter.canOpenRoute(AppRoutes.adminProductionMapTest), isTrue);
+    expect(AppRouter.canOpenRoute(AppRoutes.adminRoles), isFalse);
+  });
 }

@@ -822,6 +822,12 @@ class AppLocalizations {
           'Werka code manage',
           'Управление кодом кладовщика',
         );
+      case 'production.map.manage':
+        return _t(
+          'Production map boshqarish',
+          'Production map manage',
+          'Управление картой производства',
+        );
       case 'gscale.catalog.read':
         return _t(
           'GScale katalogini ko‘rish',

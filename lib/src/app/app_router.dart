@@ -555,6 +555,7 @@ class AppRouter {
       'party.customer.code.manage',
       'admin.activity.read',
       'werka.code.manage',
+      'production.map.manage',
     },
     AppRoutes.adminActivity: {'admin.activity.read'},
     AppRoutes.adminCreateHub: {
@@ -567,7 +568,7 @@ class AppRouter {
     },
     AppRoutes.adminSettings: {'admin.settings.read'},
     AppRoutes.adminRoles: {'role.capability.read'},
-    AppRoutes.adminProductionMapTest: {'admin.access'},
+    AppRoutes.adminProductionMapTest: {'production.map.manage'},
     AppRoutes.adminSuppliers: {
       'party.supplier.read',
       'party.customer.read',

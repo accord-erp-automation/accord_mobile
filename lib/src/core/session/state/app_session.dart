@@ -54,6 +54,7 @@ class AppSession {
       'party.customer.code.manage',
       'admin.activity.read',
       'werka.code.manage',
+      'production.map.manage',
     ])) {
       return '/admin-home';
     }
