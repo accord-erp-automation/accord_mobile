@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
 import '../../../core/theme/app_theme.dart';
@@ -918,12 +920,20 @@ class _MapCanvasPainter extends CustomPainter {
     ProductionMapNode to,
     String branch,
   ) {
-    final start = Offset(from.x + nodeSize.width / 2, from.y + nodeSize.height);
-    final end = Offset(to.x + nodeSize.width / 2, to.y);
-    final controlY = start.dy + ((end.dy - start.dy) / 2);
-    final path = Path()
-      ..moveTo(start.dx, start.dy)
-      ..cubicTo(start.dx, controlY, end.dx, controlY, end.dx, end.dy);
+    final fromRect = _nodeRect(from);
+    final toRect = _nodeRect(to);
+    final start = _edgeAnchor(fromRect, toRect.center);
+    final end = _edgeAnchor(toRect, fromRect.center);
+    final verticalCurve = (toRect.center.dy - fromRect.center.dy).abs() >=
+        (toRect.center.dx - fromRect.center.dx).abs();
+    final path = Path()..moveTo(start.dx, start.dy);
+    if (verticalCurve) {
+      final controlY = start.dy + ((end.dy - start.dy) / 2);
+      path.cubicTo(start.dx, controlY, end.dx, controlY, end.dx, end.dy);
+    } else {
+      final controlX = start.dx + ((end.dx - start.dx) / 2);
+      path.cubicTo(controlX, start.dy, controlX, end.dy, end.dx, end.dy);
+    }
     final branchKey = branch.trim().toLowerCase();
     final color = switch (branchKey) {
       'true' => scheme.primary,
@@ -936,25 +946,50 @@ class _MapCanvasPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
     canvas.drawPath(path, paint);
-    _paintArrow(canvas, end, color);
+    _paintArrow(canvas, end, start, color);
     if (branchKey.isNotEmpty) {
       _paintBranchLabel(
         canvas,
-        Offset((start.dx + end.dx) / 2, controlY - 16),
+        Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2 - 16),
         branchKey == 'true' ? 'Ha' : 'Yo‘q',
         color,
       );
     }
   }
 
-  void _paintArrow(Canvas canvas, Offset tip, Color color) {
+  Rect _nodeRect(ProductionMapNode node) {
+    return Rect.fromLTWH(node.x, node.y, nodeSize.width, nodeSize.height);
+  }
+
+  Offset _edgeAnchor(Rect rect, Offset toward) {
+    final center = rect.center;
+    final dx = toward.dx - center.dx;
+    final dy = toward.dy - center.dy;
+    if (dx == 0 && dy == 0) {
+      return center;
+    }
+    final halfWidth = rect.width / 2;
+    final halfHeight = rect.height / 2;
+    final ratio = math.max(dx.abs() / halfWidth, dy.abs() / halfHeight);
+    return Offset(center.dx + dx / ratio, center.dy + dy / ratio);
+  }
+
+  void _paintArrow(Canvas canvas, Offset tip, Offset tail, Color color) {
+    final angle = math.atan2(tip.dy - tail.dy, tip.dx - tail.dx);
+    const arrowSize = 12.0;
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
     final path = Path()
       ..moveTo(tip.dx, tip.dy)
-      ..lineTo(tip.dx - 7, tip.dy - 11)
-      ..lineTo(tip.dx + 7, tip.dy - 11)
+      ..lineTo(
+        tip.dx - math.cos(angle - math.pi / 6) * arrowSize,
+        tip.dy - math.sin(angle - math.pi / 6) * arrowSize,
+      )
+      ..lineTo(
+        tip.dx - math.cos(angle + math.pi / 6) * arrowSize,
+        tip.dy - math.sin(angle + math.pi / 6) * arrowSize,
+      )
       ..close();
     canvas.drawPath(path, paint);
   }
