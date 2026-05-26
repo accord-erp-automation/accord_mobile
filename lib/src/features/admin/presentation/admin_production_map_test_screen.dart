@@ -928,15 +928,16 @@ class _MapToolsMenu extends StatelessWidget {
           curve: Curves.easeOutBack,
           alignment: Alignment.bottomLeft,
           scale: open ? 1 : 0.86,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (var i = 0; i < actions.length; i++) ...[
-                _MapToolActionPill(action: actions[i]),
-                if (i != actions.length - 1) const SizedBox(height: 6),
+          child: SizedBox(
+            width: 324,
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final action in actions)
+                  _MapToolActionPill(action: action),
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -968,11 +969,11 @@ class _MapToolActionPill extends StatelessWidget {
           child: InkWell(
             onTap: action.enabled ? action.onTap : null,
             child: SizedBox(
+              width: 158,
               height: 56,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       action.icon,
@@ -980,13 +981,15 @@ class _MapToolActionPill extends StatelessWidget {
                       color: scheme.onPrimaryContainer,
                     ),
                     const SizedBox(width: 10),
-                    Text(
-                      action.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: scheme.onPrimaryContainer,
-                        fontWeight: FontWeight.w600,
+                    Expanded(
+                      child: Text(
+                        action.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: scheme.onPrimaryContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
