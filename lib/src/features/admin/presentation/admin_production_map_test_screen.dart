@@ -743,58 +743,96 @@ class _ProductionMapCanvas extends StatelessWidget {
         ),
         child: SizedBox(
           height: 560,
-          child: InteractiveViewer(
-            constrained: false,
-            minScale: 0.35,
-            maxScale: 2.4,
-            boundaryMargin: const EdgeInsets.all(420),
-            child: SizedBox(
-              width: _canvasSize.width,
-              height: _canvasSize.height,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Positioned(
-                    left: 0,
-                    top: 0,
-                    width: _canvasSize.width,
-                    height: _canvasSize.height,
-                    child: CustomPaint(
-                      size: _canvasSize,
-                      painter: _MapCanvasPainter(
-                        nodes: nodes,
-                        edges: edges,
-                        nodeSize: _nodeSize,
-                        scheme: scheme,
-                      ),
-                    ),
-                  ),
-                  for (final node in nodes)
-                    Positioned(
-                      left: node.x,
-                      top: node.y,
-                      width: _nodeSize.width,
-                      child: Listener(
-                        onPointerMove: (event) =>
-                            onNodeMoved(node.id, event.delta),
-                        child: _MapNodeVisual(
-                          node: node,
-                          onTap: () => onNodeTap(node),
-                          onDelete: node.kind == 'start' || node.kind == 'end'
-                              ? null
-                              : () => onNodeDelete(node),
-                          floating: false,
-                          highlighted: false,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _GridPaperPainter(scheme: scheme),
+                ),
+              ),
+              InteractiveViewer(
+                constrained: false,
+                minScale: 0.35,
+                maxScale: 2.4,
+                boundaryMargin: const EdgeInsets.all(420),
+                child: SizedBox(
+                  width: _canvasSize.width,
+                  height: _canvasSize.height,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        width: _canvasSize.width,
+                        height: _canvasSize.height,
+                        child: CustomPaint(
+                          size: _canvasSize,
+                          painter: _MapCanvasPainter(
+                            nodes: nodes,
+                            edges: edges,
+                            nodeSize: _nodeSize,
+                            scheme: scheme,
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                      for (final node in nodes)
+                        Positioned(
+                          left: node.x,
+                          top: node.y,
+                          width: _nodeSize.width,
+                          child: Listener(
+                            onPointerMove: (event) =>
+                                onNodeMoved(node.id, event.delta),
+                            child: _MapNodeVisual(
+                              node: node,
+                              onTap: () => onNodeTap(node),
+                              onDelete:
+                                  node.kind == 'start' || node.kind == 'end'
+                                      ? null
+                                      : () => onNodeDelete(node),
+                              floating: false,
+                              highlighted: false,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
     );
+  }
+}
+
+class _GridPaperPainter extends CustomPainter {
+  const _GridPaperPainter({required this.scheme});
+
+  final ColorScheme scheme;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    _paintGrid(canvas, size, scheme);
+  }
+
+  @override
+  bool shouldRepaint(covariant _GridPaperPainter oldDelegate) {
+    return oldDelegate.scheme != scheme;
+  }
+}
+
+void _paintGrid(Canvas canvas, Size size, ColorScheme scheme) {
+  final paint = Paint()
+    ..color = scheme.outlineVariant.withValues(alpha: 0.42)
+    ..strokeWidth = 1;
+  for (var x = 0.0; x <= size.width; x += 40) {
+    canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+  }
+  for (var y = 0.0; y <= size.height; y += 40) {
+    canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
   }
 }
 
@@ -813,7 +851,6 @@ class _MapCanvasPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    _paintGrid(canvas, size);
     final byID = {
       for (final node in nodes) node.id: node,
     };
@@ -824,18 +861,6 @@ class _MapCanvasPainter extends CustomPainter {
         continue;
       }
       _paintEdge(canvas, from, to, edge.branch);
-    }
-  }
-
-  void _paintGrid(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = scheme.outlineVariant.withValues(alpha: 0.42)
-      ..strokeWidth = 1;
-    for (var x = 0.0; x <= size.width; x += 40) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (var y = 0.0; y <= size.height; y += 40) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }
   }
 
