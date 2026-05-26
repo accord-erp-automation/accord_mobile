@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/navigation/navigation.dart';
 import '../../../core/widgets/shell/app_shell.dart';
 import '../../shared/models/app_models.dart';
 import '../../werka/presentation/widgets/m3_picker_sheet.dart';
@@ -987,11 +988,14 @@ class _MapToolsFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FloatingActionButton(
-      heroTag: 'production-map-tools',
-      tooltip: 'Map sozlamalari',
-      onPressed: onTap,
-      child: const Icon(Icons.tune_rounded),
+    return AppPrimaryNavigationFab(
+      destination: const AppNavigationDestination(
+        label: 'Map sozlamalari',
+        icon: Icon(Icons.tune_rounded),
+        selectedIcon: Icon(Icons.tune_rounded),
+      ),
+      selected: false,
+      onTap: onTap,
     );
   }
 }
