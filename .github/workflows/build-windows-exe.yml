@@ -1,6 +1,7 @@
 name: Build Windows EXE
 
 on:
+  push:
   workflow_dispatch:
 
 permissions:
