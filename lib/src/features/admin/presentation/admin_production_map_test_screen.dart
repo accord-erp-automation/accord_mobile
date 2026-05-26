@@ -20,6 +20,14 @@ class AdminProductionMapTestScreen extends StatefulWidget {
 
 class _AdminProductionMapTestScreenState
     extends State<AdminProductionMapTestScreen> {
+  static const _nodeGap = 18.0;
+  static const _nodeStepX = 280.0;
+  static const _nodeStepY = 132.0;
+  static const _minNodeX = 24.0;
+  static const _minNodeY = 24.0;
+  static const _maxNodeX = 1600.0;
+  static const _maxNodeY = 3200.0;
+
   String mapID = 'hotlunch-test';
   String productCode = 'HOTLUNCH';
   String productName = 'HOTLUNCH';
@@ -232,11 +240,18 @@ class _AdminProductionMapTestScreenState
     final endIndex = nodes.indexWhere((item) => item.kind == 'end');
     final previous = nodes[endIndex - 1];
     final end = nodes[endIndex];
-    nodes.insert(endIndex, node);
+    final placedNode = _placeNode(
+      node.copyWith(
+        x: previous.x,
+        y: previous.y + _nodeStepY,
+      ),
+      ignoreIds: {end.id},
+    );
+    nodes.insert(endIndex, placedNode);
     edges.removeWhere((edge) => edge.from == previous.id && edge.to == end.id);
     edges
-      ..add(ProductionMapEdge(from: previous.id, to: node.id))
-      ..add(ProductionMapEdge(from: node.id, to: end.id));
+      ..add(ProductionMapEdge(from: previous.id, to: placedNode.id))
+      ..add(ProductionMapEdge(from: placedNode.id, to: end.id));
     _pushEndDown();
   }
 
@@ -244,32 +259,43 @@ class _AdminProductionMapTestScreenState
     final endIndex = nodes.indexWhere((item) => item.kind == 'end');
     final previous = nodes[endIndex - 1];
     final end = nodes[endIndex];
-    final condition = ProductionMapNode(
-      id: id,
-      kind: 'condition',
-      title: 'Shart',
-      x: end.x,
-      y: end.y - 220,
-      formula: const ProductionFormula(
-        target: '',
-        expression: 'order_qty >= 100',
+    final condition = _placeNode(
+      ProductionMapNode(
+        id: id,
+        kind: 'condition',
+        title: 'Shart',
+        x: previous.x,
+        y: previous.y + _nodeStepY,
+        formula: const ProductionFormula(
+          target: '',
+          expression: 'order_qty >= 100',
+        ),
       ),
+      ignoreIds: {end.id},
     );
-    final trueTask = ProductionMapNode(
-      id: '${id}_true',
-      kind: 'task',
-      title: 'Ha yo‘li',
-      roleCode: 'worker',
-      x: end.x - 280,
-      y: end.y - 68,
+    final trueTask = _placeNode(
+      ProductionMapNode(
+        id: '${id}_true',
+        kind: 'task',
+        title: 'Ha yo‘li',
+        roleCode: 'worker',
+        x: condition.x - _nodeStepX,
+        y: condition.y + _nodeStepY,
+      ),
+      ignoreIds: {end.id},
+      extraNodes: [condition],
     );
-    final falseTask = ProductionMapNode(
-      id: '${id}_false',
-      kind: 'task',
-      title: 'Yo‘q yo‘li',
-      roleCode: 'worker',
-      x: end.x + 280,
-      y: end.y - 68,
+    final falseTask = _placeNode(
+      ProductionMapNode(
+        id: '${id}_false',
+        kind: 'task',
+        title: 'Yo‘q yo‘li',
+        roleCode: 'worker',
+        x: condition.x + _nodeStepX,
+        y: condition.y + _nodeStepY,
+      ),
+      ignoreIds: {end.id},
+      extraNodes: [condition, trueTask],
     );
     nodes
       ..insert(endIndex, condition)
@@ -300,7 +326,10 @@ class _AdminProductionMapTestScreenState
         .where((node) => node.id != end.id)
         .map((node) => node.y)
         .fold<double>(end.y, (max, y) => y > max ? y : max);
-    nodes[endIndex] = end.copyWith(y: deepest + 172);
+    nodes[endIndex] = _placeNode(
+      end.copyWith(y: deepest + _nodeStepY),
+      ignoreIds: {end.id},
+    );
   }
 
   void _moveNode(String nodeID, Offset delta) {
@@ -310,11 +339,107 @@ class _AdminProductionMapTestScreenState
     }
     final node = nodes[index];
     setState(() {
-      nodes[index] = node.copyWith(
-        x: (node.x + delta.dx).clamp(24, 1060).toDouble(),
-        y: (node.y + delta.dy).clamp(24, 1260).toDouble(),
-      );
+      final position = _nonOverlappingMovePosition(node, delta);
+      nodes[index] = node.copyWith(x: position.dx, y: position.dy);
     });
+  }
+
+  Offset _nonOverlappingMovePosition(ProductionMapNode node, Offset delta) {
+    final current = Offset(node.x, node.y);
+    final full = _clampNodePosition(current + delta);
+    if (!_positionOverlapsAny(full, nodeID: node.id)) {
+      return full;
+    }
+    final xOnly = _clampNodePosition(Offset(node.x + delta.dx, node.y));
+    if (!_positionOverlapsAny(xOnly, nodeID: node.id)) {
+      return xOnly;
+    }
+    final yOnly = _clampNodePosition(Offset(node.x, node.y + delta.dy));
+    if (!_positionOverlapsAny(yOnly, nodeID: node.id)) {
+      return yOnly;
+    }
+    return current;
+  }
+
+  ProductionMapNode _placeNode(
+    ProductionMapNode node, {
+    Set<String> ignoreIds = const {},
+    List<ProductionMapNode> extraNodes = const [],
+  }) {
+    final position = _firstFreePosition(
+      Offset(node.x, node.y),
+      nodeID: node.id,
+      ignoreIds: ignoreIds,
+      extraNodes: extraNodes,
+    );
+    return node.copyWith(x: position.dx, y: position.dy);
+  }
+
+  Offset _firstFreePosition(
+    Offset preferred, {
+    required String nodeID,
+    Set<String> ignoreIds = const {},
+    List<ProductionMapNode> extraNodes = const [],
+  }) {
+    final origin = _clampNodePosition(preferred);
+    final tried = <String>{};
+    for (var row = 0; row < 80; row++) {
+      for (final column in const [0, -1, 1, -2, 2, -3, 3, -4, 4]) {
+        final position = _clampNodePosition(
+          Offset(
+            origin.dx + column * _nodeStepX,
+            origin.dy + row * _nodeStepY,
+          ),
+        );
+        final key = '${position.dx}:${position.dy}';
+        if (!tried.add(key)) {
+          continue;
+        }
+        if (!_positionOverlapsAny(
+          position,
+          nodeID: nodeID,
+          ignoreIds: ignoreIds,
+          extraNodes: extraNodes,
+        )) {
+          return position;
+        }
+      }
+    }
+    return origin;
+  }
+
+  Offset _clampNodePosition(Offset position) {
+    return Offset(
+      position.dx.clamp(_minNodeX, _maxNodeX).toDouble(),
+      position.dy.clamp(_minNodeY, _maxNodeY).toDouble(),
+    );
+  }
+
+  bool _positionOverlapsAny(
+    Offset position, {
+    required String nodeID,
+    Set<String> ignoreIds = const {},
+    List<ProductionMapNode> extraNodes = const [],
+  }) {
+    final candidate = _collisionRectAt(position);
+    for (final node in [...nodes, ...extraNodes]) {
+      if (node.id == nodeID || ignoreIds.contains(node.id)) {
+        continue;
+      }
+      if (candidate.overlaps(_collisionRectAt(Offset(node.x, node.y)))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  Rect _collisionRectAt(Offset position) {
+    return Rect.fromLTWH(
+      position.dx,
+      position.dy,
+      _ProductionMapCanvas._nodeSize.width,
+      _ProductionMapCanvas._nodeSize.height,
+    ).inflate(_nodeGap / 2);
   }
 
   Future<void> _editMapInfo() async {
@@ -601,7 +726,7 @@ class _AdminProductionMapTestScreenState
                 ),
               ),
               Positioned(
-                right: 16,
+                left: 16,
                 bottom: 16,
                 child: _MapToolsFab(
                   onTap: _openMapToolsSheet,
