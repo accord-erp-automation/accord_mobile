@@ -743,13 +743,12 @@ class _ProductionMapCanvas extends StatefulWidget {
 
 class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
   late final TransformationController _transformController;
+  bool _didSetInitialTransform = false;
 
   @override
   void initState() {
     super.initState();
-    _transformController = TransformationController(
-      Matrix4.diagonal3Values(0.72, 0.72, 1),
-    );
+    _transformController = TransformationController();
   }
 
   @override
@@ -770,72 +769,138 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
           border: Border.all(color: scheme.outlineVariant),
         ),
         child: SizedBox.expand(
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: _GridPaperPainter(scheme: scheme),
-                ),
-              ),
-              InteractiveViewer(
-                transformationController: _transformController,
-                constrained: false,
-                minScale: 0.35,
-                maxScale: 2.4,
-                boundaryMargin: const EdgeInsets.all(760),
-                child: SizedBox(
-                  width: canvasSize.width,
-                  height: canvasSize.height,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Positioned(
-                        left: 0,
-                        top: 0,
-                        width: canvasSize.width,
-                        height: canvasSize.height,
-                        child: CustomPaint(
-                          size: canvasSize,
-                          painter: _MapCanvasPainter(
-                            nodes: widget.nodes,
-                            edges: widget.edges,
-                            nodeSize: _ProductionMapCanvas._nodeSize,
-                            scheme: scheme,
-                          ),
-                        ),
-                      ),
-                      for (final node in widget.nodes)
-                        Positioned(
-                          left: node.x,
-                          top: node.y,
-                          width: _ProductionMapCanvas._nodeSize.width,
-                          child: Listener(
-                            onPointerMove: (event) {
-                              final scale = _transformController.value
-                                  .getMaxScaleOnAxis();
-                              widget.onNodeMoved(node.id, event.delta / scale);
-                            },
-                            child: _MapNodeVisual(
-                              node: node,
-                              onTap: () => widget.onNodeTap(node),
-                              onDelete:
-                                  node.kind == 'start' || node.kind == 'end'
-                                      ? null
-                                      : () => widget.onNodeDelete(node),
-                              floating: false,
-                              highlighted: false,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              _scheduleInitialTransform(
+                viewportSize: constraints.biggest,
+                canvasSize: canvasSize,
+              );
+              return Stack(
+                children: [
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: _GridPaperPainter(scheme: scheme),
+                    ),
+                  ),
+                  InteractiveViewer(
+                    transformationController: _transformController,
+                    constrained: false,
+                    minScale: 0.45,
+                    maxScale: 2.4,
+                    boundaryMargin: const EdgeInsets.all(760),
+                    child: SizedBox(
+                      width: canvasSize.width,
+                      height: canvasSize.height,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Positioned(
+                            left: 0,
+                            top: 0,
+                            width: canvasSize.width,
+                            height: canvasSize.height,
+                            child: CustomPaint(
+                              size: canvasSize,
+                              painter: _MapCanvasPainter(
+                                nodes: widget.nodes,
+                                edges: widget.edges,
+                                nodeSize: _ProductionMapCanvas._nodeSize,
+                                scheme: scheme,
+                              ),
                             ),
                           ),
-                        ),
-                    ],
+                          for (final node in widget.nodes)
+                            Positioned(
+                              left: node.x,
+                              top: node.y,
+                              width: _ProductionMapCanvas._nodeSize.width,
+                              child: Listener(
+                                onPointerMove: (event) {
+                                  final scale = _transformController.value
+                                      .getMaxScaleOnAxis();
+                                  widget.onNodeMoved(
+                                    node.id,
+                                    event.delta / scale,
+                                  );
+                                },
+                                child: _MapNodeVisual(
+                                  node: node,
+                                  onTap: () => widget.onNodeTap(node),
+                                  onDelete:
+                                      node.kind == 'start' || node.kind == 'end'
+                                          ? null
+                                          : () => widget.onNodeDelete(node),
+                                  floating: false,
+                                  highlighted: false,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           ),
         ),
       ),
     );
+  }
+
+  void _scheduleInitialTransform({
+    required Size viewportSize,
+    required Size canvasSize,
+  }) {
+    if (_didSetInitialTransform || viewportSize.isEmpty) {
+      return;
+    }
+    _didSetInitialTransform = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _transformController.value = _initialTransform(
+        viewportSize: viewportSize,
+        canvasSize: canvasSize,
+      );
+    });
+  }
+
+  Matrix4 _initialTransform({
+    required Size viewportSize,
+    required Size canvasSize,
+  }) {
+    final bounds = _nodeBounds();
+    if (bounds == null) {
+      return Matrix4.identity();
+    }
+    const padding = 56.0;
+    final scaleToFitWidth = viewportSize.width / (bounds.width + padding * 2);
+    final readableScale = scaleToFitWidth.clamp(0.88, 1.08);
+    final dx = viewportSize.width / 2 - bounds.center.dx * readableScale;
+    final dy = padding - bounds.top * readableScale;
+    final minDx = viewportSize.width - canvasSize.width * readableScale;
+    final minDy = viewportSize.height - canvasSize.height * readableScale;
+    return Matrix4.identity()
+      ..setEntry(0, 0, readableScale)
+      ..setEntry(1, 1, readableScale)
+      ..setEntry(0, 3, dx.clamp(minDx, padding))
+      ..setEntry(1, 3, dy.clamp(minDy, padding));
+  }
+
+  Rect? _nodeBounds() {
+    Rect? bounds;
+    for (final node in widget.nodes) {
+      final rect = Rect.fromLTWH(
+        node.x,
+        node.y,
+        _ProductionMapCanvas._nodeSize.width,
+        _ProductionMapCanvas._nodeSize.height,
+      );
+      bounds = bounds == null ? rect : bounds.expandToInclude(rect);
+    }
+    return bounds;
   }
 
   Size _canvasSizeFor(List<ProductionMapNode> nodes) {
