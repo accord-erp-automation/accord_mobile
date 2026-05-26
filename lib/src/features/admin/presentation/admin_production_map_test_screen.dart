@@ -102,6 +102,8 @@ class _AdminProductionMapTestScreenState
   bool saving = false;
   bool running = false;
   int _nextNodeIndex = 1;
+  String? _connectingFromNodeID;
+  Offset? _connectionPreviewEnd;
 
   Future<void> _save() async {
     setState(() => saving = true);
@@ -343,6 +345,66 @@ class _AdminProductionMapTestScreenState
       nodes[index] = node.copyWith(x: position.dx, y: position.dy);
       _resolveNodeOverlaps(anchorID: nodeID);
     });
+  }
+
+  void _startConnection(String nodeID) {
+    setState(() {
+      _connectingFromNodeID = nodeID;
+      _connectionPreviewEnd = null;
+    });
+  }
+
+  void _updateConnectionPreview(Offset canvasPosition) {
+    if (_connectingFromNodeID == null) {
+      return;
+    }
+    setState(() => _connectionPreviewEnd = canvasPosition);
+  }
+
+  void _finishConnection(Offset canvasPosition) {
+    final fromID = _connectingFromNodeID;
+    setState(() {
+      _connectingFromNodeID = null;
+      _connectionPreviewEnd = null;
+      if (fromID == null) {
+        return;
+      }
+      final target = _nodeAt(canvasPosition, exceptID: fromID);
+      if (target == null) {
+        return;
+      }
+      final exists = edges.any(
+        (edge) => edge.from == fromID && edge.to == target.id,
+      );
+      if (!exists) {
+        edges.add(ProductionMapEdge(from: fromID, to: target.id));
+      }
+    });
+  }
+
+  void _cancelConnection() {
+    setState(() {
+      _connectingFromNodeID = null;
+      _connectionPreviewEnd = null;
+    });
+  }
+
+  ProductionMapNode? _nodeAt(Offset position, {required String exceptID}) {
+    for (final node in nodes.reversed) {
+      if (node.id == exceptID) {
+        continue;
+      }
+      final rect = Rect.fromLTWH(
+        node.x,
+        node.y,
+        _ProductionMapCanvas._nodeSize.width,
+        _ProductionMapCanvas._nodeSize.height,
+      );
+      if (rect.contains(position)) {
+        return node;
+      }
+    }
+    return null;
   }
 
   ProductionMapNode _placeNode(
@@ -789,9 +851,15 @@ class _AdminProductionMapTestScreenState
                 child: _ProductionMapCanvas(
                   nodes: nodes,
                   edges: edges,
+                  connectingFromNodeID: _connectingFromNodeID,
+                  connectionPreviewEnd: _connectionPreviewEnd,
                   onNodeTap: (node) => _editNode(nodes.indexOf(node)),
                   onNodeDelete: (node) => _deleteNode(nodes.indexOf(node)),
                   onNodeMoved: _moveNode,
+                  onConnectionStart: _startConnection,
+                  onConnectionUpdate: _updateConnectionPreview,
+                  onConnectionEnd: _finishConnection,
+                  onConnectionCancel: _cancelConnection,
                 ),
               ),
               Positioned(
@@ -988,9 +1056,15 @@ class _ProductionMapCanvas extends StatefulWidget {
   const _ProductionMapCanvas({
     required this.nodes,
     required this.edges,
+    required this.connectingFromNodeID,
+    required this.connectionPreviewEnd,
     required this.onNodeTap,
     required this.onNodeDelete,
     required this.onNodeMoved,
+    required this.onConnectionStart,
+    required this.onConnectionUpdate,
+    required this.onConnectionEnd,
+    required this.onConnectionCancel,
   });
 
   static const _minCanvasSize = Size(1180, 900);
@@ -998,17 +1072,25 @@ class _ProductionMapCanvas extends StatefulWidget {
 
   final List<ProductionMapNode> nodes;
   final List<ProductionMapEdge> edges;
+  final String? connectingFromNodeID;
+  final Offset? connectionPreviewEnd;
   final ValueChanged<ProductionMapNode> onNodeTap;
   final ValueChanged<ProductionMapNode> onNodeDelete;
   final void Function(String nodeID, Offset delta) onNodeMoved;
+  final ValueChanged<String> onConnectionStart;
+  final ValueChanged<Offset> onConnectionUpdate;
+  final ValueChanged<Offset> onConnectionEnd;
+  final VoidCallback onConnectionCancel;
 
   @override
   State<_ProductionMapCanvas> createState() => _ProductionMapCanvasState();
 }
 
 class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
+  final _canvasKey = GlobalKey();
   late final TransformationController _transformController;
   bool _didSetInitialTransform = false;
+  Offset? _lastConnectionPosition;
 
   @override
   void initState() {
@@ -1054,6 +1136,7 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
                   maxScale: 2.4,
                   boundaryMargin: const EdgeInsets.all(760),
                   child: SizedBox(
+                    key: _canvasKey,
                     width: canvasSize.width,
                     height: canvasSize.height,
                     child: Stack(
@@ -1069,6 +1152,8 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
                             painter: _MapCanvasPainter(
                               nodes: widget.nodes,
                               edges: widget.edges,
+                              connectionFromNodeID: widget.connectingFromNodeID,
+                              connectionPreviewEnd: widget.connectionPreviewEnd,
                               nodeSize: _ProductionMapCanvas._nodeSize,
                               scheme: scheme,
                             ),
@@ -1079,25 +1164,52 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
                             left: node.x,
                             top: node.y,
                             width: _ProductionMapCanvas._nodeSize.width,
-                            child: Listener(
-                              onPointerMove: (event) {
+                            child: _MapNodeVisual(
+                              node: node,
+                              onTap: () => widget.onNodeTap(node),
+                              onDragUpdate: (details) {
                                 final scale = _transformController.value
                                     .getMaxScaleOnAxis();
                                 widget.onNodeMoved(
                                   node.id,
-                                  event.delta / scale,
+                                  details.delta / scale,
                                 );
                               },
-                              child: _MapNodeVisual(
-                                node: node,
-                                onTap: () => widget.onNodeTap(node),
-                                onDelete:
-                                    node.kind == 'start' || node.kind == 'end'
-                                        ? null
-                                        : () => widget.onNodeDelete(node),
-                                floating: false,
-                                highlighted: false,
-                              ),
+                              onDelete:
+                                  node.kind == 'start' || node.kind == 'end'
+                                      ? null
+                                      : () => widget.onNodeDelete(node),
+                              onConnectionDragStart: (globalPosition) {
+                                final canvasPosition = _globalToCanvas(
+                                  globalPosition,
+                                );
+                                _lastConnectionPosition = canvasPosition;
+                                widget.onConnectionStart(node.id);
+                                widget.onConnectionUpdate(canvasPosition);
+                              },
+                              onConnectionDragUpdate: (globalPosition) {
+                                final canvasPosition = _globalToCanvas(
+                                  globalPosition,
+                                );
+                                _lastConnectionPosition = canvasPosition;
+                                widget.onConnectionUpdate(canvasPosition);
+                              },
+                              onConnectionDragEnd: () {
+                                final position = _lastConnectionPosition;
+                                _lastConnectionPosition = null;
+                                if (position == null) {
+                                  widget.onConnectionCancel();
+                                  return;
+                                }
+                                widget.onConnectionEnd(position);
+                              },
+                              onConnectionDragCancel: () {
+                                _lastConnectionPosition = null;
+                                widget.onConnectionCancel();
+                              },
+                              floating: false,
+                              highlighted:
+                                  widget.connectingFromNodeID == node.id,
                             ),
                           ),
                       ],
@@ -1129,6 +1241,18 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
         canvasSize: canvasSize,
       );
     });
+  }
+
+  Offset _globalToCanvas(Offset globalPosition) {
+    final context = _canvasKey.currentContext;
+    if (context == null) {
+      return Offset.zero;
+    }
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null) {
+      return Offset.zero;
+    }
+    return box.globalToLocal(globalPosition);
   }
 
   Matrix4 _initialTransform({
@@ -1219,12 +1343,16 @@ class _MapCanvasPainter extends CustomPainter {
   const _MapCanvasPainter({
     required this.nodes,
     required this.edges,
+    required this.connectionFromNodeID,
+    required this.connectionPreviewEnd,
     required this.nodeSize,
     required this.scheme,
   });
 
   final List<ProductionMapNode> nodes;
   final List<ProductionMapEdge> edges;
+  final String? connectionFromNodeID;
+  final Offset? connectionPreviewEnd;
   final Size nodeSize;
   final ColorScheme scheme;
 
@@ -1240,6 +1368,14 @@ class _MapCanvasPainter extends CustomPainter {
         continue;
       }
       _paintEdge(canvas, from, to, edge.branch);
+    }
+    final previewFromID = connectionFromNodeID;
+    final previewEnd = connectionPreviewEnd;
+    if (previewFromID != null && previewEnd != null) {
+      final from = byID[previewFromID];
+      if (from != null) {
+        _paintPreviewEdge(canvas, from, previewEnd);
+      }
     }
   }
 
@@ -1284,6 +1420,28 @@ class _MapCanvasPainter extends CustomPainter {
         color,
       );
     }
+  }
+
+  void _paintPreviewEdge(
+    Canvas canvas,
+    ProductionMapNode from,
+    Offset previewEnd,
+  ) {
+    final fromRect = _nodeRect(from);
+    final start = _edgeAnchor(fromRect, previewEnd);
+    final controlX = start.dx + ((previewEnd.dx - start.dx) / 2);
+    final path = Path()
+      ..moveTo(start.dx, start.dy)
+      ..cubicTo(controlX, start.dy, controlX, previewEnd.dy, previewEnd.dx,
+          previewEnd.dy);
+    final color = scheme.primary;
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.82)
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPath(path, paint);
+    canvas.drawCircle(previewEnd, 7, Paint()..color = color);
   }
 
   Rect _nodeRect(ProductionMapNode node) {
@@ -1358,9 +1516,7 @@ class _MapCanvasPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _MapCanvasPainter oldDelegate) {
-    return oldDelegate.nodes != nodes ||
-        oldDelegate.edges != edges ||
-        oldDelegate.scheme != scheme;
+    return true;
   }
 }
 
@@ -1368,14 +1524,24 @@ class _MapNodeVisual extends StatelessWidget {
   const _MapNodeVisual({
     required this.node,
     required this.onTap,
+    required this.onDragUpdate,
     required this.onDelete,
+    required this.onConnectionDragStart,
+    required this.onConnectionDragUpdate,
+    required this.onConnectionDragEnd,
+    required this.onConnectionDragCancel,
     required this.floating,
     required this.highlighted,
   });
 
   final ProductionMapNode node;
   final VoidCallback onTap;
+  final GestureDragUpdateCallback onDragUpdate;
   final VoidCallback? onDelete;
+  final ValueChanged<Offset> onConnectionDragStart;
+  final ValueChanged<Offset> onConnectionDragUpdate;
+  final VoidCallback onConnectionDragEnd;
+  final VoidCallback onConnectionDragCancel;
   final bool floating;
   final bool highlighted;
 
@@ -1389,6 +1555,7 @@ class _MapNodeVisual extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
+        onPanUpdate: onDragUpdate,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
           decoration: BoxDecoration(
@@ -1447,6 +1614,24 @@ class _MapNodeVisual extends StatelessWidget {
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: scheme.onSurfaceVariant,
                     fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onPanStart: (details) =>
+                      onConnectionDragStart(details.globalPosition),
+                  onPanUpdate: (details) =>
+                      onConnectionDragUpdate(details.globalPosition),
+                  onPanEnd: (_) => onConnectionDragEnd(),
+                  onPanCancel: onConnectionDragCancel,
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.add_link_rounded,
+                      size: 20,
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
                 if (onDelete != null) ...[
