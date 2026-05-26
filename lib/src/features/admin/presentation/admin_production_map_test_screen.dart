@@ -3,11 +3,11 @@ import 'dart:math' as math;
 import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/navigation/navigation.dart';
 import '../../../core/widgets/shell/app_shell.dart';
 import '../../shared/models/app_models.dart';
 import '../../werka/presentation/widgets/m3_picker_sheet.dart';
 import '../models/production_map_models.dart';
+import 'widgets/admin_create_hub_sheet.dart';
 import 'widgets/admin_dock.dart';
 import 'package:flutter/material.dart';
 
@@ -677,55 +677,55 @@ class _AdminProductionMapTestScreenState
     });
   }
 
-  List<_MapToolAction> _mapToolActions() {
+  List<AdminFabMenuAction> _mapToolActions() {
     return [
-      _MapToolAction(
+      AdminFabMenuAction(
         title: 'Map ma’lumotlari',
         icon: Icons.edit_rounded,
         onTap: () => _runMapToolAction(_editMapInfo),
       ),
-      _MapToolAction(
+      AdminFabMenuAction(
         title: 'Mahsulot',
         icon: Icons.inventory_2_rounded,
         onTap: () => _runMapToolAction(_openProductPicker),
       ),
-      _MapToolAction(
+      AdminFabMenuAction(
         title: 'Location',
         icon: Icons.account_tree_rounded,
         onTap: () => _runMapToolAction(() => _addNode('task')),
       ),
-      _MapToolAction(
+      AdminFabMenuAction(
         title: 'Formula',
         icon: Icons.functions_rounded,
         onTap: () => _runMapToolAction(() => _addNode('formula')),
       ),
-      _MapToolAction(
+      AdminFabMenuAction(
         title: 'Condition',
         icon: Icons.call_split_rounded,
         onTap: () => _runMapToolAction(() => _addNode('condition')),
       ),
-      _MapToolAction(
+      AdminFabMenuAction(
         title: 'Material',
         icon: Icons.inventory_2_rounded,
         onTap: () => _runMapToolAction(() => _addNode('material')),
       ),
-      _MapToolAction(
+      AdminFabMenuAction(
         title: 'Wait',
         icon: Icons.hourglass_bottom_rounded,
         onTap: () => _runMapToolAction(() => _addNode('wait')),
       ),
-      _MapToolAction(
+      AdminFabMenuAction(
         title: 'Output',
         icon: Icons.flag_rounded,
         onTap: () => _runMapToolAction(() => _addNode('output')),
       ),
-      _MapToolAction(
+      AdminFabMenuAction(
         title: running ? 'Hisoblanmoqda' : 'Hisoblash',
         icon: Icons.play_arrow_rounded,
         enabled: !running,
         onTap: () => _runMapToolAction(_run),
       ),
-      _MapToolAction(
+      AdminFabMenuAction(
         title: saving ? 'Saqlanyapti' : 'Saqlash',
         icon: Icons.check_rounded,
         enabled: !saving,
@@ -793,18 +793,15 @@ class _AdminProductionMapTestScreenState
                 ),
               Positioned(
                 left: 16,
-                bottom: 104,
-                child: _MapToolsMenu(
+                bottom: 16,
+                child: AdminFabActionMenu(
                   open: _mapToolsMenuOpen,
                   actions: _mapToolActions(),
-                ),
-              ),
-              Positioned(
-                left: 16,
-                bottom: 16,
-                child: _MapToolsFab(
-                  open: _mapToolsMenuOpen,
-                  onTap: _toggleMapToolsMenu,
+                  onToggle: _toggleMapToolsMenu,
+                  closedLabel: 'Map sozlamalari',
+                  openLabel: 'Yopish',
+                  closedIcon: Icons.tune_rounded,
+                  alignEnd: false,
                 ),
               ),
             ],
@@ -888,140 +885,6 @@ class _PlainActionButtonState extends State<_PlainActionButton> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _MapToolAction {
-  const _MapToolAction({
-    required this.title,
-    required this.icon,
-    required this.onTap,
-    this.enabled = true,
-  });
-
-  final String title;
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool enabled;
-}
-
-class _MapToolsMenu extends StatelessWidget {
-  const _MapToolsMenu({
-    required this.open,
-    required this.actions,
-  });
-
-  final bool open;
-  final List<_MapToolAction> actions;
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      ignoring: !open,
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        opacity: open ? 1 : 0,
-        child: AnimatedScale(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutBack,
-          alignment: Alignment.bottomLeft,
-          scale: open ? 1 : 0.86,
-          child: SizedBox(
-            width: 324,
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final action in actions)
-                  _MapToolActionPill(action: action),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MapToolActionPill extends StatelessWidget {
-  const _MapToolActionPill({required this.action});
-
-  final _MapToolAction action;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    return Semantics(
-      button: true,
-      enabled: action.enabled,
-      label: action.title,
-      child: Opacity(
-        opacity: action.enabled ? 1 : 0.48,
-        child: Material(
-          color: scheme.primaryContainer,
-          elevation: 0,
-          surfaceTintColor: Colors.transparent,
-          shape: const StadiumBorder(),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: action.enabled ? action.onTap : null,
-            child: SizedBox(
-              width: 158,
-              height: 56,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Row(
-                  children: [
-                    Icon(
-                      action.icon,
-                      size: 24,
-                      color: scheme.onPrimaryContainer,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        action.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: scheme.onPrimaryContainer,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MapToolsFab extends StatelessWidget {
-  const _MapToolsFab({
-    required this.open,
-    required this.onTap,
-  });
-
-  final bool open;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppPrimaryNavigationFab(
-      destination: AppNavigationDestination(
-        label: 'Map sozlamalari',
-        icon: Icon(open ? Icons.close_rounded : Icons.tune_rounded),
-        selectedIcon: const Icon(Icons.close_rounded),
-      ),
-      selected: open,
-      onTap: onTap,
     );
   }
 }

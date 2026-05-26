@@ -467,6 +467,214 @@ class _AdminHubActionCandidate {
   final String routeName;
 }
 
+class AdminFabMenuAction {
+  const AdminFabMenuAction({
+    required this.title,
+    required this.icon,
+    required this.onTap,
+    this.enabled = true,
+  });
+
+  final String title;
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool enabled;
+}
+
+class AdminFabActionMenu extends StatefulWidget {
+  const AdminFabActionMenu({
+    super.key,
+    required this.open,
+    required this.actions,
+    required this.onToggle,
+    required this.closedLabel,
+    required this.openLabel,
+    required this.closedIcon,
+    this.openIcon = Icons.close_rounded,
+    this.alignEnd = true,
+  });
+
+  final bool open;
+  final List<AdminFabMenuAction> actions;
+  final VoidCallback onToggle;
+  final String closedLabel;
+  final String openLabel;
+  final IconData closedIcon;
+  final IconData openIcon;
+  final bool alignEnd;
+
+  @override
+  State<AdminFabActionMenu> createState() => _AdminFabActionMenuState();
+}
+
+class _AdminFabActionMenuState extends State<AdminFabActionMenu>
+    with TickerProviderStateMixin {
+  late final AnimationController _spatialController = AnimationController(
+    vsync: this,
+    duration: _AdminCreateHubOverlayState._openDuration,
+    reverseDuration: _AdminCreateHubOverlayState._closeDuration,
+    lowerBound: _AdminCreateHubOverlayState._spatialLower,
+    upperBound: _AdminCreateHubOverlayState._spatialUpper,
+  );
+  late final AnimationController _fabMorphController = AnimationController(
+    vsync: this,
+    duration: _AdminCreateHubOverlayState._openDuration,
+    reverseDuration: _AdminCreateHubOverlayState._closeDuration,
+    lowerBound: _AdminCreateHubOverlayState._fabMorphLower,
+    upperBound: _AdminCreateHubOverlayState._fabMorphUpper,
+  );
+  late final AnimationController _effectsController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 860),
+    reverseDuration: const Duration(milliseconds: 860),
+  );
+  late final ShapeBorderTween _fabShapeTween = ShapeBorderTween(
+    begin: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(
+        appNavigationBarPrimaryButtonBorderRadius,
+      ),
+    ),
+    end: const CircleBorder(),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _applyOpenState(widget.open, animate: false);
+  }
+
+  @override
+  void didUpdateWidget(covariant AdminFabActionMenu oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.open != widget.open) {
+      _applyOpenState(widget.open);
+    }
+  }
+
+  @override
+  void dispose() {
+    _spatialController.dispose();
+    _fabMorphController.dispose();
+    _effectsController.dispose();
+    super.dispose();
+  }
+
+  void _applyOpenState(bool open, {bool animate = true}) {
+    final target = open ? 1.0 : 0.0;
+    if (!animate) {
+      _spatialController.value = target;
+      _fabMorphController.value = target;
+      _effectsController.value = target;
+      return;
+    }
+    _animateWithSpring(
+      controller: _spatialController,
+      spring: open
+          ? _AdminCreateHubOverlayState._spatialSpring
+          : _AdminCreateHubOverlayState._spatialSpringClose,
+      target: target,
+    );
+    _animateWithSpring(
+      controller: _fabMorphController,
+      spring: open
+          ? _AdminCreateHubOverlayState._fabMorphSpring
+          : _AdminCreateHubOverlayState._fabMorphSpringClose,
+      target: target,
+    );
+    _animateWithSpring(
+      controller: _effectsController,
+      spring: open
+          ? _AdminCreateHubOverlayState._effectsSpring
+          : _AdminCreateHubOverlayState._effectsSpringClose,
+      target: target,
+    );
+  }
+
+  TickerFuture _animateWithSpring({
+    required AnimationController controller,
+    required SpringDescription spring,
+    required double target,
+  }) {
+    final simulation = SpringSimulation(
+      spring,
+      controller.value,
+      target,
+      controller.velocity,
+    )..tolerance = const Tolerance(distance: 0.001, velocity: 0.001);
+    return controller.animateWith(simulation);
+  }
+
+  List<_AdminHubAction> _menuActions() {
+    final n = widget.actions.length;
+    return [
+      for (var i = 0; i < widget.actions.length; i++)
+        _AdminHubAction(
+          key: ValueKey('admin-fab-menu-${widget.actions[i].title}'),
+          title: widget.actions[i].title,
+          icon: widget.actions[i].icon,
+          routeName: '',
+          row: i,
+          staggerOrder: n - 1 - i,
+        ),
+    ];
+  }
+
+  Animation<double> _buildEffectsStagger(
+    _AdminHubAction action,
+    Animation<double> parent,
+  ) {
+    final int order = action.staggerOrder;
+    final double start = (order * 0.20).clamp(0.0, 0.76);
+    final double end = (start + 0.56).clamp(0.0, 1.0);
+    return CurvedAnimation(
+      parent: parent,
+      curve: Interval(start, end, curve: Curves.easeOutCubic),
+      reverseCurve: Interval(start, end, curve: Curves.easeInCubic),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = _menuActions();
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment:
+          widget.alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < actions.length; i++) ...[
+          _AdminHubActionPill(
+            key: actions[i].key,
+            action: actions[i],
+            spatial: _spatialController,
+            effectsAnimation: _buildEffectsStagger(
+              actions[i],
+              _effectsController,
+            ),
+            overflowAlignment:
+                widget.alignEnd ? Alignment.centerRight : Alignment.centerLeft,
+            motionKey: ValueKey('admin-fab-menu-reveal-${actions[i].row}'),
+            onTap: widget.actions[i].enabled ? widget.actions[i].onTap : null,
+          ),
+          if (i != actions.length - 1) const SizedBox(height: 4),
+        ],
+        const SizedBox(height: _AdminCreateHubOverlayState._groupButtonGap),
+        _AdminMorphFabButton(
+          fabMorphAnimation: _fabMorphController,
+          effectsAnimation: _effectsController,
+          onTap: widget.onToggle,
+          closedSize: _AdminCreateHubOverlayState._fabClosedSize,
+          openSize: _AdminCreateHubOverlayState._fabOpenSize,
+          shapeTween: _fabShapeTween,
+          closedLabel: widget.closedLabel,
+          openLabel: widget.openLabel,
+          closedIcon: widget.closedIcon,
+          openIcon: widget.openIcon,
+        ),
+      ],
+    );
+  }
+}
+
 class _AdminHubActionPill extends StatelessWidget {
   const _AdminHubActionPill({
     super.key,
@@ -475,13 +683,15 @@ class _AdminHubActionPill extends StatelessWidget {
     required this.effectsAnimation,
     this.motionKey,
     required this.onTap,
+    this.overflowAlignment = Alignment.centerRight,
   });
 
   final _AdminHubAction action;
   final Animation<double> spatial;
   final Animation<double> effectsAnimation;
   final Key? motionKey;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+  final Alignment overflowAlignment;
 
   @override
   Widget build(BuildContext context) {
@@ -544,7 +754,7 @@ class _AdminHubActionPill extends StatelessWidget {
                     child: InkWell(
                       onTap: onTap,
                       child: OverflowBox(
-                        alignment: Alignment.centerRight,
+                        alignment: overflowAlignment,
                         minWidth: targetWidth,
                         maxWidth: targetWidth,
                         child: SizedBox(
@@ -599,6 +809,10 @@ class _AdminMorphFabButton extends StatelessWidget {
     required this.closedSize,
     required this.openSize,
     required this.shapeTween,
+    this.closedLabel,
+    this.openLabel,
+    this.closedIcon = Icons.add_rounded,
+    this.openIcon = Icons.close_rounded,
   });
 
   final Animation<double> fabMorphAnimation;
@@ -607,6 +821,10 @@ class _AdminMorphFabButton extends StatelessWidget {
   final double closedSize;
   final double openSize;
   final ShapeBorderTween shapeTween;
+  final String? closedLabel;
+  final String? openLabel;
+  final IconData closedIcon;
+  final IconData openIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -639,8 +857,8 @@ class _AdminMorphFabButton extends StatelessWidget {
         return Semantics(
           button: true,
           label: iconT >= 0.5
-              ? context.l10n.closeAction
-              : context.l10n.createHubTitle,
+              ? openLabel ?? context.l10n.closeAction
+              : closedLabel ?? context.l10n.createHubTitle,
           child: SizedBox(
             width: buttonSize,
             height: buttonSize,
@@ -660,7 +878,7 @@ class _AdminMorphFabButton extends StatelessWidget {
                       Opacity(
                         opacity: 1 - iconT,
                         child: Icon(
-                          Icons.add_rounded,
+                          closedIcon,
                           size: iconSize,
                           color: foregroundColor,
                         ),
@@ -668,7 +886,7 @@ class _AdminMorphFabButton extends StatelessWidget {
                       Opacity(
                         opacity: iconT,
                         child: Icon(
-                          Icons.close_rounded,
+                          openIcon,
                           size: iconSize,
                           color: foregroundColor,
                         ),
