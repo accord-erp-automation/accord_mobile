@@ -65,4 +65,19 @@ void main() {
     expect(AppRouter.canOpenRoute(AppRoutes.adminProductionMapTest), isTrue);
     expect(AppRouter.canOpenRoute(AppRoutes.adminRoles), isFalse);
   });
+
+  test('production map route stays open for admin access', () {
+    AppSession.instance.token = 'token';
+    AppSession.instance.profile = const SessionProfile(
+      role: UserRole.admin,
+      displayName: 'Admin',
+      legalName: '',
+      ref: 'admin',
+      phone: '',
+      avatarUrl: '',
+      capabilities: ['admin.access'],
+    );
+
+    expect(AppRouter.canOpenRoute(AppRoutes.adminProductionMapTest), isTrue);
+  });
 }

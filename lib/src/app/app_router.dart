@@ -568,7 +568,10 @@ class AppRouter {
     },
     AppRoutes.adminSettings: {'admin.settings.read'},
     AppRoutes.adminRoles: {'role.capability.read'},
-    AppRoutes.adminProductionMapTest: {'production.map.manage'},
+    AppRoutes.adminProductionMapTest: {
+      'admin.access',
+      'production.map.manage',
+    },
     AppRoutes.adminSuppliers: {
       'party.supplier.read',
       'party.customer.read',
