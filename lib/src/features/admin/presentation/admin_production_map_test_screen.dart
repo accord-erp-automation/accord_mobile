@@ -399,10 +399,170 @@ class _AdminProductionMapTestScreenState
     });
   }
 
+  Future<void> _openMapToolsSheet() {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        final viewInsets = MediaQuery.viewInsetsOf(sheetContext);
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(12, 0, 12, viewInsets.bottom + 12),
+            child: _SurfacePanel(
+              child: _buildMapTools(sheetContext, inSheet: true),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMapTools(BuildContext context, {required bool inSheet}) {
+    void runAfterClose(VoidCallback action) {
+      if (inSheet) {
+        Navigator.of(context).pop();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            action();
+          }
+        });
+        return;
+      }
+      action();
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (inSheet) ...[
+          Container(
+            width: 42,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurfaceVariant
+                  .withValues(alpha: 0.36),
+              borderRadius: BorderRadius.circular(99),
+            ),
+          ),
+          const SizedBox(height: 14),
+        ],
+        _InfoLine(
+          label: 'Map ID',
+          value: mapID,
+          onTap: () => runAfterClose(_editMapInfo),
+        ),
+        const SizedBox(height: 6),
+        _InfoLine(
+          label: 'Mahsulot',
+          value: productName == productCode
+              ? productCode
+              : '$productName · $productCode',
+          onTap: () => runAfterClose(_openProductPicker),
+        ),
+        const SizedBox(height: 6),
+        _InfoLine(
+          label: 'Nomi',
+          value: mapTitle,
+          onTap: () => runAfterClose(_editMapInfo),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _PlainActionButton(
+                label: 'Location',
+                icon: Icons.account_tree_rounded,
+                onTap: () => runAfterClose(() => _addNode('task')),
+                tonal: true,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _PlainActionButton(
+                label: 'Formula',
+                icon: Icons.functions_rounded,
+                onTap: () => runAfterClose(() => _addNode('formula')),
+                tonal: true,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _PlainActionButton(
+                label: 'Condition',
+                icon: Icons.call_split_rounded,
+                onTap: () => runAfterClose(() => _addNode('condition')),
+                tonal: true,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _PlainActionButton(
+                label: 'Material',
+                icon: Icons.inventory_2_rounded,
+                onTap: () => runAfterClose(() => _addNode('material')),
+                tonal: true,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _PlainActionButton(
+                label: 'Wait',
+                icon: Icons.hourglass_bottom_rounded,
+                onTap: () => runAfterClose(() => _addNode('wait')),
+                tonal: true,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _PlainActionButton(
+                label: 'Output',
+                icon: Icons.flag_rounded,
+                onTap: () => runAfterClose(() => _addNode('output')),
+                tonal: true,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _PlainActionButton(
+                label: running ? 'Hisoblanmoqda' : 'Hisoblash',
+                icon: Icons.play_arrow_rounded,
+                onTap: running ? null : () => runAfterClose(_run),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _PlainActionButton(
+                label: saving ? 'Saqlanyapti' : 'Saqlash',
+                icon: Icons.check_rounded,
+                onTap: saving ? null : () => runAfterClose(_save),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom + 136.0;
+    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom + 76.0;
     return AppShell(
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_rounded),
@@ -428,128 +588,23 @@ class _AdminProductionMapTestScreenState
       child: ColoredBox(
         color: scheme.surface,
         child: Padding(
-          padding: EdgeInsets.fromLTRB(12, 12, 12, bottomPadding),
-          child: Column(
+          padding: EdgeInsets.only(bottom: bottomPadding),
+          child: Stack(
             children: [
-              _SurfacePanel(
-                child: Column(
-                  children: [
-                    _InfoLine(
-                      label: 'Map ID',
-                      value: mapID,
-                      onTap: _editMapInfo,
-                    ),
-                    const SizedBox(height: 6),
-                    _InfoLine(
-                      label: 'Mahsulot',
-                      value: productName == productCode
-                          ? productCode
-                          : '$productName · $productCode',
-                      onTap: _openProductPicker,
-                    ),
-                    const SizedBox(height: 6),
-                    _InfoLine(
-                      label: 'Nomi',
-                      value: mapTitle,
-                      onTap: _editMapInfo,
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _PlainActionButton(
-                            label: 'Location',
-                            icon: Icons.account_tree_rounded,
-                            onTap: () => _addNode('task'),
-                            tonal: true,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _PlainActionButton(
-                            label: 'Formula',
-                            icon: Icons.functions_rounded,
-                            onTap: () => _addNode('formula'),
-                            tonal: true,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _PlainActionButton(
-                            label: 'Condition',
-                            icon: Icons.call_split_rounded,
-                            onTap: () => _addNode('condition'),
-                            tonal: true,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _PlainActionButton(
-                            label: 'Material',
-                            icon: Icons.inventory_2_rounded,
-                            onTap: () => _addNode('material'),
-                            tonal: true,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _PlainActionButton(
-                            label: 'Wait',
-                            icon: Icons.hourglass_bottom_rounded,
-                            onTap: () => _addNode('wait'),
-                            tonal: true,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _PlainActionButton(
-                            label: 'Output',
-                            icon: Icons.flag_rounded,
-                            onTap: () => _addNode('output'),
-                            tonal: true,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _PlainActionButton(
-                            label: running ? 'Hisoblanmoqda' : 'Hisoblash',
-                            icon: Icons.play_arrow_rounded,
-                            onTap: running ? null : _run,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _PlainActionButton(
-                            label: saving ? 'Saqlanyapti' : 'Saqlash',
-                            icon: Icons.check_rounded,
-                            onTap: saving ? null : _save,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
+              Positioned.fill(
                 child: _ProductionMapCanvas(
                   nodes: nodes,
                   edges: edges,
                   onNodeTap: (node) => _editNode(nodes.indexOf(node)),
                   onNodeDelete: (node) => _deleteNode(nodes.indexOf(node)),
                   onNodeMoved: _moveNode,
+                ),
+              ),
+              Positioned(
+                right: 16,
+                bottom: 16,
+                child: _MapToolsFab(
+                  onTap: _openMapToolsSheet,
                 ),
               ),
             ],
@@ -663,6 +718,22 @@ class _SurfacePanel extends StatelessWidget {
   }
 }
 
+class _MapToolsFab extends StatelessWidget {
+  const _MapToolsFab({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton(
+      heroTag: 'production-map-tools',
+      tooltip: 'Map sozlamalari',
+      onPressed: onTap,
+      child: const Icon(Icons.tune_rounded),
+    );
+  }
+}
+
 class _InfoLine extends StatelessWidget {
   const _InfoLine({
     required this.label,
@@ -761,88 +832,87 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final canvasSize = _canvasSizeFor(widget.nodes);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerLowest,
-          border: Border.all(color: scheme.outlineVariant),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLowest,
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.56),
         ),
-        child: SizedBox.expand(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              _scheduleInitialTransform(
-                viewportSize: constraints.biggest,
-                canvasSize: canvasSize,
-              );
-              return Stack(
-                children: [
-                  Positioned.fill(
-                    child: CustomPaint(
-                      painter: _GridPaperPainter(scheme: scheme),
-                    ),
+      ),
+      child: SizedBox.expand(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            _scheduleInitialTransform(
+              viewportSize: constraints.biggest,
+              canvasSize: canvasSize,
+            );
+            return Stack(
+              children: [
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _GridPaperPainter(scheme: scheme),
                   ),
-                  InteractiveViewer(
-                    transformationController: _transformController,
-                    constrained: false,
-                    minScale: 0.45,
-                    maxScale: 2.4,
-                    boundaryMargin: const EdgeInsets.all(760),
-                    child: SizedBox(
-                      width: canvasSize.width,
-                      height: canvasSize.height,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
+                ),
+                InteractiveViewer(
+                  transformationController: _transformController,
+                  constrained: false,
+                  minScale: 0.45,
+                  maxScale: 2.4,
+                  boundaryMargin: const EdgeInsets.all(760),
+                  child: SizedBox(
+                    width: canvasSize.width,
+                    height: canvasSize.height,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Positioned(
+                          left: 0,
+                          top: 0,
+                          width: canvasSize.width,
+                          height: canvasSize.height,
+                          child: CustomPaint(
+                            size: canvasSize,
+                            painter: _MapCanvasPainter(
+                              nodes: widget.nodes,
+                              edges: widget.edges,
+                              nodeSize: _ProductionMapCanvas._nodeSize,
+                              scheme: scheme,
+                            ),
+                          ),
+                        ),
+                        for (final node in widget.nodes)
                           Positioned(
-                            left: 0,
-                            top: 0,
-                            width: canvasSize.width,
-                            height: canvasSize.height,
-                            child: CustomPaint(
-                              size: canvasSize,
-                              painter: _MapCanvasPainter(
-                                nodes: widget.nodes,
-                                edges: widget.edges,
-                                nodeSize: _ProductionMapCanvas._nodeSize,
-                                scheme: scheme,
+                            left: node.x,
+                            top: node.y,
+                            width: _ProductionMapCanvas._nodeSize.width,
+                            child: Listener(
+                              onPointerMove: (event) {
+                                final scale = _transformController.value
+                                    .getMaxScaleOnAxis();
+                                widget.onNodeMoved(
+                                  node.id,
+                                  event.delta / scale,
+                                );
+                              },
+                              child: _MapNodeVisual(
+                                node: node,
+                                onTap: () => widget.onNodeTap(node),
+                                onDelete:
+                                    node.kind == 'start' || node.kind == 'end'
+                                        ? null
+                                        : () => widget.onNodeDelete(node),
+                                floating: false,
+                                highlighted: false,
                               ),
                             ),
                           ),
-                          for (final node in widget.nodes)
-                            Positioned(
-                              left: node.x,
-                              top: node.y,
-                              width: _ProductionMapCanvas._nodeSize.width,
-                              child: Listener(
-                                onPointerMove: (event) {
-                                  final scale = _transformController.value
-                                      .getMaxScaleOnAxis();
-                                  widget.onNodeMoved(
-                                    node.id,
-                                    event.delta / scale,
-                                  );
-                                },
-                                child: _MapNodeVisual(
-                                  node: node,
-                                  onTap: () => widget.onNodeTap(node),
-                                  onDelete:
-                                      node.kind == 'start' || node.kind == 'end'
-                                          ? null
-                                          : () => widget.onNodeDelete(node),
-                                  floating: false,
-                                  highlighted: false,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
+                      ],
                     ),
                   ),
-                ],
-              );
-            },
-          ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
