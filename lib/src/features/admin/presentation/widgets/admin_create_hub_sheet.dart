@@ -639,59 +639,156 @@ class _AdminFabActionMenuState extends State<AdminFabActionMenu>
   Widget build(BuildContext context) {
     final actions = _menuActions();
     final columns = widget.columns.clamp(1, 4).toInt();
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment:
-          widget.alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-      children: [
-        for (var rowStart = 0;
-            rowStart < actions.length;
-            rowStart += columns) ...[
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var offset = 0; offset < columns; offset++)
-                if (rowStart + offset < actions.length) ...[
-                  _AdminHubActionPill(
-                    key: actions[rowStart + offset].key,
-                    action: actions[rowStart + offset],
-                    spatial: _spatialController,
-                    effectsAnimation: _buildEffectsStagger(
-                      actions[rowStart + offset],
-                      _effectsController,
-                    ),
-                    overflowAlignment: widget.alignEnd
-                        ? Alignment.centerRight
-                        : Alignment.centerLeft,
-                    motionKey: ValueKey(
-                      'admin-fab-menu-reveal-${actions[rowStart + offset].row}',
-                    ),
-                    onTap: widget.actions[rowStart + offset].enabled
-                        ? widget.actions[rowStart + offset].onTap
-                        : null,
+    final rowCount = (actions.length / columns).ceil();
+    final menuHeight = rowCount * _adminHubMenuItemHeight +
+        math.max(0, rowCount - 1) * _AdminCreateHubOverlayState._menuItemGap;
+    final hostWidth = _menuWidth(context, actions, columns);
+    final hostHeight = menuHeight +
+        _AdminCreateHubOverlayState._groupButtonGap +
+        _AdminCreateHubOverlayState._fabClosedSize;
+    return SizedBox(
+      width: hostWidth,
+      height: hostHeight,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          PositionedDirectional(
+            start: widget.alignEnd ? null : 0,
+            end: widget.alignEnd ? 0 : null,
+            bottom: _AdminCreateHubOverlayState._fabClosedSize +
+                _AdminCreateHubOverlayState._groupButtonGap,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: widget.alignEnd
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              children: [
+                for (var rowStart = 0;
+                    rowStart < actions.length;
+                    rowStart += columns) ...[
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (var offset = 0; offset < columns; offset++)
+                        if (rowStart + offset < actions.length) ...[
+                          _AdminHubActionPill(
+                            key: actions[rowStart + offset].key,
+                            action: actions[rowStart + offset],
+                            spatial: _spatialController,
+                            effectsAnimation: _buildEffectsStagger(
+                              actions[rowStart + offset],
+                              _effectsController,
+                            ),
+                            overflowAlignment: widget.alignEnd
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
+                            motionKey: ValueKey(
+                              'admin-fab-menu-reveal-${actions[rowStart + offset].row}',
+                            ),
+                            onTap: widget.actions[rowStart + offset].enabled
+                                ? widget.actions[rowStart + offset].onTap
+                                : null,
+                          ),
+                          if (offset != columns - 1 &&
+                              rowStart + offset + 1 < actions.length)
+                            const SizedBox(width: 8),
+                        ],
+                    ],
                   ),
-                  if (offset != columns - 1 &&
-                      rowStart + offset + 1 < actions.length)
-                    const SizedBox(width: 8),
+                  if (rowStart + columns < actions.length)
+                    const SizedBox(
+                      height: _AdminCreateHubOverlayState._menuItemGap,
+                    ),
                 ],
-            ],
+              ],
+            ),
           ),
-          if (rowStart + columns < actions.length) const SizedBox(height: 4),
+          AnimatedBuilder(
+            animation:
+                Listenable.merge([_fabMorphController, _effectsController]),
+            builder: (context, _) {
+              final progress = _m3SpatialLerpT(_fabMorphController.value);
+              final currentButtonSize = _lerpDouble(
+                _AdminCreateHubOverlayState._fabClosedSize,
+                _AdminCreateHubOverlayState._fabOpenSize,
+                progress,
+              );
+              final anchoredBottom =
+                  _AdminCreateHubOverlayState._fabClosedSize -
+                      currentButtonSize;
+              return PositionedDirectional(
+                start: widget.alignEnd ? null : 0,
+                end: widget.alignEnd ? 0 : null,
+                bottom: anchoredBottom,
+                child: _AdminMorphFabButton(
+                  fabMorphAnimation: _fabMorphController,
+                  effectsAnimation: _effectsController,
+                  onTap: widget.onToggle,
+                  closedSize: _AdminCreateHubOverlayState._fabClosedSize,
+                  openSize: _AdminCreateHubOverlayState._fabOpenSize,
+                  shapeTween: _fabShapeTween,
+                  closedLabel: widget.closedLabel,
+                  openLabel: widget.openLabel,
+                  closedIcon: widget.closedIcon,
+                  openIcon: widget.openIcon,
+                ),
+              );
+            },
+          ),
         ],
-        const SizedBox(height: _AdminCreateHubOverlayState._groupButtonGap),
-        _AdminMorphFabButton(
-          fabMorphAnimation: _fabMorphController,
-          effectsAnimation: _effectsController,
-          onTap: widget.onToggle,
-          closedSize: _AdminCreateHubOverlayState._fabClosedSize,
-          openSize: _AdminCreateHubOverlayState._fabOpenSize,
-          shapeTween: _fabShapeTween,
-          closedLabel: widget.closedLabel,
-          openLabel: widget.openLabel,
-          closedIcon: widget.closedIcon,
-          openIcon: widget.openIcon,
-        ),
-      ],
+      ),
+    );
+  }
+
+  double _menuWidth(
+    BuildContext context,
+    List<_AdminHubAction> actions,
+    int columns,
+  ) {
+    var width = 0.0;
+    for (var rowStart = 0; rowStart < actions.length; rowStart += columns) {
+      var rowWidth = 0.0;
+      for (var offset = 0; offset < columns; offset++) {
+        final index = rowStart + offset;
+        if (index >= actions.length) {
+          break;
+        }
+        rowWidth += _targetActionWidth(context, actions[index]);
+        if (offset != columns - 1 && index + 1 < actions.length) {
+          rowWidth += 8;
+        }
+      }
+      if (rowWidth > width) {
+        width = rowWidth;
+      }
+    }
+    return math.max(width, _AdminCreateHubOverlayState._fabClosedSize);
+  }
+
+  double _targetActionWidth(BuildContext context, _AdminHubAction action) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final textDirection = Directionality.of(context);
+    final titleStyle = theme.textTheme.titleMedium?.copyWith(
+          color: scheme.onPrimaryContainer,
+          fontWeight: FontWeight.w600,
+        ) ??
+        TextStyle(
+          color: scheme.onPrimaryContainer,
+          fontWeight: FontWeight.w600,
+        );
+    final titlePainter = TextPainter(
+      text: TextSpan(text: action.title, style: titleStyle),
+      textDirection: textDirection,
+      maxLines: 1,
+    )..layout();
+    return math.max(
+      _adminHubMenuItemHeight,
+      _adminHubActionPaddingStart +
+          24 +
+          _adminHubActionIconGap +
+          titlePainter.width +
+          _adminHubActionPaddingEnd,
     );
   }
 }
