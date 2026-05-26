@@ -140,15 +140,18 @@ class ProductionMapEdge {
   const ProductionMapEdge({
     required this.from,
     required this.to,
+    this.branch = '',
   });
 
   final String from;
   final String to;
+  final String branch;
 
   factory ProductionMapEdge.fromJson(Map<String, dynamic> json) {
     return ProductionMapEdge(
       from: json['from'] as String? ?? '',
       to: json['to'] as String? ?? '',
+      branch: json['branch'] as String? ?? '',
     );
   }
 
@@ -156,6 +159,7 @@ class ProductionMapEdge {
     return {
       'from': from,
       'to': to,
+      if (branch.trim().isNotEmpty) 'branch': branch.trim(),
     };
   }
 }

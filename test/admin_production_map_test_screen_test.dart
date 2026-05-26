@@ -52,7 +52,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Yangi location'), findsOneWidget);
 
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, -260));
+    await tester.ensureVisible(find.text('Yangi location'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Yangi location'));
     await tester.pumpAndSettle();
@@ -65,7 +65,7 @@ void main() {
     expect(find.text('Rezka location'), findsOneWidget);
   });
 
-  testWidgets('production map page edits product and reorders nodes',
+  testWidgets('production map page edits product and moves nodes on canvas',
       (tester) async {
     final seenRequests = <String>[];
     final client = _ProductionMapHttpClient(seenRequests);
@@ -96,22 +96,15 @@ void main() {
       expect(find.text('OPP mahsulot · OPP'), findsOneWidget);
       expect(seenRequests, contains('GET /v1/mobile/admin/items?limit=80'));
 
-      await tester.drag(find.byType(Scrollable).first, const Offset(0, -180));
+      await tester.ensureVisible(find.text('Katta partiya'));
       await tester.pumpAndSettle();
-      final dragStart = tester.getCenter(find.text('Rezkaga yuborish'));
-      final gesture = await tester.startGesture(dragStart);
-      await tester.pump(const Duration(milliseconds: 1000));
-      expect(find.text('Rezkaga yuborish'), findsNWidgets(2));
-      await gesture.moveBy(const Offset(0, -120));
-      await tester.pump(const Duration(milliseconds: 100));
-      await gesture.moveBy(const Offset(0, -120));
-      await tester.pump(const Duration(milliseconds: 100));
-      await gesture.up();
+      final before = tester.getTopLeft(find.text('Katta partiya')).dy;
+      await tester.drag(find.text('Katta partiya'), const Offset(40, -40));
       await tester.pumpAndSettle();
 
-      final rezkaTop = tester.getTopLeft(find.text('Rezkaga yuborish')).dy;
-      final cppTop = tester.getTopLeft(find.text('CPP hisob')).dy;
-      expect(rezkaTop, lessThan(cppTop));
+      final after = tester.getTopLeft(find.text('Katta partiya')).dy;
+      expect(after, lessThan(before));
+      expect(find.text('Katta partiyami?'), findsOneWidget);
     }, createHttpClient: (_) => client);
   });
 }

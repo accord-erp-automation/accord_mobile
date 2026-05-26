@@ -28,43 +28,70 @@ class _AdminProductionMapTestScreenState
       id: 'start',
       kind: 'start',
       title: 'Start',
+      x: 420,
+      y: 32,
     ),
     const ProductionMapNode(
       id: 'cpp_calc',
       kind: 'formula',
       title: 'CPP hisob',
       itemCode: 'CPP',
+      x: 420,
+      y: 164,
       formula: ProductionFormula(
         target: 'cpp_kg',
         expression: 'order_qty * 1.08',
       ),
     ),
     const ProductionMapNode(
+      id: 'qty_check',
+      kind: 'condition',
+      title: 'Katta partiyami?',
+      x: 420,
+      y: 296,
+      formula: ProductionFormula(
+        target: '',
+        expression: 'order_qty >= 100',
+      ),
+    ),
+    const ProductionMapNode(
+      id: 'large_batch',
+      kind: 'task',
+      title: 'Katta partiya',
+      roleCode: 'rezkachi',
+      x: 140,
+      y: 448,
+    ),
+    const ProductionMapNode(
       id: 'rezka_task',
       kind: 'task',
       title: 'Rezkaga yuborish',
       roleCode: 'rezkachi',
+      x: 700,
+      y: 448,
     ),
     const ProductionMapNode(
       id: 'end',
       kind: 'end',
       title: 'End',
+      x: 420,
+      y: 620,
     ),
   ];
   final edges = <ProductionMapEdge>[
     const ProductionMapEdge(from: 'start', to: 'cpp_calc'),
-    const ProductionMapEdge(from: 'cpp_calc', to: 'rezka_task'),
+    const ProductionMapEdge(from: 'cpp_calc', to: 'qty_check'),
+    const ProductionMapEdge(
+        from: 'qty_check', to: 'large_batch', branch: 'true'),
+    const ProductionMapEdge(
+        from: 'qty_check', to: 'rezka_task', branch: 'false'),
+    const ProductionMapEdge(from: 'large_batch', to: 'end'),
     const ProductionMapEdge(from: 'rezka_task', to: 'end'),
   ];
 
   bool saving = false;
   bool running = false;
   int _nextNodeIndex = 1;
-  final _editorStackKey = GlobalKey();
-  String? _draggingNodeID;
-  double? _dragStartY;
-  Offset? _floatingNodeOffset;
-  Offset _floatingTouchOffset = Offset.zero;
 
   Future<void> _save() async {
     setState(() => saving = true);
@@ -143,26 +170,31 @@ class _AdminProductionMapTestScreenState
   void _addNode(String kind) {
     final id = '${kind}_${_nextNodeIndex++}';
     setState(() {
-      nodes.insert(
-        nodes.length - 1,
-        _newNode(id, kind),
-      );
-      _rebuildLinearEdges();
+      if (kind == 'condition') {
+        _addConditionBranch(id);
+      } else {
+        _insertBeforeEnd(_newNode(id, kind));
+      }
     });
   }
 
   ProductionMapNode _newNode(String id, String kind) {
+    final end = nodes.firstWhere((node) => node.kind == 'end');
     return switch (kind) {
       'material' => ProductionMapNode(
           id: id,
           kind: 'material',
           title: 'Material tanlash',
           itemCode: 'CPP',
+          x: end.x,
+          y: end.y - 132,
         ),
       'formula' => ProductionMapNode(
           id: id,
           kind: 'formula',
           title: 'Hisob kitob',
+          x: end.x,
+          y: end.y - 132,
           formula: const ProductionFormula(
             target: 'result_kg',
             expression: 'order_qty',
@@ -172,29 +204,115 @@ class _AdminProductionMapTestScreenState
           id: id,
           kind: 'wait',
           title: 'Material kutish',
+          x: end.x,
+          y: end.y - 132,
         ),
       'output' => ProductionMapNode(
           id: id,
           kind: 'output',
           title: 'Natija chiqarish',
           itemCode: productCode,
+          x: end.x,
+          y: end.y - 132,
         ),
       _ => ProductionMapNode(
           id: id,
           kind: 'task',
           title: 'Yangi location',
           roleCode: 'worker',
+          x: end.x,
+          y: end.y - 132,
         ),
     };
   }
 
-  void _rebuildLinearEdges() {
+  void _insertBeforeEnd(ProductionMapNode node) {
+    final endIndex = nodes.indexWhere((item) => item.kind == 'end');
+    final previous = nodes[endIndex - 1];
+    final end = nodes[endIndex];
+    nodes.insert(endIndex, node);
+    edges.removeWhere((edge) => edge.from == previous.id && edge.to == end.id);
     edges
-      ..clear()
-      ..addAll([
-        for (var i = 0; i < nodes.length - 1; i++)
-          ProductionMapEdge(from: nodes[i].id, to: nodes[i + 1].id),
-      ]);
+      ..add(ProductionMapEdge(from: previous.id, to: node.id))
+      ..add(ProductionMapEdge(from: node.id, to: end.id));
+    _pushEndDown();
+  }
+
+  void _addConditionBranch(String id) {
+    final endIndex = nodes.indexWhere((item) => item.kind == 'end');
+    final previous = nodes[endIndex - 1];
+    final end = nodes[endIndex];
+    final condition = ProductionMapNode(
+      id: id,
+      kind: 'condition',
+      title: 'Shart',
+      x: end.x,
+      y: end.y - 220,
+      formula: const ProductionFormula(
+        target: '',
+        expression: 'order_qty >= 100',
+      ),
+    );
+    final trueTask = ProductionMapNode(
+      id: '${id}_true',
+      kind: 'task',
+      title: 'Ha yo‘li',
+      roleCode: 'worker',
+      x: end.x - 280,
+      y: end.y - 68,
+    );
+    final falseTask = ProductionMapNode(
+      id: '${id}_false',
+      kind: 'task',
+      title: 'Yo‘q yo‘li',
+      roleCode: 'worker',
+      x: end.x + 280,
+      y: end.y - 68,
+    );
+    nodes
+      ..insert(endIndex, condition)
+      ..insert(endIndex + 1, trueTask)
+      ..insert(endIndex + 2, falseTask);
+    edges.removeWhere((edge) => edge.from == previous.id && edge.to == end.id);
+    edges
+      ..add(ProductionMapEdge(from: previous.id, to: condition.id))
+      ..add(ProductionMapEdge(
+        from: condition.id,
+        to: trueTask.id,
+        branch: 'true',
+      ))
+      ..add(ProductionMapEdge(
+        from: condition.id,
+        to: falseTask.id,
+        branch: 'false',
+      ))
+      ..add(ProductionMapEdge(from: trueTask.id, to: end.id))
+      ..add(ProductionMapEdge(from: falseTask.id, to: end.id));
+    _pushEndDown();
+  }
+
+  void _pushEndDown() {
+    final endIndex = nodes.indexWhere((node) => node.kind == 'end');
+    final end = nodes[endIndex];
+    final deepest = nodes
+        .where((node) => node.id != end.id)
+        .map((node) => node.y)
+        .fold<double>(end.y, (max, y) => y > max ? y : max);
+    nodes[endIndex] = end.copyWith(y: deepest + 172);
+  }
+
+  void _moveNode(String nodeID, Offset delta) {
+    final index = nodes.indexWhere((node) => node.id == nodeID);
+    if (index < 0) {
+      return;
+    }
+    final node = nodes[index];
+    setState(() {
+      nodes[index] = node.copyWith(
+        x: (node.x + delta.dx).clamp(24, 1060).toDouble(),
+        y: (node.y + delta.dy).clamp(24, 1260).toDouble(),
+      );
+    });
   }
 
   Future<void> _editMapInfo() async {
@@ -275,106 +393,7 @@ class _AdminProductionMapTestScreenState
     }
     setState(() {
       nodes.removeAt(index);
-      _rebuildLinearEdges();
-    });
-  }
-
-  void _reorderNode(int oldIndex, int newIndex) {
-    if (oldIndex == 0 || oldIndex == nodes.length - 1) {
-      return;
-    }
-    var targetIndex = newIndex;
-    if (targetIndex > oldIndex) {
-      targetIndex -= 1;
-    }
-    targetIndex = targetIndex.clamp(1, nodes.length - 2);
-    if (oldIndex == targetIndex) {
-      return;
-    }
-    setState(() {
-      final node = nodes.removeAt(oldIndex);
-      nodes.insert(targetIndex, node);
-      _rebuildLinearEdges();
-    });
-  }
-
-  ProductionMapNode? get _floatingNode {
-    final nodeID = _draggingNodeID;
-    if (nodeID == null) {
-      return null;
-    }
-    for (final node in nodes) {
-      if (node.id == nodeID) {
-        return node;
-      }
-    }
-    return null;
-  }
-
-  Offset? _localDragPosition(Offset globalPosition) {
-    final context = _editorStackKey.currentContext;
-    if (context == null) {
-      return null;
-    }
-    final box = context.findRenderObject() as RenderBox?;
-    return box?.globalToLocal(globalPosition);
-  }
-
-  void _startFloatingDrag(
-    String nodeID,
-    LongPressStartDetails details,
-  ) {
-    final index = nodes.indexWhere((node) => node.id == nodeID);
-    if (index <= 0 || index >= nodes.length - 1) {
-      return;
-    }
-    final localPosition = _localDragPosition(details.globalPosition);
-    if (localPosition == null) {
-      return;
-    }
-    setState(() {
-      _draggingNodeID = nodeID;
-      _dragStartY = details.globalPosition.dy;
-      _floatingTouchOffset = details.localPosition;
-      _floatingNodeOffset = localPosition - _floatingTouchOffset;
-    });
-  }
-
-  void _updateFloatingDrag(LongPressMoveUpdateDetails details) {
-    final nodeID = _draggingNodeID;
-    if (nodeID == null) {
-      return;
-    }
-    final localPosition = _localDragPosition(details.globalPosition);
-    if (localPosition != null) {
-      setState(() {
-        _floatingNodeOffset = localPosition - _floatingTouchOffset;
-      });
-    }
-    final startY = _dragStartY;
-    if (startY == null) {
-      _dragStartY = details.globalPosition.dy;
-      return;
-    }
-    final currentIndex = nodes.indexWhere((node) => node.id == nodeID);
-    if (currentIndex <= 0 || currentIndex >= nodes.length - 1) {
-      return;
-    }
-    final deltaY = details.globalPosition.dy - startY;
-    if (deltaY < -64 && currentIndex > 1) {
-      _reorderNode(currentIndex, currentIndex - 1);
-      _dragStartY = details.globalPosition.dy;
-    } else if (deltaY > 64 && currentIndex < nodes.length - 2) {
-      _reorderNode(currentIndex, currentIndex + 2);
-      _dragStartY = details.globalPosition.dy;
-    }
-  }
-
-  void _endFloatingDrag(LongPressEndDetails details) {
-    setState(() {
-      _draggingNodeID = null;
-      _dragStartY = null;
-      _floatingNodeOffset = null;
+      edges.removeWhere((edge) => edge.from == node.id || edge.to == node.id);
     });
   }
 
@@ -382,9 +401,6 @@ class _AdminProductionMapTestScreenState
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final bottomPadding = MediaQuery.viewPaddingOf(context).bottom + 136.0;
-    final floatingNode = _floatingNode;
-    final floatingOffset = _floatingNodeOffset;
-    final floatingWidth = MediaQuery.sizeOf(context).width - 48;
     return AppShell(
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_rounded),
@@ -409,160 +425,128 @@ class _AdminProductionMapTestScreenState
       bottom: const AdminDock(activeTab: AdminDockTab.home),
       child: ColoredBox(
         color: scheme.surface,
-        child: Stack(
-          key: _editorStackKey,
-          clipBehavior: Clip.none,
+        child: ListView(
+          padding: EdgeInsets.fromLTRB(12, 12, 12, bottomPadding),
           children: [
-            ListView(
-              padding: EdgeInsets.fromLTRB(12, 12, 12, bottomPadding),
-              children: [
-                _SurfacePanel(
-                  child: Column(
+            _SurfacePanel(
+              child: Column(
+                children: [
+                  _InfoLine(
+                    label: 'Map ID',
+                    value: mapID,
+                    onTap: _editMapInfo,
+                  ),
+                  const SizedBox(height: 6),
+                  _InfoLine(
+                    label: 'Mahsulot',
+                    value: productName == productCode
+                        ? productCode
+                        : '$productName · $productCode',
+                    onTap: _openProductPicker,
+                  ),
+                  const SizedBox(height: 6),
+                  _InfoLine(
+                    label: 'Nomi',
+                    value: mapTitle,
+                    onTap: _editMapInfo,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
                     children: [
-                      _InfoLine(
-                        label: 'Map ID',
-                        value: mapID,
-                        onTap: _editMapInfo,
+                      Expanded(
+                        child: _PlainActionButton(
+                          label: 'Location',
+                          icon: Icons.account_tree_rounded,
+                          onTap: () => _addNode('task'),
+                          tonal: true,
+                        ),
                       ),
-                      const SizedBox(height: 6),
-                      _InfoLine(
-                        label: 'Mahsulot',
-                        value: productName == productCode
-                            ? productCode
-                            : '$productName · $productCode',
-                        onTap: _openProductPicker,
-                      ),
-                      const SizedBox(height: 6),
-                      _InfoLine(
-                        label: 'Nomi',
-                        value: mapTitle,
-                        onTap: _editMapInfo,
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _PlainActionButton(
-                              label: 'Location',
-                              icon: Icons.account_tree_rounded,
-                              onTap: () => _addNode('task'),
-                              tonal: true,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _PlainActionButton(
-                              label: 'Formula',
-                              icon: Icons.functions_rounded,
-                              onTap: () => _addNode('formula'),
-                              tonal: true,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _PlainActionButton(
-                              label: 'Material',
-                              icon: Icons.inventory_2_rounded,
-                              onTap: () => _addNode('material'),
-                              tonal: true,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _PlainActionButton(
-                              label: 'Wait',
-                              icon: Icons.hourglass_bottom_rounded,
-                              onTap: () => _addNode('wait'),
-                              tonal: true,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _PlainActionButton(
-                              label: 'Output',
-                              icon: Icons.flag_rounded,
-                              onTap: () => _addNode('output'),
-                              tonal: true,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _PlainActionButton(
-                              label: running ? 'Hisoblanmoqda' : 'Hisoblash',
-                              icon: Icons.play_arrow_rounded,
-                              onTap: running ? null : _run,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _PlainActionButton(
-                              label: saving ? 'Saqlanyapti' : 'Saqlash',
-                              icon: Icons.check_rounded,
-                              onTap: saving ? null : _save,
-                            ),
-                          ),
-                        ],
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _PlainActionButton(
+                          label: 'Formula',
+                          icon: Icons.functions_rounded,
+                          onTap: () => _addNode('formula'),
+                          tonal: true,
+                        ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 12),
-                Column(
-                  children: [
-                    for (var i = 0; i < nodes.length; i++) ...[
-                      Opacity(
-                        opacity: _draggingNodeID == nodes[i].id ? 0.24 : 1,
-                        child: _MapNodeRow(
-                          node: nodes[i],
-                          onTap: () => _editNode(i),
-                          onDelete:
-                              nodes[i].kind == 'start' || nodes[i].kind == 'end'
-                                  ? null
-                                  : () => _deleteNode(i),
-                          canDrag: nodes[i].kind != 'start' &&
-                              nodes[i].kind != 'end',
-                          onLongPressStart: (details) =>
-                              _startFloatingDrag(nodes[i].id, details),
-                          onLongPressMoveUpdate: _updateFloatingDrag,
-                          onLongPressEnd: _endFloatingDrag,
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _PlainActionButton(
+                          label: 'Condition',
+                          icon: Icons.call_split_rounded,
+                          onTap: () => _addNode('condition'),
+                          tonal: true,
                         ),
                       ),
-                      if (i < nodes.length - 1)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            color: scheme.onSurfaceVariant,
-                          ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _PlainActionButton(
+                          label: 'Material',
+                          icon: Icons.inventory_2_rounded,
+                          onTap: () => _addNode('material'),
+                          tonal: true,
                         ),
+                      ),
                     ],
-                  ],
-                ),
-              ],
-            ),
-            if (floatingNode != null && floatingOffset != null)
-              Positioned(
-                left: floatingOffset.dx.clamp(12, 48).toDouble(),
-                top: floatingOffset.dy,
-                width: floatingWidth,
-                child: IgnorePointer(
-                  child: _MapNodeVisual(
-                    node: floatingNode,
-                    onTap: () {},
-                    onDelete: null,
-                    floating: true,
-                    highlighted: false,
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _PlainActionButton(
+                          label: 'Wait',
+                          icon: Icons.hourglass_bottom_rounded,
+                          onTap: () => _addNode('wait'),
+                          tonal: true,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _PlainActionButton(
+                          label: 'Output',
+                          icon: Icons.flag_rounded,
+                          onTap: () => _addNode('output'),
+                          tonal: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _PlainActionButton(
+                          label: running ? 'Hisoblanmoqda' : 'Hisoblash',
+                          icon: Icons.play_arrow_rounded,
+                          onTap: running ? null : _run,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _PlainActionButton(
+                          label: saving ? 'Saqlanyapti' : 'Saqlash',
+                          icon: Icons.check_rounded,
+                          onTap: saving ? null : _save,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
+            ),
+            const SizedBox(height: 12),
+            _ProductionMapCanvas(
+              nodes: nodes,
+              edges: edges,
+              onNodeTap: (node) => _editNode(nodes.indexOf(node)),
+              onNodeDelete: (node) => _deleteNode(nodes.indexOf(node)),
+              onNodeMoved: _moveNode,
+            ),
           ],
         ),
       ),
@@ -729,44 +713,212 @@ class _InfoLine extends StatelessWidget {
   }
 }
 
-class _MapNodeRow extends StatelessWidget {
-  const _MapNodeRow({
-    required this.node,
-    required this.onTap,
-    required this.onDelete,
-    required this.canDrag,
-    required this.onLongPressStart,
-    required this.onLongPressMoveUpdate,
-    required this.onLongPressEnd,
+class _ProductionMapCanvas extends StatelessWidget {
+  const _ProductionMapCanvas({
+    required this.nodes,
+    required this.edges,
+    required this.onNodeTap,
+    required this.onNodeDelete,
+    required this.onNodeMoved,
   });
 
-  final ProductionMapNode node;
-  final VoidCallback onTap;
-  final VoidCallback? onDelete;
-  final bool canDrag;
-  final GestureLongPressStartCallback onLongPressStart;
-  final GestureLongPressMoveUpdateCallback onLongPressMoveUpdate;
-  final GestureLongPressEndCallback onLongPressEnd;
+  static const _canvasSize = Size(1180, 900);
+  static const _nodeSize = Size(260, 82);
+
+  final List<ProductionMapNode> nodes;
+  final List<ProductionMapEdge> edges;
+  final ValueChanged<ProductionMapNode> onNodeTap;
+  final ValueChanged<ProductionMapNode> onNodeDelete;
+  final void Function(String nodeID, Offset delta) onNodeMoved;
 
   @override
   Widget build(BuildContext context) {
-    final content = _MapNodeVisual(
-      node: node,
-      onTap: onTap,
-      onDelete: onDelete,
-      floating: false,
-      highlighted: false,
+    final scheme = Theme.of(context).colorScheme;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerLowest,
+          border: Border.all(color: scheme.outlineVariant),
+        ),
+        child: SizedBox(
+          height: 560,
+          child: InteractiveViewer(
+            constrained: false,
+            minScale: 0.35,
+            maxScale: 2.4,
+            boundaryMargin: const EdgeInsets.all(420),
+            child: SizedBox(
+              width: _canvasSize.width,
+              height: _canvasSize.height,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: _MapCanvasPainter(
+                        nodes: nodes,
+                        edges: edges,
+                        nodeSize: _nodeSize,
+                        scheme: scheme,
+                      ),
+                    ),
+                  ),
+                  for (final node in nodes)
+                    Positioned(
+                      left: node.x,
+                      top: node.y,
+                      width: _nodeSize.width,
+                      child: Listener(
+                        onPointerMove: (event) =>
+                            onNodeMoved(node.id, event.delta),
+                        child: _MapNodeVisual(
+                          node: node,
+                          onTap: () => onNodeTap(node),
+                          onDelete: node.kind == 'start' || node.kind == 'end'
+                              ? null
+                              : () => onNodeDelete(node),
+                          floating: false,
+                          highlighted: false,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
-    if (!canDrag) {
-      return content;
+  }
+}
+
+class _MapCanvasPainter extends CustomPainter {
+  const _MapCanvasPainter({
+    required this.nodes,
+    required this.edges,
+    required this.nodeSize,
+    required this.scheme,
+  });
+
+  final List<ProductionMapNode> nodes;
+  final List<ProductionMapEdge> edges;
+  final Size nodeSize;
+  final ColorScheme scheme;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    _paintGrid(canvas, size);
+    final byID = {
+      for (final node in nodes) node.id: node,
+    };
+    for (final edge in edges) {
+      final from = byID[edge.from];
+      final to = byID[edge.to];
+      if (from == null || to == null) {
+        continue;
+      }
+      _paintEdge(canvas, from, to, edge.branch);
     }
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onLongPressStart: onLongPressStart,
-      onLongPressMoveUpdate: onLongPressMoveUpdate,
-      onLongPressEnd: onLongPressEnd,
-      child: content,
+  }
+
+  void _paintGrid(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = scheme.outlineVariant.withValues(alpha: 0.42)
+      ..strokeWidth = 1;
+    for (var x = 0.0; x <= size.width; x += 40) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (var y = 0.0; y <= size.height; y += 40) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  void _paintEdge(
+    Canvas canvas,
+    ProductionMapNode from,
+    ProductionMapNode to,
+    String branch,
+  ) {
+    final start = Offset(from.x + nodeSize.width / 2, from.y + nodeSize.height);
+    final end = Offset(to.x + nodeSize.width / 2, to.y);
+    final controlY = start.dy + ((end.dy - start.dy) / 2);
+    final path = Path()
+      ..moveTo(start.dx, start.dy)
+      ..cubicTo(start.dx, controlY, end.dx, controlY, end.dx, end.dy);
+    final branchKey = branch.trim().toLowerCase();
+    final color = switch (branchKey) {
+      'true' => scheme.primary,
+      'false' => scheme.error,
+      _ => scheme.onSurfaceVariant,
+    };
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.76)
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPath(path, paint);
+    _paintArrow(canvas, end, color);
+    if (branchKey.isNotEmpty) {
+      _paintBranchLabel(
+        canvas,
+        Offset((start.dx + end.dx) / 2, controlY - 16),
+        branchKey == 'true' ? 'Ha' : 'Yo‘q',
+        color,
+      );
+    }
+  }
+
+  void _paintArrow(Canvas canvas, Offset tip, Color color) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    final path = Path()
+      ..moveTo(tip.dx, tip.dy)
+      ..lineTo(tip.dx - 7, tip.dy - 11)
+      ..lineTo(tip.dx + 7, tip.dy - 11)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  void _paintBranchLabel(
+    Canvas canvas,
+    Offset center,
+    String label,
+    Color color,
+  ) {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: TextStyle(
+          color: scheme.onPrimary,
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    final rect = Rect.fromCenter(
+      center: center,
+      width: textPainter.width + 18,
+      height: textPainter.height + 10,
     );
+    final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(99));
+    canvas.drawRRect(rrect, Paint()..color = color);
+    textPainter.paint(
+      canvas,
+      Offset(
+        rect.left + (rect.width - textPainter.width) / 2,
+        rect.top + (rect.height - textPainter.height) / 2,
+      ),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _MapCanvasPainter oldDelegate) {
+    return oldDelegate.nodes != nodes ||
+        oldDelegate.edges != edges ||
+        oldDelegate.scheme != scheme;
   }
 }
 
@@ -829,6 +981,8 @@ class _MapNodeVisual extends StatelessWidget {
                     children: [
                       Text(
                         node.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
@@ -836,6 +990,8 @@ class _MapNodeVisual extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         _subtitleFor(node),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: scheme.onSurfaceVariant,
                         ),
@@ -877,6 +1033,7 @@ class _MapNodeVisual extends StatelessWidget {
   IconData _iconFor(String kind) {
     return switch (kind) {
       'formula' => Icons.functions_rounded,
+      'condition' => Icons.call_split_rounded,
       'task' => Icons.engineering_rounded,
       'wait' => Icons.hourglass_bottom_rounded,
       'output' => Icons.inventory_2_rounded,
@@ -889,6 +1046,7 @@ class _MapNodeVisual extends StatelessWidget {
     return switch (kind) {
       'material' => 'material',
       'formula' => 'formula',
+      'condition' => 'if',
       'task' => 'location',
       'wait' => 'wait',
       'output' => 'output',
@@ -900,6 +1058,9 @@ class _MapNodeVisual extends StatelessWidget {
   String _subtitleFor(ProductionMapNode node) {
     final formula = node.formula;
     if (formula != null) {
+      if (node.kind == 'condition') {
+        return formula.expression;
+      }
       return '${formula.target} = ${formula.expression}';
     }
     if (node.roleCode.trim().isNotEmpty) {
@@ -914,6 +1075,7 @@ class _MapNodeVisual extends StatelessWidget {
   Color _colorFor(String kind, ColorScheme scheme) {
     return switch (kind) {
       'formula' => scheme.tertiaryContainer,
+      'condition' => scheme.primaryContainer,
       'task' => scheme.secondaryContainer,
       'wait' => scheme.errorContainer,
       'output' => scheme.primaryContainer,
@@ -1017,6 +1179,13 @@ class _NodeEditSheetState extends State<_NodeEditSheet> {
                   controller: _formulaExpression,
                 ),
               ],
+              if (widget.node.kind == 'condition') ...[
+                const SizedBox(height: 10),
+                _SheetField(
+                  label: 'Shart',
+                  controller: _formulaExpression,
+                ),
+              ],
               const SizedBox(height: 16),
               _PlainActionButton(
                 label: 'Saqlash',
@@ -1043,13 +1212,19 @@ class _NodeEditSheetState extends State<_NodeEditSheet> {
         roleCode: _roleCode.text.trim(),
         x: widget.node.x,
         y: widget.node.y,
-        formula: widget.node.kind == 'formula'
-            ? ProductionFormula(
-                target: formulaTarget.isEmpty ? 'result' : formulaTarget,
-                expression:
-                    formulaExpression.isEmpty ? 'order_qty' : formulaExpression,
-              )
-            : null,
+        formula:
+            widget.node.kind == 'formula' || widget.node.kind == 'condition'
+                ? ProductionFormula(
+                    target: widget.node.kind == 'condition'
+                        ? ''
+                        : formulaTarget.isEmpty
+                            ? 'result'
+                            : formulaTarget,
+                    expression: formulaExpression.isEmpty
+                        ? widget.node.formula?.expression ?? 'order_qty'
+                        : formulaExpression,
+                  )
+                : null,
       ),
     );
   }
