@@ -105,6 +105,7 @@ class _AdminProductionMapTestScreenState
   int _nextNodeIndex = 1;
   String? _connectingFromNodeID;
   Offset? _connectionPreviewEnd;
+  bool _mapToolsMenuOpen = false;
 
   Future<void> _save() async {
     setState(() => saving = true);
@@ -656,164 +657,81 @@ class _AdminProductionMapTestScreenState
     });
   }
 
-  Future<void> _openMapToolsSheet() {
-    return showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        final viewInsets = MediaQuery.viewInsetsOf(sheetContext);
-        return SafeArea(
-          top: false,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(12, 0, 12, viewInsets.bottom + 12),
-            child: _SurfacePanel(
-              child: _buildMapTools(sheetContext, inSheet: true),
-            ),
-          ),
-        );
-      },
-    );
+  void _toggleMapToolsMenu() {
+    setState(() => _mapToolsMenuOpen = !_mapToolsMenuOpen);
   }
 
-  Widget _buildMapTools(BuildContext context, {required bool inSheet}) {
-    void runAfterClose(VoidCallback action) {
-      if (inSheet) {
-        Navigator.of(context).pop();
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            action();
-          }
-        });
-        return;
-      }
-      action();
+  void _closeMapToolsMenu() {
+    if (!_mapToolsMenuOpen) {
+      return;
     }
+    setState(() => _mapToolsMenuOpen = false);
+  }
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (inSheet) ...[
-          Container(
-            width: 42,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurfaceVariant
-                  .withValues(alpha: 0.36),
-              borderRadius: BorderRadius.circular(99),
-            ),
-          ),
-          const SizedBox(height: 14),
-        ],
-        _InfoLine(
-          label: 'Map ID',
-          value: mapID,
-          onTap: () => runAfterClose(_editMapInfo),
-        ),
-        const SizedBox(height: 6),
-        _InfoLine(
-          label: 'Mahsulot',
-          value: productName == productCode
-              ? productCode
-              : '$productName · $productCode',
-          onTap: () => runAfterClose(_openProductPicker),
-        ),
-        const SizedBox(height: 6),
-        _InfoLine(
-          label: 'Nomi',
-          value: mapTitle,
-          onTap: () => runAfterClose(_editMapInfo),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _PlainActionButton(
-                label: 'Location',
-                icon: Icons.account_tree_rounded,
-                onTap: () => runAfterClose(() => _addNode('task')),
-                tonal: true,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _PlainActionButton(
-                label: 'Formula',
-                icon: Icons.functions_rounded,
-                onTap: () => runAfterClose(() => _addNode('formula')),
-                tonal: true,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _PlainActionButton(
-                label: 'Condition',
-                icon: Icons.call_split_rounded,
-                onTap: () => runAfterClose(() => _addNode('condition')),
-                tonal: true,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _PlainActionButton(
-                label: 'Material',
-                icon: Icons.inventory_2_rounded,
-                onTap: () => runAfterClose(() => _addNode('material')),
-                tonal: true,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _PlainActionButton(
-                label: 'Wait',
-                icon: Icons.hourglass_bottom_rounded,
-                onTap: () => runAfterClose(() => _addNode('wait')),
-                tonal: true,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _PlainActionButton(
-                label: 'Output',
-                icon: Icons.flag_rounded,
-                onTap: () => runAfterClose(() => _addNode('output')),
-                tonal: true,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _PlainActionButton(
-                label: running ? 'Hisoblanmoqda' : 'Hisoblash',
-                icon: Icons.play_arrow_rounded,
-                onTap: running ? null : () => runAfterClose(_run),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _PlainActionButton(
-                label: saving ? 'Saqlanyapti' : 'Saqlash',
-                icon: Icons.check_rounded,
-                onTap: saving ? null : () => runAfterClose(_save),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
+  void _runMapToolAction(VoidCallback action) {
+    _closeMapToolsMenu();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        action();
+      }
+    });
+  }
+
+  List<_MapToolAction> _mapToolActions() {
+    return [
+      _MapToolAction(
+        title: 'Map ma’lumotlari',
+        icon: Icons.edit_rounded,
+        onTap: () => _runMapToolAction(_editMapInfo),
+      ),
+      _MapToolAction(
+        title: 'Mahsulot',
+        icon: Icons.inventory_2_rounded,
+        onTap: () => _runMapToolAction(_openProductPicker),
+      ),
+      _MapToolAction(
+        title: 'Location',
+        icon: Icons.account_tree_rounded,
+        onTap: () => _runMapToolAction(() => _addNode('task')),
+      ),
+      _MapToolAction(
+        title: 'Formula',
+        icon: Icons.functions_rounded,
+        onTap: () => _runMapToolAction(() => _addNode('formula')),
+      ),
+      _MapToolAction(
+        title: 'Condition',
+        icon: Icons.call_split_rounded,
+        onTap: () => _runMapToolAction(() => _addNode('condition')),
+      ),
+      _MapToolAction(
+        title: 'Material',
+        icon: Icons.inventory_2_rounded,
+        onTap: () => _runMapToolAction(() => _addNode('material')),
+      ),
+      _MapToolAction(
+        title: 'Wait',
+        icon: Icons.hourglass_bottom_rounded,
+        onTap: () => _runMapToolAction(() => _addNode('wait')),
+      ),
+      _MapToolAction(
+        title: 'Output',
+        icon: Icons.flag_rounded,
+        onTap: () => _runMapToolAction(() => _addNode('output')),
+      ),
+      _MapToolAction(
+        title: running ? 'Hisoblanmoqda' : 'Hisoblash',
+        icon: Icons.play_arrow_rounded,
+        enabled: !running,
+        onTap: () => _runMapToolAction(_run),
+      ),
+      _MapToolAction(
+        title: saving ? 'Saqlanyapti' : 'Saqlash',
+        icon: Icons.check_rounded,
+        enabled: !saving,
+        onTap: () => _runMapToolAction(_save),
+      ),
+    ];
   }
 
   @override
@@ -863,11 +781,30 @@ class _AdminProductionMapTestScreenState
                   onConnectionCancel: _cancelConnection,
                 ),
               ),
+              if (_mapToolsMenuOpen)
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _closeMapToolsMenu,
+                    child: ColoredBox(
+                      color: scheme.scrim.withValues(alpha: 0.16),
+                    ),
+                  ),
+                ),
+              Positioned(
+                left: 16,
+                bottom: 104,
+                child: _MapToolsMenu(
+                  open: _mapToolsMenuOpen,
+                  actions: _mapToolActions(),
+                ),
+              ),
               Positioned(
                 left: 16,
                 bottom: 16,
                 child: _MapToolsFab(
-                  onTap: _openMapToolsSheet,
+                  open: _mapToolsMenuOpen,
+                  onTap: _toggleMapToolsMenu,
                 ),
               ),
             ],
@@ -883,13 +820,11 @@ class _PlainActionButton extends StatefulWidget {
     required this.label,
     required this.icon,
     required this.onTap,
-    this.tonal = false,
   });
 
   final String label;
   final IconData icon;
   final VoidCallback? onTap;
-  final bool tonal;
 
   @override
   State<_PlainActionButton> createState() => _PlainActionButtonState();
@@ -902,10 +837,8 @@ class _PlainActionButtonState extends State<_PlainActionButton> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final enabled = widget.onTap != null;
-    final background =
-        widget.tonal ? scheme.secondaryContainer : scheme.primary;
-    final foreground =
-        widget.tonal ? scheme.onSecondaryContainer : scheme.onPrimary;
+    final background = scheme.primary;
+    final foreground = scheme.onPrimary;
     return Semantics(
       button: true,
       enabled: enabled,
@@ -959,99 +892,133 @@ class _PlainActionButtonState extends State<_PlainActionButton> {
   }
 }
 
-class _SurfacePanel extends StatelessWidget {
-  const _SurfacePanel({required this.child});
+class _MapToolAction {
+  const _MapToolAction({
+    required this.title,
+    required this.icon,
+    required this.onTap,
+    this.enabled = true,
+  });
 
-  final Widget child;
+  final String title;
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool enabled;
+}
+
+class _MapToolsMenu extends StatelessWidget {
+  const _MapToolsMenu({
+    required this.open,
+    required this.actions,
+  });
+
+  final bool open;
+  final List<_MapToolAction> actions;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: scheme.outlineVariant),
+    return IgnorePointer(
+      ignoring: !open,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        opacity: open ? 1 : 0,
+        child: AnimatedScale(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutBack,
+          alignment: Alignment.bottomLeft,
+          scale: open ? 1 : 0.86,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var i = 0; i < actions.length; i++) ...[
+                _MapToolActionPill(action: actions[i]),
+                if (i != actions.length - 1) const SizedBox(height: 6),
+              ],
+            ],
+          ),
+        ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: child,
+    );
+  }
+}
+
+class _MapToolActionPill extends StatelessWidget {
+  const _MapToolActionPill({required this.action});
+
+  final _MapToolAction action;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Semantics(
+      button: true,
+      enabled: action.enabled,
+      label: action.title,
+      child: Opacity(
+        opacity: action.enabled ? 1 : 0.48,
+        child: Material(
+          color: scheme.primaryContainer,
+          elevation: 0,
+          surfaceTintColor: Colors.transparent,
+          shape: const StadiumBorder(),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: action.enabled ? action.onTap : null,
+            child: SizedBox(
+              height: 56,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      action.icon,
+                      size: 24,
+                      color: scheme.onPrimaryContainer,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      action.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: scheme.onPrimaryContainer,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
 }
 
 class _MapToolsFab extends StatelessWidget {
-  const _MapToolsFab({required this.onTap});
+  const _MapToolsFab({
+    required this.open,
+    required this.onTap,
+  });
 
+  final bool open;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return AppPrimaryNavigationFab(
-      destination: const AppNavigationDestination(
+      destination: AppNavigationDestination(
         label: 'Map sozlamalari',
-        icon: Icon(Icons.tune_rounded),
-        selectedIcon: Icon(Icons.tune_rounded),
+        icon: Icon(open ? Icons.close_rounded : Icons.tune_rounded),
+        selectedIcon: const Icon(Icons.close_rounded),
       ),
-      selected: false,
+      selected: open,
       onTap: onTap,
-    );
-  }
-}
-
-class _InfoLine extends StatelessWidget {
-  const _InfoLine({
-    required this.label,
-    required this.value,
-    this.onTap,
-  });
-
-  final String label;
-  final String value;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final content = Row(
-      children: [
-        SizedBox(
-          width: 88,
-          child: Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        if (onTap != null)
-          Icon(
-            Icons.edit_rounded,
-            size: 16,
-            color: scheme.onSurfaceVariant,
-          ),
-      ],
-    );
-    if (onTap == null) {
-      return content;
-    }
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: content,
-      ),
     );
   }
 }
