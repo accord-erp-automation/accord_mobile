@@ -7,6 +7,7 @@ import '../../../core/network/network_required_dialog.dart';
 import '../../../core/notifications/service/push_messaging_service.dart';
 import '../../../core/security/state/security_controller.dart';
 import '../../../core/session/state/app_session.dart';
+import '../../../core/test_mode/test_mode_controller.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/widgets/shell/app_shell.dart';
 import '../../../core/widgets/display/motion_widgets.dart';
@@ -128,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void submitLogin(BuildContext context) {
+  Future<void> submitLogin(BuildContext context) async {
     if (loading) {
       return;
     }
@@ -145,19 +146,34 @@ class _LoginScreenState extends State<LoginScreen> {
       loading = true;
     });
 
-    MobileApi.instance
-        .login(phone: phone, code: code)
-        .then((SessionProfile profile) {
+    try {
+      final bool testModeEnabled =
+          await TestModeController.instance.isEnabled();
+      if (testModeEnabled) {
+        await AppSession.instance.setSession(
+          token: 'test-mode-token',
+          profile: SessionProfile(
+            role: UserRole.admin,
+            displayName: 'Test Admin',
+            legalName: 'Test Admin',
+            ref: 'test-admin',
+            phone: phone,
+            avatarUrl: '',
+          ),
+        );
+      } else {
+        await MobileApi.instance.login(phone: phone, code: code);
+        PushMessagingService.instance.syncCurrentToken();
+      }
       if (!context.mounted) {
         return;
       }
-      PushMessagingService.instance.syncCurrentToken();
       SecurityController.instance.unlockAfterLogin();
       _openPostLoginRoute(
         context,
         AppPreview.initialRouteOverride ?? AppSession.instance.homeRoute,
       );
-    }).catchError((error) {
+    } catch (error) {
       if (!context.mounted) {
         return;
       }
@@ -176,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
           message: l10n.connectInternetPrompt,
         );
       }
-    });
+    }
   }
 
   void _openPostLoginRoute(BuildContext context, String routeName) {

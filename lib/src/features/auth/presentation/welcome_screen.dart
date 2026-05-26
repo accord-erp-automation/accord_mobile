@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import '../../../core/localization/app_localizations.dart';
 import '../../../core/localization/locale_controller.dart';
+import '../../../core/test_mode/test_mode_controller.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/widgets/display/motion_widgets.dart';
 import 'package:androidx_graphics_shapes/material_shapes.dart';
@@ -268,6 +269,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                               overflow: TextOverflow.ellipsis,
                             ),
                             onTap: () => _pickTheme(context, currentVariant),
+                            onHoldComplete: _confirmTestMode,
+                            holdDuration: const Duration(seconds: 3),
                           ),
                         ),
                         const SizedBox(height: 58),
@@ -555,6 +558,38 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       return;
     }
     await ThemeController.instance.setVariant(picked);
+  }
+
+  Future<void> _confirmTestMode() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Secret mode'),
+          content: const Text('Test rejimini yoqaymi?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Yo‘q'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Ha'),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    await TestModeController.instance.setEnabled(true);
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Test rejim yondi')),
+    );
   }
 
   String _localeLabel(AppLocalizations l10n, Locale locale) {
@@ -1294,18 +1329,62 @@ Offset _rotateOffset(Offset point, double radians) {
   );
 }
 
-class _WelcomeSelectionRow extends StatelessWidget {
+class _WelcomeSelectionRow extends StatefulWidget {
   const _WelcomeSelectionRow({
     required this.icon,
     required this.label,
     required this.value,
     required this.onTap,
+    this.onHoldComplete,
+    this.holdDuration = const Duration(milliseconds: 600),
   });
 
   final IconData icon;
   final Widget label;
   final Widget value;
   final VoidCallback onTap;
+  final VoidCallback? onHoldComplete;
+  final Duration holdDuration;
+
+  @override
+  State<_WelcomeSelectionRow> createState() => _WelcomeSelectionRowState();
+}
+
+class _WelcomeSelectionRowState extends State<_WelcomeSelectionRow> {
+  Timer? _holdTimer;
+  bool _holdCompleted = false;
+
+  @override
+  void dispose() {
+    _holdTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startHold() {
+    final callback = widget.onHoldComplete;
+    if (callback == null) {
+      return;
+    }
+    _holdTimer?.cancel();
+    _holdCompleted = false;
+    _holdTimer = Timer(widget.holdDuration, () {
+      _holdCompleted = true;
+      callback();
+    });
+  }
+
+  void _cancelHold() {
+    _holdTimer?.cancel();
+    _holdTimer = null;
+  }
+
+  void _handleTap() {
+    if (_holdCompleted) {
+      _holdCompleted = false;
+      return;
+    }
+    widget.onTap();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1317,23 +1396,26 @@ class _WelcomeSelectionRow extends StatelessWidget {
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
+        onTap: _handleTap,
+        onTapDown: widget.onHoldComplete == null ? null : (_) => _startHold(),
+        onTapUp: widget.onHoldComplete == null ? null : (_) => _cancelHold(),
+        onTapCancel: widget.onHoldComplete == null ? null : _cancelHold,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 10),
           child: Row(
             children: [
               Icon(
-                icon,
+                widget.icon,
                 size: 20,
                 color: scheme.onSurface.withValues(alpha: 0.88),
               ),
               const SizedBox(width: 14),
               Expanded(
-                child: label,
+                child: widget.label,
               ),
               const SizedBox(width: 12),
               Flexible(
-                child: value,
+                child: widget.value,
               ),
             ],
           ),
