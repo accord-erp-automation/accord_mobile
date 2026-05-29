@@ -78,6 +78,9 @@ class _AdminProductionMapTestScreenState
       kind: 'task',
       title: 'Katta partiya',
       roleCode: 'rezkachi',
+      qtyFormula: 'cpp_kg',
+      fromLocation: 'CPP ombor',
+      toLocation: 'Rezka apparat',
       x: 140,
       y: 448,
     ),
@@ -86,6 +89,9 @@ class _AdminProductionMapTestScreenState
       kind: 'task',
       title: 'Rezkaga yuborish',
       roleCode: 'rezkachi',
+      qtyFormula: 'order_qty / 6',
+      fromLocation: 'CPP ombor',
+      toLocation: 'Rezka apparat',
       x: 700,
       y: 448,
     ),
@@ -148,13 +154,13 @@ class _AdminProductionMapTestScreenState
   }
 
   Future<void> _run() async {
-    final qty = await showModalBottomSheet<double>(
+    final input = await showModalBottomSheet<_RunMapInput>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const _RunMapSheet(),
     );
-    if (qty == null || qty <= 0 || !mounted) {
+    if (input == null || input.orderQty <= 0 || !mounted) {
       return;
     }
     setState(() => running = true);
@@ -163,7 +169,8 @@ class _AdminProductionMapTestScreenState
         ProductionMapRunRequest(
           mapId: mapID,
           productCode: productCode,
-          orderQty: qty,
+          orderQty: input.orderQty,
+          variables: input.variables,
         ),
       );
       if (!mounted) {
@@ -233,6 +240,8 @@ class _AdminProductionMapTestScreenState
           kind: 'material',
           title: 'Material tanlash',
           itemCode: 'CPP',
+          qtyFormula: 'order_qty',
+          fromLocation: 'Ombor',
           x: end.x,
           y: end.y - 132,
         ),
@@ -259,6 +268,8 @@ class _AdminProductionMapTestScreenState
           kind: 'output',
           title: 'Natija chiqarish',
           itemCode: productCode,
+          qtyFormula: 'order_qty',
+          toLocation: 'Tayyor mahsulot ombori',
           x: end.x,
           y: end.y - 132,
         ),
@@ -267,6 +278,7 @@ class _AdminProductionMapTestScreenState
           kind: 'task',
           title: 'Yangi location',
           roleCode: 'worker',
+          qtyFormula: 'order_qty',
           x: end.x,
           y: end.y - 132,
         ),
@@ -316,6 +328,7 @@ class _AdminProductionMapTestScreenState
         kind: 'task',
         title: 'Shunda bajariladigan ish',
         roleCode: 'worker',
+        qtyFormula: 'order_qty',
         x: condition.x - _nodeStepX,
         y: condition.y + _nodeStepY,
       ),
@@ -328,6 +341,7 @@ class _AdminProductionMapTestScreenState
         kind: 'task',
         title: 'Aks holda bajariladigan ish',
         roleCode: 'worker',
+        qtyFormula: 'order_qty',
         x: condition.x + _nodeStepX,
         y: condition.y + _nodeStepY,
       ),
@@ -405,6 +419,7 @@ class _AdminProductionMapTestScreenState
         kind: 'task',
         title: 'Shunda bajariladigan ish',
         roleCode: 'worker',
+        qtyFormula: 'order_qty',
         x: condition.x - _nodeStepX,
         y: condition.y + _nodeStepY,
       ),
@@ -416,6 +431,7 @@ class _AdminProductionMapTestScreenState
         kind: 'task',
         title: 'Aks holda bajariladigan ish',
         roleCode: 'worker',
+        qtyFormula: 'order_qty',
         x: condition.x + _nodeStepX,
         y: condition.y + _nodeStepY,
       ),
@@ -1955,10 +1971,19 @@ class _MapNodeVisual extends StatelessWidget {
       return '${formula.target} = ${formula.expression}';
     }
     if (node.roleCode.trim().isNotEmpty) {
-      return node.roleCode;
+      return [
+        node.roleCode,
+        if (node.qtyFormula.trim().isNotEmpty) node.qtyFormula,
+      ].join(' · ');
     }
     if (node.itemCode.trim().isNotEmpty) {
-      return node.itemCode;
+      return [
+        node.itemCode,
+        if (node.qtyFormula.trim().isNotEmpty) node.qtyFormula,
+      ].join(' · ');
+    }
+    if (node.qtyFormula.trim().isNotEmpty) {
+      return node.qtyFormula;
     }
     return node.kind;
   }
@@ -1992,6 +2017,9 @@ class _NodeEditSheetState extends State<_NodeEditSheet> {
   late final TextEditingController _title;
   late final TextEditingController _itemCode;
   late final TextEditingController _roleCode;
+  late final TextEditingController _qtyFormula;
+  late final TextEditingController _fromLocation;
+  late final TextEditingController _toLocation;
   late final TextEditingController _formulaTarget;
   late final TextEditingController _formulaExpression;
 
@@ -2002,6 +2030,9 @@ class _NodeEditSheetState extends State<_NodeEditSheet> {
     _title = TextEditingController(text: widget.node.title);
     _itemCode = TextEditingController(text: widget.node.itemCode);
     _roleCode = TextEditingController(text: widget.node.roleCode);
+    _qtyFormula = TextEditingController(text: widget.node.qtyFormula);
+    _fromLocation = TextEditingController(text: widget.node.fromLocation);
+    _toLocation = TextEditingController(text: widget.node.toLocation);
     _formulaTarget = TextEditingController(text: formula?.target ?? '');
     _formulaExpression = TextEditingController(text: formula?.expression ?? '');
   }
@@ -2011,6 +2042,9 @@ class _NodeEditSheetState extends State<_NodeEditSheet> {
     _title.dispose();
     _itemCode.dispose();
     _roleCode.dispose();
+    _qtyFormula.dispose();
+    _fromLocation.dispose();
+    _toLocation.dispose();
     _formulaTarget.dispose();
     _formulaExpression.dispose();
     super.dispose();
@@ -2060,6 +2094,26 @@ class _NodeEditSheetState extends State<_NodeEditSheet> {
                 const SizedBox(height: 10),
                 _SheetField(label: 'Vazifa / role code', controller: _roleCode),
               ],
+              if (widget.node.kind == 'material' ||
+                  widget.node.kind == 'task' ||
+                  widget.node.kind == 'wait' ||
+                  widget.node.kind == 'output') ...[
+                const SizedBox(height: 10),
+                _SheetField(
+                  label: 'Miqdor formulasi',
+                  controller: _qtyFormula,
+                ),
+                const SizedBox(height: 10),
+                _SheetField(
+                  label: 'Qayerdan',
+                  controller: _fromLocation,
+                ),
+                const SizedBox(height: 10),
+                _SheetField(
+                  label: 'Qayerga',
+                  controller: _toLocation,
+                ),
+              ],
               if (widget.node.kind == 'formula') ...[
                 const SizedBox(height: 10),
                 _SheetField(
@@ -2101,6 +2155,9 @@ class _NodeEditSheetState extends State<_NodeEditSheet> {
         title: title.isEmpty ? widget.node.title : title,
         itemCode: _itemCode.text.trim(),
         roleCode: _roleCode.text.trim(),
+        qtyFormula: _qtyFormula.text.trim(),
+        fromLocation: _fromLocation.text.trim(),
+        toLocation: _toLocation.text.trim(),
         x: widget.node.x,
         y: widget.node.y,
         formula:
@@ -2230,12 +2287,24 @@ class _RunMapSheet extends StatefulWidget {
   State<_RunMapSheet> createState() => _RunMapSheetState();
 }
 
+class _RunMapInput {
+  const _RunMapInput({
+    required this.orderQty,
+    required this.variables,
+  });
+
+  final double orderQty;
+  final Map<String, double> variables;
+}
+
 class _RunMapSheetState extends State<_RunMapSheet> {
   final _qty = TextEditingController(text: '100');
+  final _variables = TextEditingController();
 
   @override
   void dispose() {
     _qty.dispose();
+    _variables.dispose();
     super.dispose();
   }
 
@@ -2284,6 +2353,19 @@ class _RunMapSheetState extends State<_RunMapSheet> {
                   ),
                 ),
               ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _variables,
+                minLines: 2,
+                maxLines: 5,
+                decoration: InputDecoration(
+                  labelText: 'Runtime variablelar',
+                  hintText: 'pechat_ok=1',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
               const SizedBox(height: 16),
               _PlainActionButton(
                 label: 'Hisoblash',
@@ -2302,7 +2384,31 @@ class _RunMapSheetState extends State<_RunMapSheet> {
     if (qty <= 0) {
       return;
     }
-    Navigator.of(context).pop(qty);
+    Navigator.of(context).pop(
+      _RunMapInput(
+        orderQty: qty,
+        variables: _parseVariables(_variables.text),
+      ),
+    );
+  }
+
+  Map<String, double> _parseVariables(String raw) {
+    final variables = <String, double>{};
+    for (final line in raw.split('\n')) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty || !trimmed.contains('=')) {
+        continue;
+      }
+      final parts = trimmed.split('=');
+      final key = parts.first.trim();
+      final value = double.tryParse(
+        parts.sublist(1).join('=').trim().replaceAll(',', '.'),
+      );
+      if (key.isNotEmpty && value != null) {
+        variables[key] = value;
+      }
+    }
+    return variables;
   }
 }
 
@@ -2361,6 +2467,9 @@ class _RunResultSheet extends StatelessWidget {
                   subtitle: Text([
                     if (task.roleCode.trim().isNotEmpty) task.roleCode,
                     if (task.itemCode.trim().isNotEmpty) task.itemCode,
+                    if (task.fromLocation.trim().isNotEmpty ||
+                        task.toLocation.trim().isNotEmpty)
+                      '${task.fromLocation.trim().isEmpty ? '—' : task.fromLocation} → ${task.toLocation.trim().isEmpty ? '—' : task.toLocation}',
                     task.taskKind,
                   ].join(' · ')),
                   trailing: Text(_formatQty(task.qty)),

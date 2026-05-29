@@ -48,6 +48,9 @@ class ProductionMapNode {
     this.formula,
     this.roleCode = '',
     this.itemCode = '',
+    this.qtyFormula = '',
+    this.fromLocation = '',
+    this.toLocation = '',
     this.x = 0,
     this.y = 0,
   });
@@ -58,6 +61,9 @@ class ProductionMapNode {
   final ProductionFormula? formula;
   final String roleCode;
   final String itemCode;
+  final String qtyFormula;
+  final String fromLocation;
+  final String toLocation;
   final double x;
   final double y;
 
@@ -68,6 +74,9 @@ class ProductionMapNode {
     ProductionFormula? formula,
     String? roleCode,
     String? itemCode,
+    String? qtyFormula,
+    String? fromLocation,
+    String? toLocation,
     double? x,
     double? y,
   }) {
@@ -78,6 +87,9 @@ class ProductionMapNode {
       formula: formula ?? this.formula,
       roleCode: roleCode ?? this.roleCode,
       itemCode: itemCode ?? this.itemCode,
+      qtyFormula: qtyFormula ?? this.qtyFormula,
+      fromLocation: fromLocation ?? this.fromLocation,
+      toLocation: toLocation ?? this.toLocation,
       x: x ?? this.x,
       y: y ?? this.y,
     );
@@ -93,6 +105,9 @@ class ProductionMapNode {
           : null,
       roleCode: json['role_code'] as String? ?? '',
       itemCode: json['item_code'] as String? ?? '',
+      qtyFormula: json['qty_formula'] as String? ?? '',
+      fromLocation: json['from_location'] as String? ?? '',
+      toLocation: json['to_location'] as String? ?? '',
       x: (json['x'] as num?)?.toDouble() ?? 0,
       y: (json['y'] as num?)?.toDouble() ?? 0,
     );
@@ -106,6 +121,9 @@ class ProductionMapNode {
       if (formula != null) 'formula': formula!.toJson(),
       if (roleCode.trim().isNotEmpty) 'role_code': roleCode.trim(),
       if (itemCode.trim().isNotEmpty) 'item_code': itemCode.trim(),
+      if (qtyFormula.trim().isNotEmpty) 'qty_formula': qtyFormula.trim(),
+      if (fromLocation.trim().isNotEmpty) 'from_location': fromLocation.trim(),
+      if (toLocation.trim().isNotEmpty) 'to_location': toLocation.trim(),
       'x': x,
       'y': y,
     };
@@ -190,17 +208,20 @@ class ProductionMapRunRequest {
     required this.mapId,
     required this.productCode,
     required this.orderQty,
+    this.variables = const {},
   });
 
   final String mapId;
   final String productCode;
   final double orderQty;
+  final Map<String, double> variables;
 
   Map<String, dynamic> toJson() {
     return {
       'map_id': mapId,
       'product_code': productCode,
       'order_qty': orderQty,
+      if (variables.isNotEmpty) 'variables': variables,
     };
   }
 }
@@ -213,6 +234,8 @@ class ProductionTaskDraft {
     required this.title,
     required this.roleCode,
     required this.itemCode,
+    required this.fromLocation,
+    required this.toLocation,
     required this.qty,
   });
 
@@ -222,6 +245,8 @@ class ProductionTaskDraft {
   final String title;
   final String roleCode;
   final String itemCode;
+  final String fromLocation;
+  final String toLocation;
   final double qty;
 
   factory ProductionTaskDraft.fromJson(Map<String, dynamic> json) {
@@ -232,6 +257,8 @@ class ProductionTaskDraft {
       title: json['title'] as String? ?? '',
       roleCode: json['role_code'] as String? ?? '',
       itemCode: json['item_code'] as String? ?? '',
+      fromLocation: json['from_location'] as String? ?? '',
+      toLocation: json['to_location'] as String? ?? '',
       qty: (json['qty'] as num?)?.toDouble() ?? 0,
     );
   }
