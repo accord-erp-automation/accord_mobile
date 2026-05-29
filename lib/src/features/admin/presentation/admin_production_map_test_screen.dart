@@ -165,23 +165,30 @@ class _AdminProductionMapTestScreenState
     }
     setState(() => running = true);
     try {
-      final result = await MobileApi.instance.adminRunProductionMap(
-        ProductionMapRunRequest(
-          mapId: mapID,
-          productCode: productCode,
-          orderQty: input.orderQty,
-          variables: input.variables,
-        ),
-      );
-      if (!mounted) {
-        return;
+      final variables = Map<String, double>.of(input.variables);
+      while (mounted) {
+        final result = await MobileApi.instance.adminRunProductionMap(
+          ProductionMapRunRequest(
+            mapId: mapID,
+            productCode: productCode,
+            orderQty: input.orderQty,
+            variables: variables,
+          ),
+        );
+        if (!mounted) {
+          return;
+        }
+        final next = await showModalBottomSheet<_RuntimeVariableInput>(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => _RunResultSheet(result: result),
+        );
+        if (next == null || next.name.trim().isEmpty) {
+          break;
+        }
+        variables[next.name.trim()] = next.value;
       }
-      await showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (context) => _RunResultSheet(result: result),
-      );
     } catch (error) {
       if (!mounted) {
         return;
@@ -2297,6 +2304,16 @@ class _RunMapInput {
   final Map<String, double> variables;
 }
 
+class _RuntimeVariableInput {
+  const _RuntimeVariableInput({
+    required this.name,
+    required this.value,
+  });
+
+  final String name;
+  final double value;
+}
+
 class _RunMapSheetState extends State<_RunMapSheet> {
   final _qty = TextEditingController(text: '100');
   final _variables = TextEditingController();
@@ -2412,14 +2429,34 @@ class _RunMapSheetState extends State<_RunMapSheet> {
   }
 }
 
-class _RunResultSheet extends StatelessWidget {
+class _RunResultSheet extends StatefulWidget {
   const _RunResultSheet({required this.result});
 
   final ProductionMapRunResult result;
 
   @override
+  State<_RunResultSheet> createState() => _RunResultSheetState();
+}
+
+class _RunResultSheetState extends State<_RunResultSheet> {
+  late final TextEditingController _runtimeValue;
+
+  @override
+  void initState() {
+    super.initState();
+    _runtimeValue = TextEditingController(text: '1');
+  }
+
+  @override
+  void dispose() {
+    _runtimeValue.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final result = widget.result;
     final variables = result.variables.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
     return SafeArea(
@@ -2456,6 +2493,47 @@ class _RunResultSheet extends StatelessWidget {
                 leading: const Icon(Icons.pending_actions_rounded),
                 title: Text('${result.awaitingVariable} kutilmoqda'),
                 subtitle: Text(result.awaitingExpression),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _runtimeValue,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: true,
+                ),
+                decoration: InputDecoration(
+                  labelText: result.awaitingVariable,
+                  hintText: '1 yoki 0',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: _PlainActionButton(
+                      label: 'Shunda',
+                      icon: Icons.check_rounded,
+                      onTap: () => _continueWith(1),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _PlainActionButton(
+                      label: 'Aks holda',
+                      icon: Icons.close_rounded,
+                      onTap: () => _continueWith(0),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              _PlainActionButton(
+                label: 'Qiymat bilan davom etish',
+                icon: Icons.play_arrow_rounded,
+                onTap: _continueWithTypedValue,
               ),
             ],
             const SizedBox(height: 12),
@@ -2496,6 +2574,25 @@ class _RunResultSheet extends StatelessWidget {
       return value.toStringAsFixed(0);
     }
     return value.toStringAsFixed(3);
+  }
+
+  void _continueWithTypedValue() {
+    final value =
+        double.tryParse(_runtimeValue.text.trim().replaceAll(',', '.'));
+    if (value == null) {
+      return;
+    }
+    _continueWith(value);
+  }
+
+  void _continueWith(double value) {
+    final name = widget.result.awaitingVariable.trim();
+    if (name.isEmpty) {
+      return;
+    }
+    Navigator.of(context).pop(
+      _RuntimeVariableInput(name: name, value: value),
+    );
   }
 }
 
