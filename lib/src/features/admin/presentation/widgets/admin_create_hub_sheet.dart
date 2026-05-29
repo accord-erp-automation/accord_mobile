@@ -674,6 +674,10 @@ class _AdminFabActionMenuState extends State<AdminFabActionMenu>
                           _AdminHubActionPill(
                             key: actions[rowStart + offset].key,
                             action: actions[rowStart + offset],
+                            targetWidth: _targetActionWidth(
+                              context,
+                              actions[rowStart + offset],
+                            ),
                             spatial: _spatialController,
                             effectsAnimation: _buildEffectsStagger(
                               actions[rowStart + offset],
@@ -769,6 +773,10 @@ class _AdminFabActionMenuState extends State<AdminFabActionMenu>
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final textDirection = Directionality.of(context);
+    final columns = widget.columns.clamp(1, 4).toInt();
+    final availableWidth = MediaQuery.sizeOf(context).width - 32;
+    final maxActionWidth =
+        (availableWidth - math.max(0, columns - 1) * 8) / columns;
     final titleStyle = theme.textTheme.titleMedium?.copyWith(
           color: scheme.onPrimaryContainer,
           fontWeight: FontWeight.w600,
@@ -782,7 +790,7 @@ class _AdminFabActionMenuState extends State<AdminFabActionMenu>
       textDirection: textDirection,
       maxLines: 1,
     )..layout();
-    return math.max(
+    final targetWidth = math.max(
       _adminHubMenuItemHeight,
       _adminHubActionPaddingStart +
           24 +
@@ -790,6 +798,7 @@ class _AdminFabActionMenuState extends State<AdminFabActionMenu>
           titlePainter.width +
           _adminHubActionPaddingEnd,
     );
+    return math.min(targetWidth, maxActionWidth);
   }
 }
 
@@ -799,12 +808,14 @@ class _AdminHubActionPill extends StatelessWidget {
     required this.action,
     required this.spatial,
     required this.effectsAnimation,
+    this.targetWidth,
     this.motionKey,
     required this.onTap,
     this.overflowAlignment = Alignment.centerRight,
   });
 
   final _AdminHubAction action;
+  final double? targetWidth;
   final Animation<double> spatial;
   final Animation<double> effectsAnimation;
   final Key? motionKey;
@@ -824,19 +835,20 @@ class _AdminHubActionPill extends StatelessWidget {
           color: scheme.onPrimaryContainer,
           fontWeight: FontWeight.w600,
         );
-    final TextPainter titlePainter = TextPainter(
+    final titlePainter = TextPainter(
       text: TextSpan(text: action.title, style: titleStyle),
       textDirection: textDirection,
       maxLines: 1,
     )..layout();
-    final double targetWidth = math.max(
-      _adminHubMenuItemHeight,
-      _adminHubActionPaddingStart +
-          24 +
-          _adminHubActionIconGap +
-          titlePainter.width +
-          _adminHubActionPaddingEnd,
-    );
+    final resolvedTargetWidth = targetWidth ??
+        math.max(
+          _adminHubMenuItemHeight,
+          _adminHubActionPaddingStart +
+              24 +
+              _adminHubActionIconGap +
+              titlePainter.width +
+              _adminHubActionPaddingEnd,
+        );
 
     return AnimatedBuilder(
       animation: Listenable.merge([spatial, effectsAnimation]),
@@ -846,7 +858,7 @@ class _AdminHubActionPill extends StatelessWidget {
         final double opacity = effectsAnimation.value.clamp(0.0, 1.0);
         final double currentWidth = _lerpDouble(
           _adminHubMenuItemHeight,
-          targetWidth,
+          resolvedTargetWidth,
           widthT,
         );
 
@@ -873,10 +885,10 @@ class _AdminHubActionPill extends StatelessWidget {
                       onTap: onTap,
                       child: OverflowBox(
                         alignment: overflowAlignment,
-                        minWidth: targetWidth,
-                        maxWidth: targetWidth,
+                        minWidth: resolvedTargetWidth,
+                        maxWidth: resolvedTargetWidth,
                         child: SizedBox(
-                          width: targetWidth,
+                          width: resolvedTargetWidth,
                           height: _adminHubMenuItemHeight,
                           child: Padding(
                             padding: const EdgeInsetsDirectional.only(

@@ -200,6 +200,31 @@ class _AdminProductionMapTestScreenState
     });
   }
 
+  Future<void> _addNodeToBranch(ProductionMapNode from, String branch) async {
+    final kind = await _pickNodeKind(
+      title: '${productionMapBranchDisplayLabel(branch)} yo‘liga qo‘shish',
+    );
+    if (kind == null || !mounted) {
+      return;
+    }
+    final id = '${kind}_${_nextNodeIndex++}';
+    setState(() {
+      if (kind == 'condition') {
+        _insertConditionOnBranch(
+          fromID: from.id,
+          branch: branch,
+          id: id,
+        );
+      } else {
+        _insertNodeOnBranch(
+          fromID: from.id,
+          branch: branch,
+          node: _newNode(id, kind),
+        );
+      }
+    });
+  }
+
   ProductionMapNode _newNode(String id, String kind) {
     final end = nodes.firstWhere((node) => node.kind == 'end');
     return switch (kind) {
@@ -329,6 +354,154 @@ class _AdminProductionMapTestScreenState
       ..add(ProductionMapEdge(from: trueTask.id, to: end.id))
       ..add(ProductionMapEdge(from: falseTask.id, to: end.id));
     _pushEndDown();
+  }
+
+  void _insertNodeOnBranch({
+    required String fromID,
+    required String branch,
+    required ProductionMapNode node,
+  }) {
+    final from = nodes.firstWhere((item) => item.id == fromID);
+    final target = _branchTargetOrEnd(fromID, branch);
+    final position = _branchInsertPosition(from, branch);
+    final placedNode = _placeNode(
+      node.copyWith(x: position.dx, y: position.dy),
+      extraNodes: const [],
+    );
+    nodes.insert(_insertIndexBefore(target.id), placedNode);
+    _replaceBranchWithNode(
+      fromID: fromID,
+      branch: branch,
+      nodeID: placedNode.id,
+      targetID: target.id,
+    );
+    _pushEndDown();
+  }
+
+  void _insertConditionOnBranch({
+    required String fromID,
+    required String branch,
+    required String id,
+  }) {
+    final from = nodes.firstWhere((item) => item.id == fromID);
+    final target = _branchTargetOrEnd(fromID, branch);
+    final position = _branchInsertPosition(from, branch);
+    final condition = _placeNode(
+      ProductionMapNode(
+        id: id,
+        kind: 'condition',
+        title: 'Shart',
+        x: position.dx,
+        y: position.dy,
+        formula: const ProductionFormula(
+          target: '',
+          expression: 'order_qty >= 100',
+        ),
+      ),
+    );
+    final trueTask = _placeNode(
+      ProductionMapNode(
+        id: '${id}_true',
+        kind: 'task',
+        title: 'Shunda bajariladigan ish',
+        roleCode: 'worker',
+        x: condition.x - _nodeStepX,
+        y: condition.y + _nodeStepY,
+      ),
+      extraNodes: [condition],
+    );
+    final falseTask = _placeNode(
+      ProductionMapNode(
+        id: '${id}_false',
+        kind: 'task',
+        title: 'Aks holda bajariladigan ish',
+        roleCode: 'worker',
+        x: condition.x + _nodeStepX,
+        y: condition.y + _nodeStepY,
+      ),
+      extraNodes: [condition, trueTask],
+    );
+    nodes.insertAll(
+      _insertIndexBefore(target.id),
+      [condition, trueTask, falseTask],
+    );
+    edges.removeWhere(
+      (edge) =>
+          edge.from == fromID &&
+          edge.branch.trim().toLowerCase() == branch.trim().toLowerCase(),
+    );
+    edges
+      ..add(ProductionMapEdge(
+        from: fromID,
+        to: condition.id,
+        branch: branch.trim().toLowerCase(),
+      ))
+      ..add(ProductionMapEdge(
+        from: condition.id,
+        to: trueTask.id,
+        branch: 'true',
+      ))
+      ..add(ProductionMapEdge(
+        from: condition.id,
+        to: falseTask.id,
+        branch: 'false',
+      ))
+      ..add(ProductionMapEdge(from: trueTask.id, to: target.id))
+      ..add(ProductionMapEdge(from: falseTask.id, to: target.id));
+    _pushEndDown();
+  }
+
+  ProductionMapNode _branchTargetOrEnd(String fromID, String branch) {
+    final branchKey = branch.trim().toLowerCase();
+    final branchEdge = edges.cast<ProductionMapEdge?>().firstWhere(
+          (edge) =>
+              edge?.from == fromID &&
+              edge?.branch.trim().toLowerCase() == branchKey,
+          orElse: () => null,
+        );
+    if (branchEdge != null) {
+      final targetIndex = nodes.indexWhere((node) => node.id == branchEdge.to);
+      if (targetIndex >= 0) {
+        return nodes[targetIndex];
+      }
+    }
+    return nodes.firstWhere((node) => node.kind == 'end');
+  }
+
+  Offset _branchInsertPosition(ProductionMapNode from, String branch) {
+    final branchKey = branch.trim().toLowerCase();
+    final dx = switch (branchKey) {
+      'true' => -_nodeStepX,
+      'false' => _nodeStepX,
+      _ => 0,
+    };
+    return _clampNodePosition(
+      Offset(from.x + dx, from.y + _nodeStepY),
+    );
+  }
+
+  int _insertIndexBefore(String nodeID) {
+    final targetIndex = nodes.indexWhere((node) => node.id == nodeID);
+    if (targetIndex >= 0) {
+      return targetIndex;
+    }
+    return nodes.indexWhere((node) => node.kind == 'end');
+  }
+
+  void _replaceBranchWithNode({
+    required String fromID,
+    required String branch,
+    required String nodeID,
+    required String targetID,
+  }) {
+    final branchKey = branch.trim().toLowerCase();
+    edges.removeWhere(
+      (edge) =>
+          edge.from == fromID && edge.branch.trim().toLowerCase() == branchKey,
+    );
+    edges
+      ..add(ProductionMapEdge(from: fromID, to: nodeID, branch: branchKey))
+      ..add(ProductionMapEdge(from: nodeID, to: targetID));
   }
 
   void _pushEndDown() {
@@ -685,6 +858,65 @@ class _AdminProductionMapTestScreenState
     });
   }
 
+  Future<String?> _pickNodeKind({required String title}) {
+    final scheme = Theme.of(context).colorScheme;
+    return showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: scheme.surface,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: scheme.shadow.withValues(alpha: 0.18),
+                    blurRadius: 24,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
+                    const SizedBox(height: 14),
+                    GridView.count(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      childAspectRatio: 2.6,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: [
+                        for (final choice in _nodeKindChoices)
+                          _BranchNodeKindButton(
+                            choice: choice,
+                            onTap: () => Navigator.of(context).pop(choice.kind),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   List<AdminFabMenuAction> _mapToolActions() {
     return [
       AdminFabMenuAction(
@@ -785,6 +1017,7 @@ class _AdminProductionMapTestScreenState
                 onConnectionUpdate: _updateConnectionPreview,
                 onConnectionEnd: _finishConnection,
                 onConnectionCancel: _cancelConnection,
+                onBranchAdd: _addNodeToBranch,
               ),
             ),
             if (_mapToolsMenuOpen)
@@ -908,6 +1141,7 @@ class _ProductionMapCanvas extends StatefulWidget {
     required this.onConnectionUpdate,
     required this.onConnectionEnd,
     required this.onConnectionCancel,
+    required this.onBranchAdd,
   });
 
   static const _minCanvasSize = Size(1180, 900);
@@ -924,6 +1158,7 @@ class _ProductionMapCanvas extends StatefulWidget {
   final ValueChanged<Offset> onConnectionUpdate;
   final ValueChanged<Offset> onConnectionEnd;
   final VoidCallback onConnectionCancel;
+  final void Function(ProductionMapNode node, String branch) onBranchAdd;
 
   @override
   State<_ProductionMapCanvas> createState() => _ProductionMapCanvasState();
@@ -1055,6 +1290,29 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
                                   widget.connectingFromNodeID == node.id,
                             ),
                           ),
+                        for (final node in widget.nodes)
+                          if (node.kind == 'condition') ...[
+                            Positioned(
+                              left: _branchButtonLeft(node, 'true'),
+                              top: node.y +
+                                  _ProductionMapCanvas._nodeSize.height +
+                                  12,
+                              child: _BranchAddButton(
+                                branch: 'true',
+                                onTap: () => widget.onBranchAdd(node, 'true'),
+                              ),
+                            ),
+                            Positioned(
+                              left: _branchButtonLeft(node, 'false'),
+                              top: node.y +
+                                  _ProductionMapCanvas._nodeSize.height +
+                                  12,
+                              child: _BranchAddButton(
+                                branch: 'false',
+                                onTap: () => widget.onBranchAdd(node, 'false'),
+                              ),
+                            ),
+                          ],
                       ],
                     ),
                   ),
@@ -1150,6 +1408,167 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
       }
     }
     return Size(maxX, maxY);
+  }
+
+  double _branchButtonLeft(ProductionMapNode node, String branch) {
+    const buttonWidth = _BranchAddButton.width;
+    final left = switch (branch) {
+      'true' => node.x - buttonWidth - 10,
+      'false' => node.x + _ProductionMapCanvas._nodeSize.width + 10,
+      _ => node.x,
+    };
+    return math.max(8, left);
+  }
+}
+
+class _NodeKindChoice {
+  const _NodeKindChoice({
+    required this.kind,
+    required this.title,
+    required this.icon,
+  });
+
+  final String kind;
+  final String title;
+  final IconData icon;
+}
+
+const _nodeKindChoices = [
+  _NodeKindChoice(
+    kind: 'task',
+    title: 'Location',
+    icon: Icons.account_tree_rounded,
+  ),
+  _NodeKindChoice(
+    kind: 'formula',
+    title: 'Formula',
+    icon: Icons.functions_rounded,
+  ),
+  _NodeKindChoice(
+    kind: 'condition',
+    title: 'Condition',
+    icon: Icons.call_split_rounded,
+  ),
+  _NodeKindChoice(
+    kind: 'material',
+    title: 'Material',
+    icon: Icons.inventory_2_rounded,
+  ),
+  _NodeKindChoice(
+    kind: 'wait',
+    title: 'Wait',
+    icon: Icons.hourglass_bottom_rounded,
+  ),
+  _NodeKindChoice(
+    kind: 'output',
+    title: 'Output',
+    icon: Icons.flag_rounded,
+  ),
+];
+
+class _BranchNodeKindButton extends StatelessWidget {
+  const _BranchNodeKindButton({
+    required this.choice,
+    required this.onTap,
+  });
+
+  final _NodeKindChoice choice;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.secondaryContainer,
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Icon(choice.icon, size: 21, color: scheme.onSecondaryContainer),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  choice.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: scheme.onSecondaryContainer,
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BranchAddButton extends StatelessWidget {
+  const _BranchAddButton({
+    required this.branch,
+    required this.onTap,
+  });
+
+  static const width = 118.0;
+
+  final String branch;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final branchKey = branch.trim().toLowerCase();
+    final color = switch (branchKey) {
+      'true' => scheme.primaryContainer,
+      'false' => scheme.errorContainer,
+      _ => scheme.secondaryContainer,
+    };
+    final foreground = switch (branchKey) {
+      'true' => scheme.onPrimaryContainer,
+      'false' => scheme.onErrorContainer,
+      _ => scheme.onSecondaryContainer,
+    };
+    return SizedBox(
+      width: width,
+      height: 36,
+      child: Material(
+        color: color,
+        borderRadius: BorderRadius.circular(99),
+        elevation: 2,
+        shadowColor: scheme.shadow.withValues(alpha: 0.18),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.add_rounded, size: 18, color: foreground),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    productionMapBranchDisplayLabel(branch),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: foreground,
+                          fontWeight: FontWeight.w900,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
