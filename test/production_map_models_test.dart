@@ -42,6 +42,7 @@ void main() {
       'order_qty': 100,
       'variables': {'order_qty': 100},
       'tasks': const [],
+      'visited_node_ids': const ['start', 'pechat_check'],
       'awaiting_node_id': 'pechat_check',
       'awaiting_variable': 'pechat_ok',
       'awaiting_expression': 'pechat_ok == 1',
@@ -50,5 +51,6 @@ void main() {
     expect(result.awaitingNodeId, 'pechat_check');
     expect(result.awaitingVariable, 'pechat_ok');
     expect(result.awaitingExpression, 'pechat_ok == 1');
+    expect(result.visitedNodeIds, ['start', 'pechat_check']);
   });
 }

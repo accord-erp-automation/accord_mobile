@@ -120,6 +120,8 @@ class _AdminProductionMapTestScreenState
   String? _connectingFromNodeID;
   Offset? _connectionPreviewEnd;
   bool _mapToolsMenuOpen = false;
+  Set<String> _runVisitedNodeIDs = const {};
+  String _runAwaitingNodeID = '';
 
   Future<void> _save() async {
     setState(() => saving = true);
@@ -178,6 +180,10 @@ class _AdminProductionMapTestScreenState
         if (!mounted) {
           return;
         }
+        setState(() {
+          _runVisitedNodeIDs = result.visitedNodeIds.toSet();
+          _runAwaitingNodeID = result.awaitingNodeId;
+        });
         final next = await showModalBottomSheet<_RuntimeVariableInput>(
           context: context,
           isScrollControlled: true,
@@ -1033,6 +1039,8 @@ class _AdminProductionMapTestScreenState
                 edges: edges,
                 connectingFromNodeID: _connectingFromNodeID,
                 connectionPreviewEnd: _connectionPreviewEnd,
+                runVisitedNodeIDs: _runVisitedNodeIDs,
+                runAwaitingNodeID: _runAwaitingNodeID,
                 onNodeTap: (node) => _editNode(nodes.indexOf(node)),
                 onNodeDelete: (node) => _deleteNode(nodes.indexOf(node)),
                 onNodeMoved: _moveNode,
@@ -1157,6 +1165,8 @@ class _ProductionMapCanvas extends StatefulWidget {
     required this.edges,
     required this.connectingFromNodeID,
     required this.connectionPreviewEnd,
+    required this.runVisitedNodeIDs,
+    required this.runAwaitingNodeID,
     required this.onNodeTap,
     required this.onNodeDelete,
     required this.onNodeMoved,
@@ -1174,6 +1184,8 @@ class _ProductionMapCanvas extends StatefulWidget {
   final List<ProductionMapEdge> edges;
   final String? connectingFromNodeID;
   final Offset? connectionPreviewEnd;
+  final Set<String> runVisitedNodeIDs;
+  final String runAwaitingNodeID;
   final ValueChanged<ProductionMapNode> onNodeTap;
   final ValueChanged<ProductionMapNode> onNodeDelete;
   final void Function(String nodeID, Offset delta) onNodeMoved;
@@ -1309,8 +1321,10 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
                                 widget.onConnectionCancel();
                               },
                               floating: false,
-                              highlighted:
-                                  widget.connectingFromNodeID == node.id,
+                              highlighted: widget.connectingFromNodeID ==
+                                      node.id ||
+                                  widget.runVisitedNodeIDs.contains(node.id),
+                              awaiting: widget.runAwaitingNodeID == node.id,
                             ),
                           ),
                         for (final node in widget.nodes)
@@ -1819,6 +1833,7 @@ class _MapNodeVisual extends StatelessWidget {
     required this.onConnectionDragCancel,
     required this.floating,
     required this.highlighted,
+    required this.awaiting,
   });
 
   final ProductionMapNode node;
@@ -1831,6 +1846,7 @@ class _MapNodeVisual extends StatelessWidget {
   final VoidCallback onConnectionDragCancel;
   final bool floating;
   final bool highlighted;
+  final bool awaiting;
 
   @override
   Widget build(BuildContext context) {
@@ -1848,9 +1864,11 @@ class _MapNodeVisual extends StatelessWidget {
           decoration: BoxDecoration(
             color: _colorFor(node.kind, scheme),
             borderRadius: _shapeFor(node.kind),
-            border: highlighted
-                ? Border.all(color: scheme.primary, width: 2)
-                : null,
+            border: awaiting
+                ? Border.all(color: scheme.error, width: 3)
+                : highlighted
+                    ? Border.all(color: scheme.primary, width: 2)
+                    : null,
             boxShadow: floating
                 ? [
                     BoxShadow(

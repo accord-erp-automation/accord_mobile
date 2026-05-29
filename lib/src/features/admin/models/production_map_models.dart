@@ -271,6 +271,7 @@ class ProductionMapRunResult {
     required this.orderQty,
     required this.variables,
     required this.tasks,
+    required this.visitedNodeIds,
     required this.awaitingNodeId,
     required this.awaitingVariable,
     required this.awaitingExpression,
@@ -281,6 +282,7 @@ class ProductionMapRunResult {
   final double orderQty;
   final Map<String, double> variables;
   final List<ProductionTaskDraft> tasks;
+  final List<String> visitedNodeIds;
   final String awaitingNodeId;
   final String awaitingVariable;
   final String awaitingExpression;
@@ -297,6 +299,9 @@ class ProductionMapRunResult {
           .map((item) => ProductionTaskDraft.fromJson(
                 item as Map<String, dynamic>,
               ))
+          .toList(growable: false),
+      visitedNodeIds: (json['visited_node_ids'] as List<dynamic>? ?? const [])
+          .map((item) => item.toString())
           .toList(growable: false),
       awaitingNodeId: json['awaiting_node_id'] as String? ?? '',
       awaitingVariable: json['awaiting_variable'] as String? ?? '',
