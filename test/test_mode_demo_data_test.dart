@@ -22,6 +22,14 @@ void main() {
     expect(customers.map((item) => item.ref), contains('demo-customer-1'));
   });
 
+  test('test mode can be switched off', () async {
+    await TestModeController.instance.setEnabled(true);
+    expect(await TestModeController.instance.isEnabled(), isTrue);
+
+    await TestModeController.instance.setEnabled(false);
+    expect(await TestModeController.instance.isEnabled(), isFalse);
+  });
+
   test('test mode returns searchable demo products without server', () async {
     await TestModeController.instance.setEnabled(true);
 

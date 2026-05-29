@@ -561,12 +561,19 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   }
 
   Future<void> _confirmTestMode() async {
+    final enabled = await TestModeController.instance.isEnabled();
+    if (!mounted) {
+      return;
+    }
+    final nextEnabled = !enabled;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text('Secret mode'),
-          content: const Text('Test rejimini yoqaymi?'),
+          content: Text(
+            enabled ? 'Test rejimini o‘chiraymi?' : 'Test rejimini yoqaymi?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -583,12 +590,16 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     if (confirmed != true || !mounted) {
       return;
     }
-    await TestModeController.instance.setEnabled(true);
+    await TestModeController.instance.setEnabled(nextEnabled);
     if (!mounted) {
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Test rejim yondi')),
+      SnackBar(
+        content: Text(
+          nextEnabled ? 'Test rejim yondi' : 'Test rejim o‘chdi',
+        ),
+      ),
     );
   }
 
