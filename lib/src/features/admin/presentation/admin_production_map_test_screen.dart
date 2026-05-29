@@ -11,6 +11,14 @@ import 'widgets/admin_create_hub_sheet.dart';
 import 'widgets/admin_dock.dart';
 import 'package:flutter/material.dart';
 
+String productionMapBranchDisplayLabel(String branch) {
+  return switch (branch.trim().toLowerCase()) {
+    'true' => 'Shunda',
+    'false' => 'Aks holda',
+    _ => branch,
+  };
+}
+
 class AdminProductionMapTestScreen extends StatefulWidget {
   const AdminProductionMapTestScreen({super.key});
 
@@ -281,7 +289,7 @@ class _AdminProductionMapTestScreenState
       ProductionMapNode(
         id: '${id}_true',
         kind: 'task',
-        title: 'Ha yo‘li',
+        title: 'Shunda bajariladigan ish',
         roleCode: 'worker',
         x: condition.x - _nodeStepX,
         y: condition.y + _nodeStepY,
@@ -293,7 +301,7 @@ class _AdminProductionMapTestScreenState
       ProductionMapNode(
         id: '${id}_false',
         kind: 'task',
-        title: 'Yo‘q yo‘li',
+        title: 'Aks holda bajariladigan ish',
         roleCode: 'worker',
         x: condition.x + _nodeStepX,
         y: condition.y + _nodeStepY,
@@ -1105,11 +1113,13 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
     final dy = padding - bounds.top * readableScale;
     final minDx = viewportSize.width - canvasSize.width * readableScale;
     final minDy = viewportSize.height - canvasSize.height * readableScale;
+    final maxDx = math.max(minDx, padding);
+    final maxDy = math.max(minDy, padding);
     return Matrix4.identity()
       ..setEntry(0, 0, readableScale)
       ..setEntry(1, 1, readableScale)
-      ..setEntry(0, 3, dx.clamp(minDx, padding))
-      ..setEntry(1, 3, dy.clamp(minDy, padding));
+      ..setEntry(0, 3, dx.clamp(minDx, maxDx))
+      ..setEntry(1, 3, dy.clamp(minDy, maxDy));
   }
 
   Rect? _nodeBounds() {
@@ -1251,7 +1261,7 @@ class _MapCanvasPainter extends CustomPainter {
       _paintBranchLabel(
         canvas,
         Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2 - 16),
-        branchKey == 'true' ? 'Ha' : 'Yo‘q',
+        productionMapBranchDisplayLabel(branchKey),
         color,
       );
     }
