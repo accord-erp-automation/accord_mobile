@@ -12,9 +12,9 @@ the home screen.
 
 Important:
 
-- do not use an unsigned build
-- do not rely on a debug build if you want home-screen launch
-- use a signed `profile` build for this flow
+- do not use `flutter run` for device install
+- do not use debug builds for device install
+- use only a signed `release` build for this flow
 
 ## Current Project Facts
 
@@ -60,15 +60,30 @@ Expected success:
 
 - `App uninstalled.`
 
-## 3. Build a signed profile iPhone app
+## Release-Only Install Command
+
+Use this command for iPhone install:
 
 ```bash
-flutter build ios --profile
+make ios-release-install
+```
+
+That target only runs:
+
+1. `flutter build ios --release`
+2. `xcrun devicectl device install app ... Runner.app`
+
+It does not run `flutter run` and does not install debug builds.
+
+## 3. Build a signed release iPhone app
+
+```bash
+flutter build ios --release
 ```
 
 Expected artifact:
 
-- `build/ios/iphoneos/Runner.app`
+- `build/ios/Release-iphoneos/Runner.app`
 
 ## 4. Verify the native asset framework is correctly signed
 
@@ -162,30 +177,11 @@ produce an installable app bundle.
 
 ## Known-Good Repeatable Sequence
 
-If asked to fresh-install again, use this exact sequence:
+If asked to install again, use this exact sequence:
 
 ```bash
-cd /Volumes/Samsung990P/local.git/erpnext_stock_telegram/mobile_app
-
-xcrun devicectl device uninstall app \
-  --device 00008030-000E09812150802E \
-  com.example.erpnextStockMobile
-
-flutter build ios --profile
-
-xcrun devicectl device install app \
-  --device 00008030-000E09812150802E \
-  build/ios/iphoneos/Runner.app
-```
-
-Optional launch:
-
-```bash
-xcrun devicectl device process launch \
-  --device 00008030-000E09812150802E \
-  com.example.erpnextStockMobile \
-  --terminate-existing \
-  --activate
+cd /Volumes/Samsung990P/gscale/accord_mobile
+make ios-release-install
 ```
 
 ## Do Not Repeat These Mistakes

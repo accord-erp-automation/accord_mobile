@@ -33,7 +33,7 @@ endif
 # Release APKs: arm64-v8a only (typical phones); no universal/fat APK.
 FLUTTER_APK_RELEASE_FLAGS := --release --target-platform android-arm64
 
-.PHONY: run oneni ami web analyze test deps backend-up backend-stop mock-backend mock-stop core-up core-stop remote-up remote-stop remote-url apk apk-remote run-remote android-sdk-setup domain-up domain-up-fast domain-url apk-domain run-domain bench-start bench-restart bench-stop bench-limit-start bench-limit-stop prepare-run run-local web-local
+.PHONY: run oneni ami web analyze test deps backend-up backend-stop mock-backend mock-stop core-up core-stop remote-up remote-stop remote-url apk apk-remote run-remote android-sdk-setup domain-up domain-up-fast domain-url apk-domain run-domain bench-start bench-restart bench-stop bench-limit-start bench-limit-stop prepare-run run-local web-local ios-release-install
 
 deps:
 	@flutter pub get
@@ -196,6 +196,9 @@ apk-domain: deps domain-up android-sdk-setup
 	cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/$(APK_NAME) && \
 	echo "APK (arm64-v8a) tayyor: build/app/outputs/flutter-apk/$(APK_NAME)" && \
 	echo "Core URL: $$DOMAIN_URL"
+
+ios-release-install:
+	@./tools/runtime/install_ios_release.sh
 
 analyze:
 	@flutter analyze
