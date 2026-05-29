@@ -34,4 +34,21 @@ void main() {
 
     expect(request.toJson()['variables'], {'pechat_ok': 1.0});
   });
+
+  test('production map run result parses awaited runtime variable', () {
+    final result = ProductionMapRunResult.fromJson({
+      'map_id': 'map-1',
+      'product_code': 'HOT',
+      'order_qty': 100,
+      'variables': {'order_qty': 100},
+      'tasks': const [],
+      'awaiting_node_id': 'pechat_check',
+      'awaiting_variable': 'pechat_ok',
+      'awaiting_expression': 'pechat_ok == 1',
+    });
+
+    expect(result.awaitingNodeId, 'pechat_check');
+    expect(result.awaitingVariable, 'pechat_ok');
+    expect(result.awaitingExpression, 'pechat_ok == 1');
+  });
 }

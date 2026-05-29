@@ -2448,6 +2448,16 @@ class _RunResultSheet extends StatelessWidget {
                     fontWeight: FontWeight.w900,
                   ),
             ),
+            if (result.awaitingVariable.trim().isNotEmpty) ...[
+              const SizedBox(height: 12),
+              ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.pending_actions_rounded),
+                title: Text('${result.awaitingVariable} kutilmoqda'),
+                subtitle: Text(result.awaitingExpression),
+              ),
+            ],
             const SizedBox(height: 12),
             for (final variable in variables)
               ListTile(

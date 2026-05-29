@@ -271,6 +271,9 @@ class ProductionMapRunResult {
     required this.orderQty,
     required this.variables,
     required this.tasks,
+    required this.awaitingNodeId,
+    required this.awaitingVariable,
+    required this.awaitingExpression,
   });
 
   final String mapId;
@@ -278,6 +281,9 @@ class ProductionMapRunResult {
   final double orderQty;
   final Map<String, double> variables;
   final List<ProductionTaskDraft> tasks;
+  final String awaitingNodeId;
+  final String awaitingVariable;
+  final String awaitingExpression;
 
   factory ProductionMapRunResult.fromJson(Map<String, dynamic> json) {
     return ProductionMapRunResult(
@@ -292,6 +298,9 @@ class ProductionMapRunResult {
                 item as Map<String, dynamic>,
               ))
           .toList(growable: false),
+      awaitingNodeId: json['awaiting_node_id'] as String? ?? '',
+      awaitingVariable: json['awaiting_variable'] as String? ?? '',
+      awaitingExpression: json['awaiting_expression'] as String? ?? '',
     );
   }
 }
