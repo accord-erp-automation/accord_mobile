@@ -1466,6 +1466,7 @@ class _MapCanvasPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
     canvas.drawPath(path, paint);
+    _paintStartPort(canvas, from, branchKey, start, color);
     _paintArrow(canvas, end, start, color);
     if (branchKey.isNotEmpty) {
       _paintBranchLabel(
@@ -1501,6 +1502,7 @@ class _MapCanvasPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
     canvas.drawPath(path, paint);
+    _paintStartPort(canvas, from, branchKey, start, color);
     canvas.drawCircle(previewEnd, 7, Paint()..color = color);
     if (branchKey.isNotEmpty) {
       _paintBranchLabel(
@@ -1544,6 +1546,33 @@ class _MapCanvasPainter extends CustomPainter {
     final halfHeight = rect.height / 2;
     final ratio = math.max(dx.abs() / halfWidth, dy.abs() / halfHeight);
     return Offset(center.dx + dx / ratio, center.dy + dy / ratio);
+  }
+
+  void _paintStartPort(
+    Canvas canvas,
+    ProductionMapNode node,
+    String branchKey,
+    Offset center,
+    Color color,
+  ) {
+    if (node.kind == 'condition' && branchKey.isNotEmpty) {
+      return;
+    }
+    canvas.drawCircle(
+      center,
+      6,
+      Paint()
+        ..color = scheme.surface
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawCircle(
+      center,
+      6,
+      Paint()
+        ..color = color
+        ..strokeWidth = 2.4
+        ..style = PaintingStyle.stroke,
+    );
   }
 
   void _paintArrow(Canvas canvas, Offset tip, Offset tail, Color color) {
