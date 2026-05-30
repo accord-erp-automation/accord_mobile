@@ -86,6 +86,39 @@ void main() {
     expect(find.text('Rezkaga yuborish'), findsOneWidget);
   });
 
+  testWidgets('production map branch handle can detach a connected branch',
+      (tester) async {
+    await _usePhoneViewport(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(useMaterial3: true),
+        locale: const Locale('uz'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const AdminProductionMapTestScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final trueHandle =
+        find.byKey(const ValueKey('production-map-branch-add-true')).first;
+    await tester.longPress(trueHandle);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Uzaymi?'), findsOneWidget);
+    await tester.tap(find.text('Uzish'));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(trueHandle);
+    await tester.pumpAndSettle();
+    expect(find.text('Uzaymi?'), findsNothing);
+  });
+
   testWidgets('production map branch adds condition with open branch handles',
       (tester) async {
     await _usePhoneViewport(tester);
