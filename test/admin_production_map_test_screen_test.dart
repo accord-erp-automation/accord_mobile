@@ -86,7 +86,7 @@ void main() {
     expect(find.text('Rezkaga yuborish'), findsOneWidget);
   });
 
-  testWidgets('production map branch can add nested condition nodes',
+  testWidgets('production map branch adds condition with open branch handles',
       (tester) async {
     await _usePhoneViewport(tester);
     await tester.pumpWidget(
@@ -113,8 +113,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Shart'), findsOneWidget);
-    expect(find.text('Bajariladigan ish'), findsOneWidget);
-    expect(find.text('Boshqa holatdagi ish'), findsOneWidget);
+    expect(find.text('Bajariladigan ish'), findsNothing);
+    expect(find.text('Boshqa holatdagi ish'), findsNothing);
+    expect(find.byIcon(Icons.add_rounded), findsWidgets);
   });
 }
 

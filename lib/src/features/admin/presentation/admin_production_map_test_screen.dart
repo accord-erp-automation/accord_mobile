@@ -335,51 +335,9 @@ class _AdminProductionMapTestScreenState
       ),
       ignoreIds: {end.id},
     );
-    final trueTask = _placeNode(
-      ProductionMapNode(
-        id: '${id}_true',
-        kind: 'task',
-        title: 'Bajariladigan ish',
-        roleCode: 'worker',
-        qtyFormula: 'order_qty',
-        x: condition.x - _nodeStepX,
-        y: condition.y + _nodeStepY,
-      ),
-      ignoreIds: {end.id},
-      extraNodes: [condition],
-    );
-    final falseTask = _placeNode(
-      ProductionMapNode(
-        id: '${id}_false',
-        kind: 'task',
-        title: 'Boshqa holatdagi ish',
-        roleCode: 'worker',
-        qtyFormula: 'order_qty',
-        x: condition.x + _nodeStepX,
-        y: condition.y + _nodeStepY,
-      ),
-      ignoreIds: {end.id},
-      extraNodes: [condition, trueTask],
-    );
-    nodes
-      ..insert(endIndex, condition)
-      ..insert(endIndex + 1, trueTask)
-      ..insert(endIndex + 2, falseTask);
+    nodes.insert(endIndex, condition);
     edges.removeWhere((edge) => edge.from == previous.id && edge.to == end.id);
-    edges
-      ..add(ProductionMapEdge(from: previous.id, to: condition.id))
-      ..add(ProductionMapEdge(
-        from: condition.id,
-        to: trueTask.id,
-        branch: 'true',
-      ))
-      ..add(ProductionMapEdge(
-        from: condition.id,
-        to: falseTask.id,
-        branch: 'false',
-      ))
-      ..add(ProductionMapEdge(from: trueTask.id, to: end.id))
-      ..add(ProductionMapEdge(from: falseTask.id, to: end.id));
+    edges.add(ProductionMapEdge(from: previous.id, to: condition.id));
     _pushEndDown();
   }
 
@@ -426,57 +384,17 @@ class _AdminProductionMapTestScreenState
         ),
       ),
     );
-    final trueTask = _placeNode(
-      ProductionMapNode(
-        id: '${id}_true',
-        kind: 'task',
-        title: 'Bajariladigan ish',
-        roleCode: 'worker',
-        qtyFormula: 'order_qty',
-        x: condition.x - _nodeStepX,
-        y: condition.y + _nodeStepY,
-      ),
-      extraNodes: [condition],
-    );
-    final falseTask = _placeNode(
-      ProductionMapNode(
-        id: '${id}_false',
-        kind: 'task',
-        title: 'Boshqa holatdagi ish',
-        roleCode: 'worker',
-        qtyFormula: 'order_qty',
-        x: condition.x + _nodeStepX,
-        y: condition.y + _nodeStepY,
-      ),
-      extraNodes: [condition, trueTask],
-    );
-    nodes.insertAll(
-      _insertIndexBefore(target.id),
-      [condition, trueTask, falseTask],
-    );
+    nodes.insert(_insertIndexBefore(target.id), condition);
     edges.removeWhere(
       (edge) =>
           edge.from == fromID &&
           edge.branch.trim().toLowerCase() == branch.trim().toLowerCase(),
     );
-    edges
-      ..add(ProductionMapEdge(
-        from: fromID,
-        to: condition.id,
-        branch: branch.trim().toLowerCase(),
-      ))
-      ..add(ProductionMapEdge(
-        from: condition.id,
-        to: trueTask.id,
-        branch: 'true',
-      ))
-      ..add(ProductionMapEdge(
-        from: condition.id,
-        to: falseTask.id,
-        branch: 'false',
-      ))
-      ..add(ProductionMapEdge(from: trueTask.id, to: target.id))
-      ..add(ProductionMapEdge(from: falseTask.id, to: target.id));
+    edges.add(ProductionMapEdge(
+      from: fromID,
+      to: condition.id,
+      branch: branch.trim().toLowerCase(),
+    ));
     _pushEndDown();
   }
 
