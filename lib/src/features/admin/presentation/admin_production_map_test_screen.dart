@@ -339,7 +339,7 @@ class _AdminProductionMapTestScreenState
       ProductionMapNode(
         id: '${id}_true',
         kind: 'task',
-        title: 'Shunda bajariladigan ish',
+        title: 'Bajariladigan ish',
         roleCode: 'worker',
         qtyFormula: 'order_qty',
         x: condition.x - _nodeStepX,
@@ -352,7 +352,7 @@ class _AdminProductionMapTestScreenState
       ProductionMapNode(
         id: '${id}_false',
         kind: 'task',
-        title: 'Aks holda bajariladigan ish',
+        title: 'Boshqa holatdagi ish',
         roleCode: 'worker',
         qtyFormula: 'order_qty',
         x: condition.x + _nodeStepX,
@@ -430,7 +430,7 @@ class _AdminProductionMapTestScreenState
       ProductionMapNode(
         id: '${id}_true',
         kind: 'task',
-        title: 'Shunda bajariladigan ish',
+        title: 'Bajariladigan ish',
         roleCode: 'worker',
         qtyFormula: 'order_qty',
         x: condition.x - _nodeStepX,
@@ -442,7 +442,7 @@ class _AdminProductionMapTestScreenState
       ProductionMapNode(
         id: '${id}_false',
         kind: 'task',
-        title: 'Aks holda bajariladigan ish',
+        title: 'Boshqa holatdagi ish',
         roleCode: 'worker',
         qtyFormula: 'order_qty',
         x: condition.x + _nodeStepX,
@@ -1552,7 +1552,7 @@ class _BranchAddButton extends StatelessWidget {
     required this.onTap,
   });
 
-  static const width = 118.0;
+  static const width = 44.0;
 
   final String branch;
   final VoidCallback onTap;
@@ -1571,37 +1571,20 @@ class _BranchAddButton extends StatelessWidget {
       'false' => scheme.onErrorContainer,
       _ => scheme.onSecondaryContainer,
     };
-    return SizedBox(
-      width: width,
-      height: 36,
-      child: Material(
-        color: color,
-        borderRadius: BorderRadius.circular(99),
-        elevation: 2,
-        shadowColor: scheme.shadow.withValues(alpha: 0.18),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.add_rounded, size: 18, color: foreground),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    productionMapBranchDisplayLabel(branch),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: foreground,
-                          fontWeight: FontWeight.w900,
-                        ),
-                  ),
-                ),
-              ],
-            ),
+    return Tooltip(
+      message: '${productionMapBranchDisplayLabel(branch)} yo‘liga qo‘shish',
+      child: SizedBox(
+        width: width,
+        height: 36,
+        child: Material(
+          color: color,
+          borderRadius: BorderRadius.circular(99),
+          elevation: 2,
+          shadowColor: scheme.shadow.withValues(alpha: 0.18),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: Icon(Icons.add_rounded, size: 22, color: foreground),
           ),
         ),
       ),

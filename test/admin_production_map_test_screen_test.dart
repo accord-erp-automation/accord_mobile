@@ -105,7 +105,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Shunda').first);
+    await tester.tap(find.byIcon(Icons.add_rounded).first);
     await tester.pumpAndSettle();
     expect(find.text('Shunda yo‘liga qo‘shish'), findsOneWidget);
 
@@ -113,8 +113,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Shart'), findsOneWidget);
-    expect(find.text('Shunda bajariladigan ish'), findsOneWidget);
-    expect(find.text('Aks holda bajariladigan ish'), findsOneWidget);
+    expect(find.text('Bajariladigan ish'), findsOneWidget);
+    expect(find.text('Boshqa holatdagi ish'), findsOneWidget);
   });
 }
 
