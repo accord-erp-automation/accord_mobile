@@ -94,7 +94,7 @@ void main() {
     );
   });
 
-  testWidgets('production map node connector can detach a plain outgoing edge',
+  testWidgets('production map edge delete button removes an outgoing edge',
       (tester) async {
     await _usePhoneViewport(tester);
     await tester.pumpWidget(
@@ -116,18 +116,13 @@ void main() {
     await _tapMapTool(tester, 'Location');
     await tester.pumpAndSettle();
 
-    final newLocationConnector =
-        find.byKey(const ValueKey('production-map-node-connect-task_1'));
-    await tester.longPress(newLocationConnector);
+    final deleteButton = find.byKey(
+      const ValueKey('production-map-edge-delete-task_1-end-'),
+    );
+    await tester.tap(deleteButton);
     await tester.pumpAndSettle();
 
-    expect(find.text('Uzaymi?'), findsOneWidget);
-    await tester.tap(find.text('Uzish'));
-    await tester.pumpAndSettle();
-
-    await tester.longPress(newLocationConnector);
-    await tester.pumpAndSettle();
-    expect(find.text('Uzaymi?'), findsNothing);
+    expect(deleteButton, findsNothing);
   });
 
   testWidgets('production map branch adds condition with open branch handles',

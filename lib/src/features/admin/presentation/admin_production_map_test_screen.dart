@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import '../../../app/app_router.dart';
 import '../../../core/api/mobile_api.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/feedback/m3_confirm_dialog.dart';
 import '../../../core/widgets/shell/app_shell.dart';
 import '../../shared/models/app_models.dart';
 import '../../werka/presentation/widgets/m3_picker_sheet.dart';
@@ -370,50 +369,13 @@ class _AdminProductionMapTestScreenState
     });
   }
 
-  Future<void> _confirmDetachBranch(
-    ProductionMapNode node,
-    String branch,
-  ) async {
-    final branchLabel = productionMapBranchDisplayLabel(branch);
-    final confirmed = await showM3ConfirmDialog(
-      context: context,
-      title: 'Uzaymi?',
-      message: '$branchLabel yo‘li ulangan carddan ajratiladi.',
-      cancelLabel: 'Yo‘q',
-      confirmLabel: 'Uzish',
-      destructive: true,
-      blurBackground: true,
-    );
-    if (confirmed != true || !mounted) {
-      return;
-    }
-    final branchKey = branch.trim().toLowerCase();
+  void _removeEdge(ProductionMapEdge edge) {
     setState(() {
       edges.removeWhere(
-        (edge) =>
-            edge.from == node.id &&
-            edge.branch.trim().toLowerCase() == branchKey,
-      );
-    });
-  }
-
-  Future<void> _confirmDetachNodeOutput(ProductionMapNode node) async {
-    final confirmed = await showM3ConfirmDialog(
-      context: context,
-      title: 'Uzaymi?',
-      message: '${node.title} cardidan chiqqan yo‘l ajratiladi.',
-      cancelLabel: 'Yo‘q',
-      confirmLabel: 'Uzish',
-      destructive: true,
-      blurBackground: true,
-    );
-    if (confirmed != true || !mounted) {
-      return;
-    }
-    setState(() {
-      edges.removeWhere(
-        (edge) =>
-            edge.from == node.id && edge.branch.trim().toLowerCase().isEmpty,
+        (item) =>
+            item.from == edge.from &&
+            item.to == edge.to &&
+            item.branch == edge.branch,
       );
     });
   }
@@ -659,53 +621,6 @@ class _AdminProductionMapTestScreenState
     });
   }
 
-  Future<void> _handleNodeTap(ProductionMapNode node) async {
-    final incomingBranch = _incomingBranchEdge(node);
-    if (incomingBranch == null) {
-      await _editNode(nodes.indexOf(node));
-      return;
-    }
-    final action = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return _BranchTargetActionSheet(
-          branch: incomingBranch.branch,
-        );
-      },
-    );
-    if (!mounted || action == null) {
-      return;
-    }
-    if (action == 'edit') {
-      await _editNode(nodes.indexOf(node));
-      return;
-    }
-    if (action == 'detach') {
-      setState(() {
-        edges.removeWhere(
-          (edge) =>
-              edge.from == incomingBranch.from &&
-              edge.to == incomingBranch.to &&
-              edge.branch == incomingBranch.branch,
-        );
-      });
-    }
-  }
-
-  ProductionMapEdge? _incomingBranchEdge(ProductionMapNode node) {
-    for (final edge in edges) {
-      if (edge.to != node.id || edge.branch.trim().isEmpty) {
-        continue;
-      }
-      final fromIndex = nodes.indexWhere((item) => item.id == edge.from);
-      if (fromIndex >= 0 && nodes[fromIndex].kind == 'condition') {
-        return edge;
-      }
-    }
-    return null;
-  }
-
   Future<void> _editNode(int index) async {
     if (index < 0) {
       return;
@@ -850,15 +765,14 @@ class _AdminProductionMapTestScreenState
                 connectionPreviewEnd: _connectionPreviewEnd,
                 runVisitedNodeIDs: _runVisitedNodeIDs,
                 runAwaitingNodeID: _runAwaitingNodeID,
-                onNodeTap: _handleNodeTap,
+                onNodeTap: (node) => _editNode(nodes.indexOf(node)),
                 onNodeDelete: (node) => _deleteNode(nodes.indexOf(node)),
                 onNodeMoved: _moveNode,
                 onConnectionStart: _startConnection,
                 onConnectionUpdate: _updateConnectionPreview,
                 onConnectionEnd: _finishConnection,
                 onConnectionCancel: _cancelConnection,
-                onBranchDetach: _confirmDetachBranch,
-                onNodeOutputDetach: _confirmDetachNodeOutput,
+                onEdgeDelete: _removeEdge,
               ),
             ),
             if (_mapToolsMenuOpen)
@@ -985,8 +899,7 @@ class _ProductionMapCanvas extends StatefulWidget {
     required this.onConnectionUpdate,
     required this.onConnectionEnd,
     required this.onConnectionCancel,
-    required this.onBranchDetach,
-    required this.onNodeOutputDetach,
+    required this.onEdgeDelete,
   });
 
   static const _minCanvasSize = Size(1180, 900);
@@ -1006,8 +919,7 @@ class _ProductionMapCanvas extends StatefulWidget {
   final ValueChanged<Offset> onConnectionUpdate;
   final ValueChanged<Offset> onConnectionEnd;
   final VoidCallback onConnectionCancel;
-  final void Function(ProductionMapNode node, String branch) onBranchDetach;
-  final ValueChanged<ProductionMapNode> onNodeOutputDetach;
+  final ValueChanged<ProductionMapEdge> onEdgeDelete;
 
   @override
   State<_ProductionMapCanvas> createState() => _ProductionMapCanvasState();
@@ -1087,6 +999,16 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
                             ),
                           ),
                         ),
+                        for (final edge in widget.edges)
+                          if (_edgeActionPosition(edge) case final position?)
+                            Positioned(
+                              left: position.dx - 13,
+                              top: position.dy - 13,
+                              child: _EdgeDeleteButton(
+                                edge: edge,
+                                onTap: () => widget.onEdgeDelete(edge),
+                              ),
+                            ),
                         for (final node in widget.nodes)
                           Positioned(
                             left: node.x,
@@ -1135,9 +1057,6 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
                                 _lastConnectionPosition = null;
                                 widget.onConnectionCancel();
                               },
-                              connectionConnected: _hasPlainOutgoingEdge(node),
-                              onConnectionDetach: () =>
-                                  widget.onNodeOutputDetach(node),
                               floating: false,
                               highlighted: widget.connectingFromNodeID ==
                                       node.id ||
@@ -1152,7 +1071,6 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
                               top: _branchButtonTop(node),
                               child: _BranchAddButton(
                                 branch: 'true',
-                                connected: _hasBranchEdge(node, 'true'),
                                 onConnectionDragStart: (globalPosition) {
                                   final canvasPosition =
                                       _globalToCanvas(globalPosition);
@@ -1179,8 +1097,6 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
                                   _lastConnectionPosition = null;
                                   widget.onConnectionCancel();
                                 },
-                                onDetachRequest: () =>
-                                    widget.onBranchDetach(node, 'true'),
                               ),
                             ),
                             Positioned(
@@ -1188,7 +1104,6 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
                               top: _branchButtonTop(node),
                               child: _BranchAddButton(
                                 branch: 'false',
-                                connected: _hasBranchEdge(node, 'false'),
                                 onConnectionDragStart: (globalPosition) {
                                   final canvasPosition =
                                       _globalToCanvas(globalPosition);
@@ -1215,8 +1130,6 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
                                   _lastConnectionPosition = null;
                                   widget.onConnectionCancel();
                                 },
-                                onDetachRequest: () =>
-                                    widget.onBranchDetach(node, 'false'),
                               ),
                             ),
                           ],
@@ -1334,43 +1247,98 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
         _BranchAddButton.height / 2;
   }
 
-  bool _hasBranchEdge(ProductionMapNode node, String branch) {
-    final branchKey = branch.trim().toLowerCase();
-    return widget.edges.any(
-      (edge) =>
-          edge.from == node.id && edge.branch.trim().toLowerCase() == branchKey,
+  Offset? _edgeActionPosition(ProductionMapEdge edge) {
+    final from = _nodeByID(edge.from);
+    final to = _nodeByID(edge.to);
+    if (from == null || to == null) {
+      return null;
+    }
+    final fromRect = _nodeRect(from);
+    final toRect = _nodeRect(to);
+    final branchKey = edge.branch.trim().toLowerCase();
+    final start = _startAnchor(from, branchKey, toRect.center);
+    final end = _edgeAnchor(toRect, fromRect.center);
+    return Offset(
+      (start.dx + end.dx) / 2,
+      (start.dy + end.dy) / 2,
     );
   }
 
-  bool _hasPlainOutgoingEdge(ProductionMapNode node) {
-    return widget.edges.any(
-      (edge) =>
-          edge.from == node.id && edge.branch.trim().toLowerCase().isEmpty,
+  ProductionMapNode? _nodeByID(String id) {
+    for (final node in widget.nodes) {
+      if (node.id == id) {
+        return node;
+      }
+    }
+    return null;
+  }
+
+  Rect _nodeRect(ProductionMapNode node) {
+    return Rect.fromLTWH(
+      node.x,
+      node.y,
+      _ProductionMapCanvas._nodeSize.width,
+      _ProductionMapCanvas._nodeSize.height,
     );
+  }
+
+  Offset _startAnchor(
+    ProductionMapNode node,
+    String branchKey,
+    Offset fallbackToward,
+  ) {
+    final rect = _nodeRect(node);
+    if (node.kind != 'condition') {
+      return _externalPortCenter(rect, fallbackToward);
+    }
+    return switch (branchKey) {
+      'true' => Offset(rect.left, rect.center.dy),
+      'false' => Offset(rect.right, rect.center.dy),
+      _ => _externalPortCenter(rect, fallbackToward),
+    };
+  }
+
+  Offset _externalPortCenter(Rect rect, Offset toward) {
+    final anchor = _edgeAnchor(rect, toward);
+    final vector = anchor - rect.center;
+    final distance = vector.distance;
+    if (distance == 0) {
+      return anchor;
+    }
+    return anchor + vector / distance * _MapCanvasPainter.portRadius;
+  }
+
+  Offset _edgeAnchor(Rect rect, Offset toward) {
+    final center = rect.center;
+    final dx = toward.dx - center.dx;
+    final dy = toward.dy - center.dy;
+    if (dx == 0 && dy == 0) {
+      return center;
+    }
+    final halfWidth = rect.width / 2;
+    final halfHeight = rect.height / 2;
+    final ratio = math.max(dx.abs() / halfWidth, dy.abs() / halfHeight);
+    return Offset(center.dx + dx / ratio, center.dy + dy / ratio);
   }
 }
 
 class _BranchAddButton extends StatelessWidget {
   const _BranchAddButton({
     required this.branch,
-    required this.connected,
     required this.onConnectionDragStart,
     required this.onConnectionDragUpdate,
     required this.onConnectionDragEnd,
     required this.onConnectionDragCancel,
-    required this.onDetachRequest,
   });
 
   static const width = 34.0;
   static const height = 34.0;
 
   final String branch;
-  final bool connected;
   final ValueChanged<Offset> onConnectionDragStart;
   final ValueChanged<Offset> onConnectionDragUpdate;
   final VoidCallback onConnectionDragEnd;
   final VoidCallback onConnectionDragCancel;
-  final VoidCallback onDetachRequest;
 
   @override
   Widget build(BuildContext context) {
@@ -1387,9 +1355,8 @@ class _BranchAddButton extends StatelessWidget {
       _ => scheme.onSecondaryContainer,
     };
     return Tooltip(
-      message: connected
-          ? '${productionMapBranchDisplayLabel(branch)} yo‘lini ushlab uzish'
-          : '${productionMapBranchDisplayLabel(branch)} yo‘liga qo‘l tortish',
+      message:
+          '${productionMapBranchDisplayLabel(branch)} yo‘liga qo‘l tortish',
       child: SizedBox(
         key: ValueKey('production-map-branch-add-$branch'),
         width: width,
@@ -1402,7 +1369,6 @@ class _BranchAddButton extends StatelessWidget {
               onConnectionDragUpdate(details.globalPosition),
           onPanEnd: (_) => onConnectionDragEnd(),
           onPanCancel: onConnectionDragCancel,
-          onLongPress: connected ? onDetachRequest : null,
           child: Material(
             color: color,
             borderRadius: BorderRadius.circular(99),
@@ -1417,65 +1383,42 @@ class _BranchAddButton extends StatelessWidget {
   }
 }
 
-class _BranchTargetActionSheet extends StatelessWidget {
-  const _BranchTargetActionSheet({
-    required this.branch,
+class _EdgeDeleteButton extends StatelessWidget {
+  const _EdgeDeleteButton({
+    required this.edge,
+    required this.onTap,
   });
 
-  final String branch;
+  final ProductionMapEdge edge;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final branchLabel = productionMapBranchDisplayLabel(branch);
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: scheme.surface,
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: scheme.shadow.withValues(alpha: 0.18),
-                blurRadius: 24,
-                offset: const Offset(0, 12),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  branchLabel,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                ),
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => Navigator.of(context).pop('detach'),
-                        icon: const Icon(Icons.link_off_rounded),
-                        label: const Text('Yo‘lni uzish'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () => Navigator.of(context).pop('edit'),
-                        icon: const Icon(Icons.tune_rounded),
-                        label: const Text('Cardni sozlash'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+    final branchKey = edge.branch.trim().toLowerCase();
+    final color = switch (branchKey) {
+      'true' => scheme.primary,
+      'false' => scheme.error,
+      _ => scheme.onSurfaceVariant,
+    };
+    return Tooltip(
+      message: 'Yo‘lni uzish',
+      child: Material(
+        key: ValueKey(
+            'production-map-edge-delete-${edge.from}-${edge.to}-${edge.branch}'),
+        color: scheme.surface,
+        shape: const CircleBorder(),
+        elevation: 2,
+        shadowColor: scheme.shadow.withValues(alpha: 0.16),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: SizedBox.square(
+            dimension: 26,
+            child: Icon(
+              Icons.close_rounded,
+              size: 17,
+              color: color,
             ),
           ),
         ),
@@ -1534,7 +1477,7 @@ class _MapCanvasPainter extends CustomPainter {
   final Size nodeSize;
   final ColorScheme scheme;
 
-  static const _portRadius = 6.0;
+  static const portRadius = 6.0;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1664,7 +1607,7 @@ class _MapCanvasPainter extends CustomPainter {
     if (distance == 0) {
       return anchor;
     }
-    return anchor + vector / distance * _portRadius;
+    return anchor + vector / distance * portRadius;
   }
 
   Offset _edgeAnchor(Rect rect, Offset toward) {
@@ -1726,14 +1669,14 @@ class _MapCanvasPainter extends CustomPainter {
     }
     canvas.drawCircle(
       center,
-      _portRadius,
+      portRadius,
       Paint()
         ..color = scheme.surface
         ..style = PaintingStyle.fill,
     );
     canvas.drawCircle(
       center,
-      _portRadius,
+      portRadius,
       Paint()
         ..color = color
         ..strokeWidth = 2.4
@@ -1810,8 +1753,6 @@ class _MapNodeVisual extends StatelessWidget {
     required this.onConnectionDragUpdate,
     required this.onConnectionDragEnd,
     required this.onConnectionDragCancel,
-    required this.connectionConnected,
-    required this.onConnectionDetach,
     required this.floating,
     required this.highlighted,
     required this.awaiting,
@@ -1825,8 +1766,6 @@ class _MapNodeVisual extends StatelessWidget {
   final ValueChanged<Offset> onConnectionDragUpdate;
   final VoidCallback onConnectionDragEnd;
   final VoidCallback onConnectionDragCancel;
-  final bool connectionConnected;
-  final VoidCallback onConnectionDetach;
   final bool floating;
   final bool highlighted;
   final bool awaiting;
@@ -1914,7 +1853,6 @@ class _MapNodeVisual extends StatelessWidget {
                       onConnectionDragUpdate(details.globalPosition),
                   onPanEnd: (_) => onConnectionDragEnd(),
                   onPanCancel: onConnectionDragCancel,
-                  onLongPress: connectionConnected ? onConnectionDetach : null,
                   child: Padding(
                     padding: const EdgeInsets.all(4),
                     child: Icon(
