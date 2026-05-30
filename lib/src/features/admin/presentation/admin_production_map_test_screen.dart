@@ -1442,7 +1442,8 @@ class _MapCanvasPainter extends CustomPainter {
   ) {
     final fromRect = _nodeRect(from);
     final toRect = _nodeRect(to);
-    final start = _edgeAnchor(fromRect, toRect.center);
+    final branchKey = branch.trim().toLowerCase();
+    final start = _startAnchor(from, branchKey, toRect.center);
     final end = _edgeAnchor(toRect, fromRect.center);
     final verticalCurve = (toRect.center.dy - fromRect.center.dy).abs() >=
         (toRect.center.dx - fromRect.center.dx).abs();
@@ -1454,7 +1455,6 @@ class _MapCanvasPainter extends CustomPainter {
       final controlX = start.dx + ((end.dx - start.dx) / 2);
       path.cubicTo(controlX, start.dy, controlX, end.dy, end.dx, end.dy);
     }
-    final branchKey = branch.trim().toLowerCase();
     final color = switch (branchKey) {
       'true' => scheme.primary,
       'false' => scheme.error,
@@ -1483,14 +1483,13 @@ class _MapCanvasPainter extends CustomPainter {
     Offset previewEnd,
     String branch,
   ) {
-    final fromRect = _nodeRect(from);
-    final start = _edgeAnchor(fromRect, previewEnd);
+    final branchKey = branch.trim().toLowerCase();
+    final start = _startAnchor(from, branchKey, previewEnd);
     final controlX = start.dx + ((previewEnd.dx - start.dx) / 2);
     final path = Path()
       ..moveTo(start.dx, start.dy)
       ..cubicTo(controlX, start.dy, controlX, previewEnd.dy, previewEnd.dx,
           previewEnd.dy);
-    final branchKey = branch.trim().toLowerCase();
     final color = switch (branchKey) {
       'true' => scheme.primary,
       'false' => scheme.error,
@@ -1516,6 +1515,22 @@ class _MapCanvasPainter extends CustomPainter {
 
   Rect _nodeRect(ProductionMapNode node) {
     return Rect.fromLTWH(node.x, node.y, nodeSize.width, nodeSize.height);
+  }
+
+  Offset _startAnchor(
+    ProductionMapNode node,
+    String branchKey,
+    Offset fallbackToward,
+  ) {
+    final rect = _nodeRect(node);
+    if (node.kind != 'condition') {
+      return _edgeAnchor(rect, fallbackToward);
+    }
+    return switch (branchKey) {
+      'true' => Offset(rect.left, rect.center.dy),
+      'false' => Offset(rect.right, rect.center.dy),
+      _ => _edgeAnchor(rect, fallbackToward),
+    };
   }
 
   Offset _edgeAnchor(Rect rect, Offset toward) {
