@@ -687,7 +687,63 @@ class _AdminProductionMapTestScreenState
     });
   }
 
+  Future<void> _handleNodeTap(ProductionMapNode node) async {
+    final incomingBranch = _incomingBranchEdge(node);
+    if (incomingBranch == null) {
+      await _editNode(nodes.indexOf(node));
+      return;
+    }
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final from = nodes.firstWhere(
+          (item) => item.id == incomingBranch.from,
+          orElse: () => node,
+        );
+        return _BranchTargetActionSheet(
+          branch: incomingBranch.branch,
+          fromTitle: from.title,
+          toTitle: node.title,
+        );
+      },
+    );
+    if (!mounted || action == null) {
+      return;
+    }
+    if (action == 'edit') {
+      await _editNode(nodes.indexOf(node));
+      return;
+    }
+    if (action == 'detach') {
+      setState(() {
+        edges.removeWhere(
+          (edge) =>
+              edge.from == incomingBranch.from &&
+              edge.to == incomingBranch.to &&
+              edge.branch == incomingBranch.branch,
+        );
+      });
+    }
+  }
+
+  ProductionMapEdge? _incomingBranchEdge(ProductionMapNode node) {
+    for (final edge in edges) {
+      if (edge.to != node.id || edge.branch.trim().isEmpty) {
+        continue;
+      }
+      final fromIndex = nodes.indexWhere((item) => item.id == edge.from);
+      if (fromIndex >= 0 && nodes[fromIndex].kind == 'condition') {
+        return edge;
+      }
+    }
+    return null;
+  }
+
   Future<void> _editNode(int index) async {
+    if (index < 0) {
+      return;
+    }
     final node = nodes[index];
     final edited = await showModalBottomSheet<ProductionMapNode>(
       context: context,
@@ -828,7 +884,7 @@ class _AdminProductionMapTestScreenState
                 connectionPreviewEnd: _connectionPreviewEnd,
                 runVisitedNodeIDs: _runVisitedNodeIDs,
                 runAwaitingNodeID: _runAwaitingNodeID,
-                onNodeTap: (node) => _editNode(nodes.indexOf(node)),
+                onNodeTap: _handleNodeTap,
                 onNodeDelete: (node) => _deleteNode(nodes.indexOf(node)),
                 onNodeMoved: _moveNode,
                 onConnectionStart: _startConnection,
@@ -1388,6 +1444,86 @@ class _BranchAddButton extends StatelessWidget {
             shadowColor: scheme.shadow.withValues(alpha: 0.18),
             clipBehavior: Clip.antiAlias,
             child: Icon(Icons.add_link_rounded, size: 18, color: foreground),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BranchTargetActionSheet extends StatelessWidget {
+  const _BranchTargetActionSheet({
+    required this.branch,
+    required this.fromTitle,
+    required this.toTitle,
+  });
+
+  final String branch;
+  final String fromTitle;
+  final String toTitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final branchLabel = productionMapBranchDisplayLabel(branch);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: scheme.surface,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: scheme.shadow.withValues(alpha: 0.18),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$branchLabel yo‘li',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '$fromTitle → $toTitle',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.of(context).pop('detach'),
+                        icon: const Icon(Icons.link_off_rounded),
+                        label: const Text('Yo‘lni uzish'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () => Navigator.of(context).pop('edit'),
+                        icon: const Icon(Icons.tune_rounded),
+                        label: const Text('Cardni sozlash'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

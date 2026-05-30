@@ -119,6 +119,37 @@ void main() {
     expect(find.text('Uzaymi?'), findsNothing);
   });
 
+  testWidgets('production map branch target opens branch actions first',
+      (tester) async {
+    await _usePhoneViewport(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(useMaterial3: true),
+        locale: const Locale('uz'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const AdminProductionMapTestScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Rezkaga yuborish'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Aks holda yo‘li'), findsOneWidget);
+    expect(find.text('Node sozlash'), findsNothing);
+
+    await tester.tap(find.text('Cardni sozlash'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Node sozlash'), findsOneWidget);
+  });
+
   testWidgets('production map node connector can detach a plain outgoing edge',
       (tester) async {
     await _usePhoneViewport(tester);
