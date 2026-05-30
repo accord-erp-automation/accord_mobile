@@ -945,7 +945,7 @@ class _ProductionMapCanvas extends StatefulWidget {
   });
 
   static const _minCanvasSize = Size(1180, 900);
-  static const _nodeSize = Size(260, 82);
+  static const _nodeSize = Size(260, 60);
 
   final List<ProductionMapNode> nodes;
   final List<ProductionMapEdge> edges;
