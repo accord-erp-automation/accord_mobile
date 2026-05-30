@@ -105,7 +105,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.add_rounded).first);
+    await tester.tap(
+      find.byKey(const ValueKey('production-map-branch-add-true')).first,
+    );
     await tester.pumpAndSettle();
     expect(find.text('Shunda yo‘liga qo‘shish'), findsOneWidget);
 
@@ -115,7 +117,14 @@ void main() {
     expect(find.text('Shart'), findsOneWidget);
     expect(find.text('Bajariladigan ish'), findsNothing);
     expect(find.text('Boshqa holatdagi ish'), findsNothing);
-    expect(find.byIcon(Icons.add_rounded), findsWidgets);
+    expect(
+      find.byKey(const ValueKey('production-map-branch-add-true')),
+      findsWidgets,
+    );
+    expect(
+      find.byKey(const ValueKey('production-map-branch-add-false')),
+      findsWidgets,
+    );
   });
 }
 

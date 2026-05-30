@@ -1249,9 +1249,7 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
                           if (node.kind == 'condition') ...[
                             Positioned(
                               left: _branchButtonLeft(node, 'true'),
-                              top: node.y +
-                                  _ProductionMapCanvas._nodeSize.height +
-                                  12,
+                              top: _branchButtonTop(node),
                               child: _BranchAddButton(
                                 branch: 'true',
                                 onTap: () => widget.onBranchAdd(node, 'true'),
@@ -1259,9 +1257,7 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
                             ),
                             Positioned(
                               left: _branchButtonLeft(node, 'false'),
-                              top: node.y +
-                                  _ProductionMapCanvas._nodeSize.height +
-                                  12,
+                              top: _branchButtonTop(node),
                               child: _BranchAddButton(
                                 branch: 'false',
                                 onTap: () => widget.onBranchAdd(node, 'false'),
@@ -1368,11 +1364,18 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
   double _branchButtonLeft(ProductionMapNode node, String branch) {
     const buttonWidth = _BranchAddButton.width;
     final left = switch (branch) {
-      'true' => node.x - buttonWidth - 10,
-      'false' => node.x + _ProductionMapCanvas._nodeSize.width + 10,
+      'true' => node.x - buttonWidth / 2,
+      'false' =>
+        node.x + _ProductionMapCanvas._nodeSize.width - buttonWidth / 2,
       _ => node.x,
     };
     return math.max(8, left);
+  }
+
+  double _branchButtonTop(ProductionMapNode node) {
+    return node.y +
+        _ProductionMapCanvas._nodeSize.height / 2 -
+        _BranchAddButton.height / 2;
   }
 }
 
@@ -1470,7 +1473,8 @@ class _BranchAddButton extends StatelessWidget {
     required this.onTap,
   });
 
-  static const width = 44.0;
+  static const width = 34.0;
+  static const height = 34.0;
 
   final String branch;
   final VoidCallback onTap;
@@ -1492,8 +1496,9 @@ class _BranchAddButton extends StatelessWidget {
     return Tooltip(
       message: '${productionMapBranchDisplayLabel(branch)} yo‘liga qo‘shish',
       child: SizedBox(
+        key: ValueKey('production-map-branch-add-$branch'),
         width: width,
-        height: 36,
+        height: height,
         child: Material(
           color: color,
           borderRadius: BorderRadius.circular(99),
@@ -1502,7 +1507,7 @@ class _BranchAddButton extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onTap,
-            child: Icon(Icons.add_rounded, size: 22, color: foreground),
+            child: Icon(Icons.add_link_rounded, size: 18, color: foreground),
           ),
         ),
       ),
