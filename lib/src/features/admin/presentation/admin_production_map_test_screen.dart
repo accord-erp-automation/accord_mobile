@@ -425,6 +425,27 @@ class _AdminProductionMapTestScreenState
     });
   }
 
+  Future<void> _confirmDetachNodeOutput(ProductionMapNode node) async {
+    final confirmed = await showM3ConfirmDialog(
+      context: context,
+      title: 'Uzaymi?',
+      message: '${node.title} cardidan chiqqan yo‘l ajratiladi.',
+      cancelLabel: 'Yo‘q',
+      confirmLabel: 'Uzish',
+      destructive: true,
+      blurBackground: true,
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    setState(() {
+      edges.removeWhere(
+        (edge) =>
+            edge.from == node.id && edge.branch.trim().toLowerCase().isEmpty,
+      );
+    });
+  }
+
   ProductionMapNode? _nodeAt(Offset position, {required String exceptID}) {
     for (final node in nodes.reversed) {
       if (node.id == exceptID) {
@@ -815,6 +836,7 @@ class _AdminProductionMapTestScreenState
                 onConnectionEnd: _finishConnection,
                 onConnectionCancel: _cancelConnection,
                 onBranchDetach: _confirmDetachBranch,
+                onNodeOutputDetach: _confirmDetachNodeOutput,
               ),
             ),
             if (_mapToolsMenuOpen)
@@ -942,6 +964,7 @@ class _ProductionMapCanvas extends StatefulWidget {
     required this.onConnectionEnd,
     required this.onConnectionCancel,
     required this.onBranchDetach,
+    required this.onNodeOutputDetach,
   });
 
   static const _minCanvasSize = Size(1180, 900);
@@ -962,6 +985,7 @@ class _ProductionMapCanvas extends StatefulWidget {
   final ValueChanged<Offset> onConnectionEnd;
   final VoidCallback onConnectionCancel;
   final void Function(ProductionMapNode node, String branch) onBranchDetach;
+  final ValueChanged<ProductionMapNode> onNodeOutputDetach;
 
   @override
   State<_ProductionMapCanvas> createState() => _ProductionMapCanvasState();
@@ -1089,6 +1113,9 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
                                 _lastConnectionPosition = null;
                                 widget.onConnectionCancel();
                               },
+                              connectionConnected: _hasPlainOutgoingEdge(node),
+                              onConnectionDetach: () =>
+                                  widget.onNodeOutputDetach(node),
                               floating: false,
                               highlighted: widget.connectingFromNodeID ==
                                       node.id ||
@@ -1290,6 +1317,13 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
     return widget.edges.any(
       (edge) =>
           edge.from == node.id && edge.branch.trim().toLowerCase() == branchKey,
+    );
+  }
+
+  bool _hasPlainOutgoingEdge(ProductionMapNode node) {
+    return widget.edges.any(
+      (edge) =>
+          edge.from == node.id && edge.branch.trim().toLowerCase().isEmpty,
     );
   }
 }
@@ -1656,6 +1690,8 @@ class _MapNodeVisual extends StatelessWidget {
     required this.onConnectionDragUpdate,
     required this.onConnectionDragEnd,
     required this.onConnectionDragCancel,
+    required this.connectionConnected,
+    required this.onConnectionDetach,
     required this.floating,
     required this.highlighted,
     required this.awaiting,
@@ -1669,6 +1705,8 @@ class _MapNodeVisual extends StatelessWidget {
   final ValueChanged<Offset> onConnectionDragUpdate;
   final VoidCallback onConnectionDragEnd;
   final VoidCallback onConnectionDragCancel;
+  final bool connectionConnected;
+  final VoidCallback onConnectionDetach;
   final bool floating;
   final bool highlighted;
   final bool awaiting;
@@ -1748,6 +1786,7 @@ class _MapNodeVisual extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 GestureDetector(
+                  key: ValueKey('production-map-node-connect-${node.id}'),
                   behavior: HitTestBehavior.opaque,
                   onPanStart: (details) =>
                       onConnectionDragStart(details.globalPosition),
@@ -1755,6 +1794,7 @@ class _MapNodeVisual extends StatelessWidget {
                       onConnectionDragUpdate(details.globalPosition),
                   onPanEnd: (_) => onConnectionDragEnd(),
                   onPanCancel: onConnectionDragCancel,
+                  onLongPress: connectionConnected ? onConnectionDetach : null,
                   child: Padding(
                     padding: const EdgeInsets.all(4),
                     child: Icon(

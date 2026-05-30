@@ -119,6 +119,39 @@ void main() {
     expect(find.text('Uzaymi?'), findsNothing);
   });
 
+  testWidgets('production map node connector can detach a plain outgoing edge',
+      (tester) async {
+    await _usePhoneViewport(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(useMaterial3: true),
+        locale: const Locale('uz'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const AdminProductionMapTestScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final largeBatchConnector =
+        find.byKey(const ValueKey('production-map-node-connect-large_batch'));
+    await tester.longPress(largeBatchConnector);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Uzaymi?'), findsOneWidget);
+    await tester.tap(find.text('Uzish'));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(largeBatchConnector);
+    await tester.pumpAndSettle();
+    expect(find.text('Uzaymi?'), findsNothing);
+  });
+
   testWidgets('production map branch adds condition with open branch handles',
       (tester) async {
     await _usePhoneViewport(tester);
