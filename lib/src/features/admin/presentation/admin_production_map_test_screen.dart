@@ -697,14 +697,8 @@ class _AdminProductionMapTestScreenState
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        final from = nodes.firstWhere(
-          (item) => item.id == incomingBranch.from,
-          orElse: () => node,
-        );
         return _BranchTargetActionSheet(
           branch: incomingBranch.branch,
-          fromTitle: from.title,
-          toTitle: node.title,
         );
       },
     );
@@ -1454,13 +1448,9 @@ class _BranchAddButton extends StatelessWidget {
 class _BranchTargetActionSheet extends StatelessWidget {
   const _BranchTargetActionSheet({
     required this.branch,
-    required this.fromTitle,
-    required this.toTitle,
   });
 
   final String branch;
-  final String fromTitle;
-  final String toTitle;
 
   @override
   Widget build(BuildContext context) {
@@ -1488,18 +1478,9 @@ class _BranchTargetActionSheet extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$branchLabel yo‘li',
+                  branchLabel,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w900,
-                      ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '$fromTitle → $toTitle',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurfaceVariant,
                       ),
                 ),
                 const SizedBox(height: 18),

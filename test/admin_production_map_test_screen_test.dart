@@ -141,7 +141,8 @@ void main() {
     await tester.tap(find.text('Rezkaga yuborish'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Aks holda yo‘li'), findsOneWidget);
+    expect(find.text('Aks holda'), findsOneWidget);
+    expect(find.textContaining('→'), findsNothing);
     expect(find.text('Node sozlash'), findsNothing);
 
     await tester.tap(find.text('Cardni sozlash'));
