@@ -1481,16 +1481,12 @@ class _MapCanvasPainter extends CustomPainter {
     final branchKey = branch.trim().toLowerCase();
     final start = _startAnchor(from, branchKey, toRect.center);
     final end = _edgeAnchor(toRect, fromRect.center);
-    final verticalCurve = (toRect.center.dy - fromRect.center.dy).abs() >=
-        (toRect.center.dx - fromRect.center.dx).abs();
-    final path = Path()..moveTo(start.dx, start.dy);
-    if (verticalCurve) {
-      final controlY = start.dy + ((end.dy - start.dy) / 2);
-      path.cubicTo(start.dx, controlY, end.dx, controlY, end.dx, end.dy);
-    } else {
-      final controlX = start.dx + ((end.dx - start.dx) / 2);
-      path.cubicTo(controlX, start.dy, controlX, end.dy, end.dx, end.dy);
-    }
+    final path = _elasticPath(
+      start: start,
+      end: end,
+      startOrigin: fromRect.center,
+      endOrigin: toRect.center,
+    );
     final color = switch (branchKey) {
       'true' => scheme.primary,
       'false' => scheme.error,
@@ -1522,11 +1518,12 @@ class _MapCanvasPainter extends CustomPainter {
   ) {
     final branchKey = branch.trim().toLowerCase();
     final start = _startAnchor(from, branchKey, previewEnd);
-    final controlX = start.dx + ((previewEnd.dx - start.dx) / 2);
-    final path = Path()
-      ..moveTo(start.dx, start.dy)
-      ..cubicTo(controlX, start.dy, controlX, previewEnd.dy, previewEnd.dx,
-          previewEnd.dy);
+    final path = _elasticPath(
+      start: start,
+      end: previewEnd,
+      startOrigin: _nodeRect(from).center,
+      endOrigin: previewEnd,
+    );
     final color = switch (branchKey) {
       'true' => scheme.primary,
       'false' => scheme.error,
@@ -1592,6 +1589,40 @@ class _MapCanvasPainter extends CustomPainter {
     final halfHeight = rect.height / 2;
     final ratio = math.max(dx.abs() / halfWidth, dy.abs() / halfHeight);
     return Offset(center.dx + dx / ratio, center.dy + dy / ratio);
+  }
+
+  Path _elasticPath({
+    required Offset start,
+    required Offset end,
+    required Offset startOrigin,
+    required Offset endOrigin,
+  }) {
+    final distance = (end - start).distance;
+    final handle = (distance * 0.42).clamp(54.0, 190.0);
+    final startTangent = _normalizedOr(start - startOrigin, end - start);
+    final endTangent = _normalizedOr(end - endOrigin, start - end);
+    final control1 = start + startTangent * handle;
+    final control2 = end + endTangent * handle;
+    return Path()
+      ..moveTo(start.dx, start.dy)
+      ..cubicTo(
+        control1.dx,
+        control1.dy,
+        control2.dx,
+        control2.dy,
+        end.dx,
+        end.dy,
+      );
+  }
+
+  Offset _normalizedOr(Offset value, Offset fallback) {
+    if (value.distance > 0.001) {
+      return value / value.distance;
+    }
+    if (fallback.distance > 0.001) {
+      return fallback / fallback.distance;
+    }
+    return const Offset(1, 0);
   }
 
   void _paintStartPort(
