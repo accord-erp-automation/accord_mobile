@@ -1411,6 +1411,8 @@ class _MapCanvasPainter extends CustomPainter {
   final Size nodeSize;
   final ColorScheme scheme;
 
+  static const _portRadius = 6.0;
+
   @override
   void paint(Canvas canvas, Size size) {
     final byID = {
@@ -1526,13 +1528,23 @@ class _MapCanvasPainter extends CustomPainter {
   ) {
     final rect = _nodeRect(node);
     if (node.kind != 'condition') {
-      return _edgeAnchor(rect, fallbackToward);
+      return _externalPortCenter(rect, fallbackToward);
     }
     return switch (branchKey) {
       'true' => Offset(rect.left, rect.center.dy),
       'false' => Offset(rect.right, rect.center.dy),
-      _ => _edgeAnchor(rect, fallbackToward),
+      _ => _externalPortCenter(rect, fallbackToward),
     };
+  }
+
+  Offset _externalPortCenter(Rect rect, Offset toward) {
+    final anchor = _edgeAnchor(rect, toward);
+    final vector = anchor - rect.center;
+    final distance = vector.distance;
+    if (distance == 0) {
+      return anchor;
+    }
+    return anchor + vector / distance * _portRadius;
   }
 
   Offset _edgeAnchor(Rect rect, Offset toward) {
@@ -1560,14 +1572,14 @@ class _MapCanvasPainter extends CustomPainter {
     }
     canvas.drawCircle(
       center,
-      6,
+      _portRadius,
       Paint()
         ..color = scheme.surface
         ..style = PaintingStyle.fill,
     );
     canvas.drawCircle(
       center,
-      6,
+      _portRadius,
       Paint()
         ..color = color
         ..strokeWidth = 2.4
