@@ -118,6 +118,7 @@ class _AdminProductionMapTestScreenState
   bool running = false;
   int _nextNodeIndex = 1;
   String? _connectingFromNodeID;
+  String _connectingFromBranch = '';
   Offset? _connectionPreviewEnd;
   bool _mapToolsMenuOpen = false;
   Set<String> _runVisitedNodeIDs = const {};
@@ -220,31 +221,6 @@ class _AdminProductionMapTestScreenState
     });
   }
 
-  Future<void> _addNodeToBranch(ProductionMapNode from, String branch) async {
-    final kind = await _pickNodeKind(
-      title: '${productionMapBranchDisplayLabel(branch)} yo‘liga qo‘shish',
-    );
-    if (kind == null || !mounted) {
-      return;
-    }
-    final id = '${kind}_${_nextNodeIndex++}';
-    setState(() {
-      if (kind == 'condition') {
-        _insertConditionOnBranch(
-          fromID: from.id,
-          branch: branch,
-          id: id,
-        );
-      } else {
-        _insertNodeOnBranch(
-          fromID: from.id,
-          branch: branch,
-          node: _newNode(id, kind),
-        );
-      }
-    });
-  }
-
   ProductionMapNode _newNode(String id, String kind) {
     final end = nodes.firstWhere((node) => node.kind == 'end');
     return switch (kind) {
@@ -341,116 +317,6 @@ class _AdminProductionMapTestScreenState
     _pushEndDown();
   }
 
-  void _insertNodeOnBranch({
-    required String fromID,
-    required String branch,
-    required ProductionMapNode node,
-  }) {
-    final from = nodes.firstWhere((item) => item.id == fromID);
-    final target = _branchTargetOrEnd(fromID, branch);
-    final position = _branchInsertPosition(from, branch);
-    final placedNode = _placeNode(
-      node.copyWith(x: position.dx, y: position.dy),
-      extraNodes: const [],
-    );
-    nodes.insert(_insertIndexBefore(target.id), placedNode);
-    _replaceBranchWithNode(
-      fromID: fromID,
-      branch: branch,
-      nodeID: placedNode.id,
-      targetID: target.id,
-    );
-    _pushEndDown();
-  }
-
-  void _insertConditionOnBranch({
-    required String fromID,
-    required String branch,
-    required String id,
-  }) {
-    final from = nodes.firstWhere((item) => item.id == fromID);
-    final target = _branchTargetOrEnd(fromID, branch);
-    final position = _branchInsertPosition(from, branch);
-    final condition = _placeNode(
-      ProductionMapNode(
-        id: id,
-        kind: 'condition',
-        title: 'Shart',
-        x: position.dx,
-        y: position.dy,
-        formula: const ProductionFormula(
-          target: '',
-          expression: 'order_qty >= 100',
-        ),
-      ),
-    );
-    nodes.insert(_insertIndexBefore(target.id), condition);
-    edges.removeWhere(
-      (edge) =>
-          edge.from == fromID &&
-          edge.branch.trim().toLowerCase() == branch.trim().toLowerCase(),
-    );
-    edges.add(ProductionMapEdge(
-      from: fromID,
-      to: condition.id,
-      branch: branch.trim().toLowerCase(),
-    ));
-    _pushEndDown();
-  }
-
-  ProductionMapNode _branchTargetOrEnd(String fromID, String branch) {
-    final branchKey = branch.trim().toLowerCase();
-    final branchEdge = edges.cast<ProductionMapEdge?>().firstWhere(
-          (edge) =>
-              edge?.from == fromID &&
-              edge?.branch.trim().toLowerCase() == branchKey,
-          orElse: () => null,
-        );
-    if (branchEdge != null) {
-      final targetIndex = nodes.indexWhere((node) => node.id == branchEdge.to);
-      if (targetIndex >= 0) {
-        return nodes[targetIndex];
-      }
-    }
-    return nodes.firstWhere((node) => node.kind == 'end');
-  }
-
-  Offset _branchInsertPosition(ProductionMapNode from, String branch) {
-    final branchKey = branch.trim().toLowerCase();
-    final dx = switch (branchKey) {
-      'true' => -_nodeStepX,
-      'false' => _nodeStepX,
-      _ => 0,
-    };
-    return _clampNodePosition(
-      Offset(from.x + dx, from.y + _nodeStepY),
-    );
-  }
-
-  int _insertIndexBefore(String nodeID) {
-    final targetIndex = nodes.indexWhere((node) => node.id == nodeID);
-    if (targetIndex >= 0) {
-      return targetIndex;
-    }
-    return nodes.indexWhere((node) => node.kind == 'end');
-  }
-
-  void _replaceBranchWithNode({
-    required String fromID,
-    required String branch,
-    required String nodeID,
-    required String targetID,
-  }) {
-    final branchKey = branch.trim().toLowerCase();
-    edges.removeWhere(
-      (edge) =>
-          edge.from == fromID && edge.branch.trim().toLowerCase() == branchKey,
-    );
-    edges
-      ..add(ProductionMapEdge(from: fromID, to: nodeID, branch: branchKey))
-      ..add(ProductionMapEdge(from: nodeID, to: targetID));
-  }
-
   void _pushEndDown() {
     final endIndex = nodes.indexWhere((node) => node.kind == 'end');
     final end = nodes[endIndex];
@@ -477,9 +343,10 @@ class _AdminProductionMapTestScreenState
     });
   }
 
-  void _startConnection(String nodeID) {
+  void _startConnection(String nodeID, [String branch = '']) {
     setState(() {
       _connectingFromNodeID = nodeID;
+      _connectingFromBranch = branch.trim().toLowerCase();
       _connectionPreviewEnd = null;
     });
   }
@@ -493,8 +360,10 @@ class _AdminProductionMapTestScreenState
 
   void _finishConnection(Offset canvasPosition) {
     final fromID = _connectingFromNodeID;
+    final branchKey = _connectingFromBranch;
     setState(() {
       _connectingFromNodeID = null;
+      _connectingFromBranch = '';
       _connectionPreviewEnd = null;
       if (fromID == null) {
         return;
@@ -503,11 +372,19 @@ class _AdminProductionMapTestScreenState
       if (target == null) {
         return;
       }
-      final exists = edges.any(
-        (edge) => edge.from == fromID && edge.to == target.id,
-      );
+      final exists = edges.any((edge) =>
+          edge.from == fromID &&
+          edge.to == target.id &&
+          edge.branch.trim().toLowerCase() == branchKey);
       if (!exists) {
-        edges.add(ProductionMapEdge(from: fromID, to: target.id));
+        if (branchKey.isNotEmpty) {
+          edges.removeWhere((edge) =>
+              edge.from == fromID &&
+              edge.branch.trim().toLowerCase() == branchKey);
+        }
+        edges.add(
+          ProductionMapEdge(from: fromID, to: target.id, branch: branchKey),
+        );
       }
     });
   }
@@ -515,6 +392,7 @@ class _AdminProductionMapTestScreenState
   void _cancelConnection() {
     setState(() {
       _connectingFromNodeID = null;
+      _connectingFromBranch = '';
       _connectionPreviewEnd = null;
     });
   }
@@ -805,65 +683,6 @@ class _AdminProductionMapTestScreenState
     });
   }
 
-  Future<String?> _pickNodeKind({required String title}) {
-    final scheme = Theme.of(context).colorScheme;
-    return showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: scheme.surface,
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: scheme.shadow.withValues(alpha: 0.18),
-                    blurRadius: 24,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                    ),
-                    const SizedBox(height: 14),
-                    GridView.count(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
-                      childAspectRatio: 2.6,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: [
-                        for (final choice in _nodeKindChoices)
-                          _BranchNodeKindButton(
-                            choice: choice,
-                            onTap: () => Navigator.of(context).pop(choice.kind),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   List<AdminFabMenuAction> _mapToolActions() {
     return [
       AdminFabMenuAction(
@@ -956,6 +775,7 @@ class _AdminProductionMapTestScreenState
                 nodes: nodes,
                 edges: edges,
                 connectingFromNodeID: _connectingFromNodeID,
+                connectingFromBranch: _connectingFromBranch,
                 connectionPreviewEnd: _connectionPreviewEnd,
                 runVisitedNodeIDs: _runVisitedNodeIDs,
                 runAwaitingNodeID: _runAwaitingNodeID,
@@ -966,7 +786,6 @@ class _AdminProductionMapTestScreenState
                 onConnectionUpdate: _updateConnectionPreview,
                 onConnectionEnd: _finishConnection,
                 onConnectionCancel: _cancelConnection,
-                onBranchAdd: _addNodeToBranch,
               ),
             ),
             if (_mapToolsMenuOpen)
@@ -1082,6 +901,7 @@ class _ProductionMapCanvas extends StatefulWidget {
     required this.nodes,
     required this.edges,
     required this.connectingFromNodeID,
+    required this.connectingFromBranch,
     required this.connectionPreviewEnd,
     required this.runVisitedNodeIDs,
     required this.runAwaitingNodeID,
@@ -1092,7 +912,6 @@ class _ProductionMapCanvas extends StatefulWidget {
     required this.onConnectionUpdate,
     required this.onConnectionEnd,
     required this.onConnectionCancel,
-    required this.onBranchAdd,
   });
 
   static const _minCanvasSize = Size(1180, 900);
@@ -1101,17 +920,17 @@ class _ProductionMapCanvas extends StatefulWidget {
   final List<ProductionMapNode> nodes;
   final List<ProductionMapEdge> edges;
   final String? connectingFromNodeID;
+  final String connectingFromBranch;
   final Offset? connectionPreviewEnd;
   final Set<String> runVisitedNodeIDs;
   final String runAwaitingNodeID;
   final ValueChanged<ProductionMapNode> onNodeTap;
   final ValueChanged<ProductionMapNode> onNodeDelete;
   final void Function(String nodeID, Offset delta) onNodeMoved;
-  final ValueChanged<String> onConnectionStart;
+  final void Function(String nodeID, String branch) onConnectionStart;
   final ValueChanged<Offset> onConnectionUpdate;
   final ValueChanged<Offset> onConnectionEnd;
   final VoidCallback onConnectionCancel;
-  final void Function(ProductionMapNode node, String branch) onBranchAdd;
 
   @override
   State<_ProductionMapCanvas> createState() => _ProductionMapCanvasState();
@@ -1184,6 +1003,7 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
                               nodes: widget.nodes,
                               edges: widget.edges,
                               connectionFromNodeID: widget.connectingFromNodeID,
+                              connectionFromBranch: widget.connectingFromBranch,
                               connectionPreviewEnd: widget.connectionPreviewEnd,
                               nodeSize: _ProductionMapCanvas._nodeSize,
                               scheme: scheme,
@@ -1215,7 +1035,7 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
                                   globalPosition,
                                 );
                                 _lastConnectionPosition = canvasPosition;
-                                widget.onConnectionStart(node.id);
+                                widget.onConnectionStart(node.id, '');
                                 widget.onConnectionUpdate(canvasPosition);
                               },
                               onConnectionDragUpdate: (globalPosition) {
@@ -1252,7 +1072,32 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
                               top: _branchButtonTop(node),
                               child: _BranchAddButton(
                                 branch: 'true',
-                                onTap: () => widget.onBranchAdd(node, 'true'),
+                                onConnectionDragStart: (globalPosition) {
+                                  final canvasPosition =
+                                      _globalToCanvas(globalPosition);
+                                  _lastConnectionPosition = canvasPosition;
+                                  widget.onConnectionStart(node.id, 'true');
+                                  widget.onConnectionUpdate(canvasPosition);
+                                },
+                                onConnectionDragUpdate: (globalPosition) {
+                                  final canvasPosition =
+                                      _globalToCanvas(globalPosition);
+                                  _lastConnectionPosition = canvasPosition;
+                                  widget.onConnectionUpdate(canvasPosition);
+                                },
+                                onConnectionDragEnd: () {
+                                  final position = _lastConnectionPosition;
+                                  _lastConnectionPosition = null;
+                                  if (position == null) {
+                                    widget.onConnectionCancel();
+                                    return;
+                                  }
+                                  widget.onConnectionEnd(position);
+                                },
+                                onConnectionDragCancel: () {
+                                  _lastConnectionPosition = null;
+                                  widget.onConnectionCancel();
+                                },
                               ),
                             ),
                             Positioned(
@@ -1260,7 +1105,32 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
                               top: _branchButtonTop(node),
                               child: _BranchAddButton(
                                 branch: 'false',
-                                onTap: () => widget.onBranchAdd(node, 'false'),
+                                onConnectionDragStart: (globalPosition) {
+                                  final canvasPosition =
+                                      _globalToCanvas(globalPosition);
+                                  _lastConnectionPosition = canvasPosition;
+                                  widget.onConnectionStart(node.id, 'false');
+                                  widget.onConnectionUpdate(canvasPosition);
+                                },
+                                onConnectionDragUpdate: (globalPosition) {
+                                  final canvasPosition =
+                                      _globalToCanvas(globalPosition);
+                                  _lastConnectionPosition = canvasPosition;
+                                  widget.onConnectionUpdate(canvasPosition);
+                                },
+                                onConnectionDragEnd: () {
+                                  final position = _lastConnectionPosition;
+                                  _lastConnectionPosition = null;
+                                  if (position == null) {
+                                    widget.onConnectionCancel();
+                                    return;
+                                  }
+                                  widget.onConnectionEnd(position);
+                                },
+                                onConnectionDragCancel: () {
+                                  _lastConnectionPosition = null;
+                                  widget.onConnectionCancel();
+                                },
                               ),
                             ),
                           ],
@@ -1379,105 +1249,23 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
   }
 }
 
-class _NodeKindChoice {
-  const _NodeKindChoice({
-    required this.kind,
-    required this.title,
-    required this.icon,
-  });
-
-  final String kind;
-  final String title;
-  final IconData icon;
-}
-
-const _nodeKindChoices = [
-  _NodeKindChoice(
-    kind: 'task',
-    title: 'Location',
-    icon: Icons.account_tree_rounded,
-  ),
-  _NodeKindChoice(
-    kind: 'formula',
-    title: 'Formula',
-    icon: Icons.functions_rounded,
-  ),
-  _NodeKindChoice(
-    kind: 'condition',
-    title: 'Condition',
-    icon: Icons.call_split_rounded,
-  ),
-  _NodeKindChoice(
-    kind: 'material',
-    title: 'Material',
-    icon: Icons.inventory_2_rounded,
-  ),
-  _NodeKindChoice(
-    kind: 'wait',
-    title: 'Wait',
-    icon: Icons.hourglass_bottom_rounded,
-  ),
-  _NodeKindChoice(
-    kind: 'output',
-    title: 'Output',
-    icon: Icons.flag_rounded,
-  ),
-];
-
-class _BranchNodeKindButton extends StatelessWidget {
-  const _BranchNodeKindButton({
-    required this.choice,
-    required this.onTap,
-  });
-
-  final _NodeKindChoice choice;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.secondaryContainer,
-      borderRadius: BorderRadius.circular(20),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              Icon(choice.icon, size: 21, color: scheme.onSecondaryContainer),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  choice.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: scheme.onSecondaryContainer,
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _BranchAddButton extends StatelessWidget {
   const _BranchAddButton({
     required this.branch,
-    required this.onTap,
+    required this.onConnectionDragStart,
+    required this.onConnectionDragUpdate,
+    required this.onConnectionDragEnd,
+    required this.onConnectionDragCancel,
   });
 
   static const width = 34.0;
   static const height = 34.0;
 
   final String branch;
-  final VoidCallback onTap;
+  final ValueChanged<Offset> onConnectionDragStart;
+  final ValueChanged<Offset> onConnectionDragUpdate;
+  final VoidCallback onConnectionDragEnd;
+  final VoidCallback onConnectionDragCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -1499,14 +1287,20 @@ class _BranchAddButton extends StatelessWidget {
         key: ValueKey('production-map-branch-add-$branch'),
         width: width,
         height: height,
-        child: Material(
-          color: color,
-          borderRadius: BorderRadius.circular(99),
-          elevation: 2,
-          shadowColor: scheme.shadow.withValues(alpha: 0.18),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onPanStart: (details) =>
+              onConnectionDragStart(details.globalPosition),
+          onPanUpdate: (details) =>
+              onConnectionDragUpdate(details.globalPosition),
+          onPanEnd: (_) => onConnectionDragEnd(),
+          onPanCancel: onConnectionDragCancel,
+          child: Material(
+            color: color,
+            borderRadius: BorderRadius.circular(99),
+            elevation: 2,
+            shadowColor: scheme.shadow.withValues(alpha: 0.18),
+            clipBehavior: Clip.antiAlias,
             child: Icon(Icons.add_link_rounded, size: 18, color: foreground),
           ),
         ),
@@ -1551,6 +1345,7 @@ class _MapCanvasPainter extends CustomPainter {
     required this.nodes,
     required this.edges,
     required this.connectionFromNodeID,
+    required this.connectionFromBranch,
     required this.connectionPreviewEnd,
     required this.nodeSize,
     required this.scheme,
@@ -1559,6 +1354,7 @@ class _MapCanvasPainter extends CustomPainter {
   final List<ProductionMapNode> nodes;
   final List<ProductionMapEdge> edges;
   final String? connectionFromNodeID;
+  final String connectionFromBranch;
   final Offset? connectionPreviewEnd;
   final Size nodeSize;
   final ColorScheme scheme;
@@ -1581,7 +1377,7 @@ class _MapCanvasPainter extends CustomPainter {
     if (previewFromID != null && previewEnd != null) {
       final from = byID[previewFromID];
       if (from != null) {
-        _paintPreviewEdge(canvas, from, previewEnd);
+        _paintPreviewEdge(canvas, from, previewEnd, connectionFromBranch);
       }
     }
   }
@@ -1633,6 +1429,7 @@ class _MapCanvasPainter extends CustomPainter {
     Canvas canvas,
     ProductionMapNode from,
     Offset previewEnd,
+    String branch,
   ) {
     final fromRect = _nodeRect(from);
     final start = _edgeAnchor(fromRect, previewEnd);
@@ -1641,7 +1438,12 @@ class _MapCanvasPainter extends CustomPainter {
       ..moveTo(start.dx, start.dy)
       ..cubicTo(controlX, start.dy, controlX, previewEnd.dy, previewEnd.dx,
           previewEnd.dy);
-    final color = scheme.primary;
+    final branchKey = branch.trim().toLowerCase();
+    final color = switch (branchKey) {
+      'true' => scheme.primary,
+      'false' => scheme.error,
+      _ => scheme.primary,
+    };
     final paint = Paint()
       ..color = color.withValues(alpha: 0.82)
       ..strokeWidth = 3
@@ -1649,6 +1451,15 @@ class _MapCanvasPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
     canvas.drawPath(path, paint);
     canvas.drawCircle(previewEnd, 7, Paint()..color = color);
+    if (branchKey.isNotEmpty) {
+      _paintBranchLabel(
+        canvas,
+        Offset((start.dx + previewEnd.dx) / 2,
+            (start.dy + previewEnd.dy) / 2 - 16),
+        productionMapBranchDisplayLabel(branchKey),
+        color,
+      );
+    }
   }
 
   Rect _nodeRect(ProductionMapNode node) {

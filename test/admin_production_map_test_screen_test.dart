@@ -105,16 +105,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(
-      find.byKey(const ValueKey('production-map-branch-add-true')).first,
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Shunda yo‘liga qo‘shish'), findsOneWidget);
-
-    await tester.tap(find.text('Condition').last);
+    await _tapMapTool(tester, 'Condition');
     await tester.pumpAndSettle();
 
     expect(find.text('Shart'), findsOneWidget);
+    expect(find.text('Shunda yo‘liga qo‘shish'), findsNothing);
     expect(find.text('Bajariladigan ish'), findsNothing);
     expect(find.text('Boshqa holatdagi ish'), findsNothing);
     expect(
