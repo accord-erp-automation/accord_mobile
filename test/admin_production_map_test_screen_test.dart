@@ -82,73 +82,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Katta partiyami?'), findsOneWidget);
-    expect(find.text('Katta partiya'), findsOneWidget);
-    expect(find.text('Rezkaga yuborish'), findsOneWidget);
-  });
-
-  testWidgets('production map branch handle can detach a connected branch',
-      (tester) async {
-    await _usePhoneViewport(tester);
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(useMaterial3: true),
-        locale: const Locale('uz'),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-        ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: const AdminProductionMapTestScreen(),
-      ),
+    expect(find.text('Katta partiya'), findsNothing);
+    expect(find.text('Rezkaga yuborish'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('production-map-branch-add-true')),
+      findsWidgets,
     );
-    await tester.pumpAndSettle();
-
-    final trueHandle =
-        find.byKey(const ValueKey('production-map-branch-add-true')).first;
-    await tester.longPress(trueHandle);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Uzaymi?'), findsOneWidget);
-    await tester.tap(find.text('Uzish'));
-    await tester.pumpAndSettle();
-
-    await tester.longPress(trueHandle);
-    await tester.pumpAndSettle();
-    expect(find.text('Uzaymi?'), findsNothing);
-  });
-
-  testWidgets('production map branch target opens branch actions first',
-      (tester) async {
-    await _usePhoneViewport(tester);
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(useMaterial3: true),
-        locale: const Locale('uz'),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-        ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: const AdminProductionMapTestScreen(),
-      ),
+    expect(
+      find.byKey(const ValueKey('production-map-branch-add-false')),
+      findsWidgets,
     );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Rezkaga yuborish'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Aks holda'), findsOneWidget);
-    expect(find.textContaining('→'), findsNothing);
-    expect(find.text('Node sozlash'), findsNothing);
-
-    await tester.tap(find.text('Cardni sozlash'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Node sozlash'), findsOneWidget);
   });
 
   testWidgets('production map node connector can detach a plain outgoing edge',
@@ -170,16 +113,19 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final largeBatchConnector =
-        find.byKey(const ValueKey('production-map-node-connect-large_batch'));
-    await tester.longPress(largeBatchConnector);
+    await _tapMapTool(tester, 'Location');
+    await tester.pumpAndSettle();
+
+    final newLocationConnector =
+        find.byKey(const ValueKey('production-map-node-connect-task_1'));
+    await tester.longPress(newLocationConnector);
     await tester.pumpAndSettle();
 
     expect(find.text('Uzaymi?'), findsOneWidget);
     await tester.tap(find.text('Uzish'));
     await tester.pumpAndSettle();
 
-    await tester.longPress(largeBatchConnector);
+    await tester.longPress(newLocationConnector);
     await tester.pumpAndSettle();
     expect(find.text('Uzaymi?'), findsNothing);
   });

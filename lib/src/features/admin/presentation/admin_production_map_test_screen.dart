@@ -75,44 +75,16 @@ class _AdminProductionMapTestScreenState
       ),
     ),
     const ProductionMapNode(
-      id: 'large_batch',
-      kind: 'task',
-      title: 'Katta partiya',
-      roleCode: 'rezkachi',
-      qtyFormula: 'cpp_kg',
-      fromLocation: 'CPP ombor',
-      toLocation: 'Rezka apparat',
-      x: 140,
-      y: 448,
-    ),
-    const ProductionMapNode(
-      id: 'rezka_task',
-      kind: 'task',
-      title: 'Rezkaga yuborish',
-      roleCode: 'rezkachi',
-      qtyFormula: 'order_qty / 6',
-      fromLocation: 'CPP ombor',
-      toLocation: 'Rezka apparat',
-      x: 700,
-      y: 448,
-    ),
-    const ProductionMapNode(
       id: 'end',
       kind: 'end',
       title: 'End',
       x: 420,
-      y: 620,
+      y: 520,
     ),
   ];
   final edges = <ProductionMapEdge>[
     const ProductionMapEdge(from: 'start', to: 'cpp_calc'),
     const ProductionMapEdge(from: 'cpp_calc', to: 'qty_check'),
-    const ProductionMapEdge(
-        from: 'qty_check', to: 'large_batch', branch: 'true'),
-    const ProductionMapEdge(
-        from: 'qty_check', to: 'rezka_task', branch: 'false'),
-    const ProductionMapEdge(from: 'large_batch', to: 'end'),
-    const ProductionMapEdge(from: 'rezka_task', to: 'end'),
   ];
 
   bool saving = false;
