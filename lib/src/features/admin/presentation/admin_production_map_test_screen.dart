@@ -1967,6 +1967,21 @@ class _MapNodeVisual extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final isLocation = node.kind == 'location';
+    if (isLocation) {
+      return _WarehouseLocationNode(
+        node: node,
+        onTap: onTap,
+        onDragUpdate: onDragUpdate,
+        onDelete: onDelete,
+        onConnectionDragStart: onConnectionDragStart,
+        onConnectionDragUpdate: onConnectionDragUpdate,
+        onConnectionDragEnd: onConnectionDragEnd,
+        onConnectionDragCancel: onConnectionDragCancel,
+        floating: floating,
+        highlighted: highlighted,
+        awaiting: awaiting,
+      );
+    }
     return Semantics(
       button: true,
       label: '${node.title} node',
@@ -1983,12 +1998,7 @@ class _MapNodeVisual extends StatelessWidget {
                 ? Border.all(color: scheme.error, width: 3)
                 : highlighted
                     ? Border.all(color: scheme.primary, width: 2)
-                    : node.kind == 'location'
-                        ? Border.all(
-                            color: scheme.outlineVariant,
-                            width: 1.2,
-                          )
-                        : null,
+                    : null,
             boxShadow: floating
                 ? [
                     BoxShadow(
@@ -1999,112 +2009,84 @@ class _MapNodeVisual extends StatelessWidget {
                   ]
                 : null,
           ),
-          child: Stack(
-            children: [
-              if (isLocation) ...[
-                Positioned(
-                  left: 18,
-                  top: 0,
-                  right: 18,
-                  height: 10,
-                  child: _WarehouseAwning(scheme: scheme),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: scheme.surface.withValues(alpha: 0.55),
+                  child: Icon(_iconFor(node.kind), size: 19),
                 ),
-                Positioned(
-                  left: 0,
-                  top: 10,
-                  right: 0,
-                  child: Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: scheme.outlineVariant.withValues(alpha: 0.7),
-                  ),
-                ),
-              ],
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  14,
-                  isLocation ? 14 : 12,
-                  14,
-                  isLocation ? 10 : 12,
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundColor: scheme.surface.withValues(alpha: 0.55),
-                      child: Icon(_iconFor(node.kind), size: 19),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            node.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _subtitleFor(node),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        node.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _labelFor(node.kind),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      key: ValueKey('production-map-node-connect-${node.id}'),
-                      behavior: HitTestBehavior.opaque,
-                      onPanStart: (details) =>
-                          onConnectionDragStart(details.globalPosition),
-                      onPanUpdate: (details) =>
-                          onConnectionDragUpdate(details.globalPosition),
-                      onPanEnd: (_) => onConnectionDragEnd(),
-                      onPanCancel: onConnectionDragCancel,
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: Icon(
-                          Icons.add_link_rounded,
-                          size: 20,
+                      const SizedBox(height: 2),
+                      Text(
+                        _subtitleFor(node),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: scheme.onSurfaceVariant,
                         ),
                       ),
-                    ),
-                    if (onDelete != null) ...[
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: onDelete,
-                        child: Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: Icon(
-                            Icons.close_rounded,
-                            size: 20,
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 8),
+                Text(
+                  _labelFor(node.kind),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  key: ValueKey('production-map-node-connect-${node.id}'),
+                  behavior: HitTestBehavior.opaque,
+                  onPanStart: (details) =>
+                      onConnectionDragStart(details.globalPosition),
+                  onPanUpdate: (details) =>
+                      onConnectionDragUpdate(details.globalPosition),
+                  onPanEnd: (_) => onConnectionDragEnd(),
+                  onPanCancel: onConnectionDragCancel,
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.add_link_rounded,
+                      size: 20,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                if (onDelete != null) ...[
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onDelete,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 20,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       ),
@@ -2192,31 +2174,145 @@ class _MapNodeVisual extends StatelessWidget {
   }
 }
 
-class _WarehouseAwning extends StatelessWidget {
-  const _WarehouseAwning({required this.scheme});
+class _WarehouseLocationNode extends StatelessWidget {
+  const _WarehouseLocationNode({
+    required this.node,
+    required this.onTap,
+    required this.onDragUpdate,
+    required this.onDelete,
+    required this.onConnectionDragStart,
+    required this.onConnectionDragUpdate,
+    required this.onConnectionDragEnd,
+    required this.onConnectionDragCancel,
+    required this.floating,
+    required this.highlighted,
+    required this.awaiting,
+  });
 
+  final ProductionMapNode node;
+  final VoidCallback onTap;
+  final GestureDragUpdateCallback onDragUpdate;
+  final VoidCallback? onDelete;
+  final ValueChanged<Offset> onConnectionDragStart;
+  final ValueChanged<Offset> onConnectionDragUpdate;
+  final VoidCallback onConnectionDragEnd;
+  final VoidCallback onConnectionDragCancel;
+  final bool floating;
+  final bool highlighted;
+  final bool awaiting;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final borderColor = awaiting
+        ? scheme.error
+        : highlighted
+            ? scheme.primary
+            : scheme.outlineVariant;
+    return Semantics(
+      button: true,
+      label: '${node.title} ombor',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        onPanUpdate: onDragUpdate,
+        child: SizedBox(
+          height: 60,
+          child: Center(
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 120),
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: scheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(
+                      color: borderColor,
+                      width: awaiting || highlighted ? 2.4 : 1.2,
+                    ),
+                    boxShadow: floating
+                        ? [
+                            BoxShadow(
+                              color: scheme.shadow.withValues(alpha: 0.28),
+                              blurRadius: 18,
+                              offset: const Offset(0, 10),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Icon(
+                    Icons.storefront_rounded,
+                    size: 26,
+                    color: scheme.onPrimaryContainer,
+                  ),
+                ),
+                Positioned(
+                  right: -34,
+                  child: GestureDetector(
+                    key: ValueKey('production-map-node-connect-${node.id}'),
+                    behavior: HitTestBehavior.opaque,
+                    onPanStart: (details) =>
+                        onConnectionDragStart(details.globalPosition),
+                    onPanUpdate: (details) =>
+                        onConnectionDragUpdate(details.globalPosition),
+                    onPanEnd: (_) => onConnectionDragEnd(),
+                    onPanCancel: onConnectionDragCancel,
+                    child: _WarehouseMiniButton(
+                      icon: Icons.add_link_rounded,
+                      scheme: scheme,
+                    ),
+                  ),
+                ),
+                if (onDelete != null)
+                  Positioned(
+                    top: -12,
+                    right: -20,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: onDelete,
+                      child: _WarehouseMiniButton(
+                        icon: Icons.close_rounded,
+                        scheme: scheme,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _WarehouseMiniButton extends StatelessWidget {
+  const _WarehouseMiniButton({
+    required this.icon,
+    required this.scheme,
+  });
+
+  final IconData icon;
   final ColorScheme scheme;
 
   @override
   Widget build(BuildContext context) {
-    final stripeColors = [
-      scheme.primary.withValues(alpha: 0.24),
-      scheme.surfaceContainerHighest,
-    ];
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(
-        bottom: Radius.circular(7),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        shape: BoxShape.circle,
+        border: Border.all(color: scheme.outlineVariant),
       ),
-      child: Row(
-        children: [
-          for (var index = 0; index < 6; index++)
-            Expanded(
-              child: ColoredBox(
-                color: stripeColors[index.isEven ? 0 : 1],
-                child: const SizedBox.expand(),
-              ),
-            ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(5),
+        child: Icon(
+          icon,
+          size: 15,
+          color: scheme.onSurfaceVariant,
+        ),
       ),
     );
   }

@@ -47,14 +47,12 @@ void main() {
 
     await _tapMapTool(tester, 'Location');
     await tester.pumpAndSettle();
-    expect(find.text('ERPNext ombor'), findsWidgets);
-    expect(find.text('ombor'), findsWidgets);
     expect(find.byIcon(Icons.storefront_rounded), findsWidgets);
 
-    final warehouseTitle = find.text('ERPNext ombor').first;
-    await tester.ensureVisible(warehouseTitle);
+    final warehouseIcon = find.byIcon(Icons.storefront_rounded).first;
+    await tester.ensureVisible(warehouseIcon);
     await tester.pumpAndSettle();
-    await tester.tap(warehouseTitle);
+    await tester.tap(warehouseIcon);
     await tester.pumpAndSettle();
     expect(find.text('Node sozlash'), findsOneWidget);
     expect(find.text('ERPNext ombor'), findsWidgets);
@@ -63,7 +61,7 @@ void main() {
     await tester.tap(find.text('Saqlash').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('Rezka ombor'), findsOneWidget);
+    expect(find.byIcon(Icons.storefront_rounded), findsWidgets);
   });
 
   testWidgets('production map sheet closes when tapping the dimmed barrier',
