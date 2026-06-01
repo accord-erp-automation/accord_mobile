@@ -1451,7 +1451,7 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
     final start = _startAnchor(from, branchKey, toRect.center);
     final isWarehouseTarget = to.kind == 'location';
     final end = isWarehouseTarget
-        ? _externalPortCenter(toRect, fromRect.center)
+        ? _warehousePortCenter(toRect, fromRect.center)
         : _edgeAnchor(toRect, fromRect.center);
     return Offset(
       (start.dx + end.dx) / 2,
@@ -1501,6 +1501,16 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
       return anchor;
     }
     return anchor + vector / distance * _MapCanvasPainter.portRadius;
+  }
+
+  Offset _warehousePortCenter(Rect rect, Offset toward) {
+    final anchor = _edgeAnchor(rect, toward);
+    final vector = anchor - rect.center;
+    final distance = vector.distance;
+    if (distance == 0) {
+      return anchor;
+    }
+    return anchor + vector / distance * 4;
   }
 
   Offset _edgeAnchor(Rect rect, Offset toward) {
@@ -1709,7 +1719,7 @@ class _MapCanvasPainter extends CustomPainter {
     final start = _startAnchor(from, branchKey, toRect.center);
     final isWarehouseTarget = to.kind == 'location';
     final end = isWarehouseTarget
-        ? _externalPortCenter(toRect, fromRect.center)
+        ? _warehousePortCenter(toRect, fromRect.center)
         : _edgeAnchor(toRect, fromRect.center);
     final path = _elasticPath(
       start: start,
@@ -1810,6 +1820,16 @@ class _MapCanvasPainter extends CustomPainter {
       return anchor;
     }
     return anchor + vector / distance * portRadius;
+  }
+
+  Offset _warehousePortCenter(Rect rect, Offset toward) {
+    final anchor = _edgeAnchor(rect, toward);
+    final vector = anchor - rect.center;
+    final distance = vector.distance;
+    if (distance == 0) {
+      return anchor;
+    }
+    return anchor + vector / distance * 4;
   }
 
   Offset _edgeAnchor(Rect rect, Offset toward) {
@@ -2279,7 +2299,7 @@ class _WarehouseLocationNode extends StatelessWidget {
                   ),
                 ),
                 Positioned(
-                  right: -44,
+                  right: -28,
                   child: GestureDetector(
                     key: ValueKey('production-map-node-connect-${node.id}'),
                     behavior: HitTestBehavior.opaque,
@@ -2297,8 +2317,8 @@ class _WarehouseLocationNode extends StatelessWidget {
                 ),
                 if (onDelete != null)
                   Positioned(
-                    top: -16,
-                    right: -26,
+                    top: -14,
+                    right: -18,
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: onDelete,
