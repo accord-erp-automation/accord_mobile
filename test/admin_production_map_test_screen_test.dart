@@ -94,6 +94,39 @@ void main() {
     );
   });
 
+  testWidgets('production map formula field shows human variable editor',
+      (tester) async {
+    await _usePhoneViewport(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(useMaterial3: true),
+        locale: const Locale('uz'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const AdminProductionMapTestScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('CPP hisob'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Node sozlash'), findsOneWidget);
+    expect(find.text('Buyurtma miqdori * 1.08'), findsOneWidget);
+    expect(find.text('order_qty * 1.08'), findsNothing);
+
+    await tester.tap(find.text('Buyurtma miqdori * 1.08'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Formula yozish'), findsOneWidget);
+    expect(find.text('Buyurtma miqdori'), findsWidgets);
+  });
+
   testWidgets('production map edge delete button removes an outgoing edge',
       (tester) async {
     await _usePhoneViewport(tester);

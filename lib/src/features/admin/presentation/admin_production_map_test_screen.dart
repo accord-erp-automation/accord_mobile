@@ -19,6 +19,44 @@ String productionMapBranchDisplayLabel(String branch) {
   };
 }
 
+const _formulaVariables = [
+  _FormulaVariable(label: 'Buyurtma miqdori', token: 'order_qty'),
+  _FormulaVariable(label: 'CPP kg', token: 'cpp_kg'),
+  _FormulaVariable(label: 'Natija kg', token: 'result_kg'),
+];
+
+String _formulaDisplayText(String expression) {
+  var text = expression;
+  for (final variable in _formulaVariables) {
+    text = text.replaceAllMapped(
+      RegExp('\\b${RegExp.escape(variable.token)}\\b'),
+      (_) => variable.label,
+    );
+  }
+  return text;
+}
+
+String _formulaInternalText(String expression) {
+  var text = expression;
+  for (final variable in _formulaVariables) {
+    text = text.replaceAll(
+      RegExp(variable.label, caseSensitive: false),
+      variable.token,
+    );
+  }
+  return text;
+}
+
+class _FormulaVariable {
+  const _FormulaVariable({
+    required this.label,
+    required this.token,
+  });
+
+  final String label;
+  final String token;
+}
+
 class AdminProductionMapTestScreen extends StatefulWidget {
   const AdminProductionMapTestScreen({super.key});
 
@@ -2047,7 +2085,7 @@ class _NodeEditSheetState extends State<_NodeEditSheet> {
                   widget.node.kind == 'wait' ||
                   widget.node.kind == 'output') ...[
                 const SizedBox(height: 10),
-                _SheetField(
+                _FormulaSheetField(
                   label: 'Miqdor formulasi',
                   controller: _qtyFormula,
                 ),
@@ -2067,14 +2105,14 @@ class _NodeEditSheetState extends State<_NodeEditSheet> {
                 _SheetField(
                     label: 'Formula target', controller: _formulaTarget),
                 const SizedBox(height: 10),
-                _SheetField(
+                _FormulaSheetField(
                   label: 'Formula',
                   controller: _formulaExpression,
                 ),
               ],
               if (widget.node.kind == 'condition') ...[
                 const SizedBox(height: 10),
-                _SheetField(
+                _FormulaSheetField(
                   label: 'Shart',
                   controller: _formulaExpression,
                 ),
@@ -2553,6 +2591,273 @@ class _SheetField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    );
+  }
+}
+
+class _FormulaSheetField extends StatefulWidget {
+  const _FormulaSheetField({
+    required this.label,
+    required this.controller,
+  });
+
+  final String label;
+  final TextEditingController controller;
+
+  @override
+  State<_FormulaSheetField> createState() => _FormulaSheetFieldState();
+}
+
+class _FormulaSheetFieldState extends State<_FormulaSheetField> {
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_sync);
+  }
+
+  @override
+  void didUpdateWidget(covariant _FormulaSheetField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller == widget.controller) {
+      return;
+    }
+    oldWidget.controller.removeListener(_sync);
+    widget.controller.addListener(_sync);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_sync);
+    super.dispose();
+  }
+
+  void _sync() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _openEditor() async {
+    final edited = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _FormulaEditorSheet(
+        title: widget.label,
+        expression: widget.controller.text,
+      ),
+    );
+    if (edited == null || !mounted) {
+      return;
+    }
+    widget.controller.text = edited;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final display = _formulaDisplayText(widget.controller.text);
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: _openEditor,
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: widget.label,
+          suffixIcon: const Icon(Icons.open_in_full_rounded),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        child: Text(
+          display.isEmpty ? ' ' : display,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
+}
+
+class _FormulaEditorSheet extends StatefulWidget {
+  const _FormulaEditorSheet({
+    required this.title,
+    required this.expression,
+  });
+
+  final String title;
+  final String expression;
+
+  @override
+  State<_FormulaEditorSheet> createState() => _FormulaEditorSheetState();
+}
+
+class _FormulaEditorSheetState extends State<_FormulaEditorSheet> {
+  late final TextEditingController _expression;
+  _FormulaVariable? _suggestion;
+
+  @override
+  void initState() {
+    super.initState();
+    _expression = TextEditingController(
+      text: _formulaDisplayText(widget.expression),
+    );
+    _expression.addListener(_updateSuggestion);
+    _updateSuggestion();
+  }
+
+  @override
+  void dispose() {
+    _expression.dispose();
+    super.dispose();
+  }
+
+  void _updateSuggestion() {
+    final next = _currentSuggestion();
+    if (next == _suggestion) {
+      return;
+    }
+    setState(() => _suggestion = next);
+  }
+
+  _FormulaVariable? _currentSuggestion() {
+    final selection = _expression.selection;
+    final text = _expression.text;
+    final cursor = selection.isValid ? selection.baseOffset : text.length;
+    final prefix = _currentSegment(text, cursor).trim().toLowerCase();
+    if (prefix.length < 2) {
+      return null;
+    }
+    for (final variable in _formulaVariables) {
+      if (variable.label.toLowerCase().startsWith(prefix) ||
+          variable.token.toLowerCase().startsWith(prefix)) {
+        return variable;
+      }
+    }
+    return null;
+  }
+
+  String _currentSegment(String text, int cursor) {
+    var start = cursor.clamp(0, text.length);
+    while (start > 0) {
+      final char = text[start - 1];
+      if ('+-*/()<>!=&|,'.contains(char)) {
+        break;
+      }
+      start--;
+    }
+    return text.substring(start, cursor.clamp(0, text.length));
+  }
+
+  void _insertVariable(_FormulaVariable variable) {
+    final selection = _expression.selection;
+    final text = _expression.text;
+    final cursor = selection.isValid ? selection.baseOffset : text.length;
+    var start = cursor.clamp(0, text.length);
+    while (start > 0 && !'+-*/()<>!=&|,'.contains(text[start - 1])) {
+      start--;
+    }
+    final before = text.substring(0, start);
+    final after = text.substring(cursor.clamp(0, text.length));
+    final nextText = '$before${variable.label}$after';
+    final nextOffset = before.length + variable.label.length;
+    _expression.value = TextEditingValue(
+      text: nextText,
+      selection: TextSelection.collapsed(offset: nextOffset),
+    );
+  }
+
+  void _save() {
+    Navigator.of(context).pop(
+      _formulaInternalText(_expression.text.trim()),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final viewInsets = MediaQuery.viewInsetsOf(context).bottom;
+    final suggestion = _suggestion;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(bottom: viewInsets),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainer,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: scheme.onSurfaceVariant.withValues(alpha: 0.45),
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                    child: const SizedBox(width: 44, height: 4),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  '${widget.title} yozish',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: _expression,
+                  autofocus: true,
+                  minLines: 5,
+                  maxLines: 8,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) {
+                    final active = _suggestion;
+                    if (active != null) {
+                      _insertVariable(active);
+                      return;
+                    }
+                    _save();
+                  },
+                  decoration: InputDecoration(
+                    labelText: widget.title,
+                    alignLabelWithHint: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                ),
+                if (suggestion != null) ...[
+                  const SizedBox(height: 10),
+                  ActionChip(
+                    avatar: const Icon(Icons.keyboard_return_rounded),
+                    label: Text(suggestion.label),
+                    onPressed: () => _insertVariable(suggestion),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final variable in _formulaVariables)
+                      InputChip(
+                        label: Text(variable.label),
+                        onPressed: () => _insertVariable(variable),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _PlainActionButton(
+                  label: 'Saqlash',
+                  icon: Icons.check_rounded,
+                  onTap: _save,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
