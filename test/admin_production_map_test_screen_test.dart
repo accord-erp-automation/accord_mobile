@@ -1,15 +1,18 @@
 import 'package:erpnext_stock_mobile/src/core/localization/app_localizations.dart';
 import 'package:erpnext_stock_mobile/src/core/session/session.dart';
+import 'package:erpnext_stock_mobile/src/core/test_mode/test_mode_controller.dart';
 import 'package:erpnext_stock_mobile/src/features/admin/presentation/admin_production_map_test_screen.dart';
 import 'package:erpnext_stock_mobile/src/features/shared/models/app_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {
+    SharedPreferences.setMockInitialValues(const <String, Object>{});
     AppSession.instance.token = 'token';
     AppSession.instance.profile = const SessionProfile(
       role: UserRole.admin,
@@ -28,6 +31,7 @@ void main() {
 
   testWidgets('production map page can add and edit a location node',
       (tester) async {
+    await TestModeController.instance.setEnabled(true);
     await _usePhoneViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
@@ -56,10 +60,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Ombor tanlash'), findsOneWidget);
 
-    await tester.tap(find.text('Rezka ombor').last);
+    await tester.tap(find.text('Xomashyo ombori - DEMO').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('Rezka ombor'), findsWidgets);
+    expect(find.text('Xomashyo ombori - DEMO'), findsWidgets);
   });
 
   testWidgets('production map sheet closes when tapping the dimmed barrier',

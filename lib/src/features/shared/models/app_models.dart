@@ -122,6 +122,26 @@ class SupplierItem {
   }
 }
 
+class AdminWarehouse {
+  const AdminWarehouse({
+    required this.warehouse,
+    this.company = '',
+    this.isGroup = false,
+  });
+
+  final String warehouse;
+  final String company;
+  final bool isGroup;
+
+  factory AdminWarehouse.fromJson(Map<String, dynamic> json) {
+    return AdminWarehouse(
+      warehouse: json['warehouse'] as String? ?? '',
+      company: json['company'] as String? ?? '',
+      isGroup: json['is_group'] == true,
+    );
+  }
+}
+
 class SupplierDirectoryEntry {
   const SupplierDirectoryEntry({
     required this.ref,

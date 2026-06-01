@@ -95,16 +95,26 @@ Future<List<GScaleCatalogWarehouse>> fetchGScaleDefaultWarehouses({
 }) async {
   final client = api ?? MobileApi.instance;
   final profile = AppSession.instance.profile;
-  final canReadAdminSettings = role == UserRole.admin ||
-      (role == null && profile?.hasCapability('admin.settings.read') == true);
+  final canReadAdminWarehouses = role == UserRole.admin ||
+      (role == null &&
+          (profile?.hasCapability('admin.access') == true ||
+              profile?.hasCapability('production.map.manage') == true ||
+              profile?.hasCapability('catalog.item.read') == true));
   final canReadGScaleCatalog = role == UserRole.werka ||
       (role == null && profile?.hasCapability('gscale.catalog.read') == true);
-  if (canReadAdminSettings) {
-    final settings = await client.adminSettings();
-    return gscaleWarehousesFromDefault(
-      settings.defaultTargetWarehouse,
-      query: query,
-    ).take(limit).toList();
+  if (canReadAdminWarehouses) {
+    final warehouses = await client.adminWarehouses(query: query, limit: limit);
+    return warehouses
+        .map(
+          (warehouse) => GScaleCatalogWarehouse(
+            warehouse: warehouse.warehouse,
+            company:
+                warehouse.company.trim().isEmpty ? null : warehouse.company,
+          ),
+        )
+        .where((warehouse) => warehouse.warehouse.trim().isNotEmpty)
+        .take(limit)
+        .toList(growable: false);
   }
   if (canReadGScaleCatalog) {
     final items = await client.gscaleItemsPage(limit: 200);

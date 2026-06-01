@@ -25,19 +25,6 @@ const _formulaVariables = [
   _FormulaVariable(label: 'Natija kg', token: 'result_kg'),
 ];
 
-const _warehousePickerSuggestions = [
-  'Xomashyo ombori',
-  'Qadoqlash ombori',
-  'Rezka ombor',
-  'Laminat ombor',
-  'MCP ombor',
-  'CPP ombor',
-  'Tayyor mahsulot ombori',
-  'Xomashyo ombori - DEMO',
-  'Qadoqlash ombori - DEMO',
-  'Tayyor mahsulot ombori - DEMO',
-];
-
 String _formulaDisplayText(String expression) {
   var text = expression;
   for (final variable in _formulaVariables) {
@@ -780,23 +767,34 @@ class _AdminProductionMapTestScreenState
     }
     final node = nodes[index];
     if (node.kind == 'location') {
-      final picked = await showModalBottomSheet<String>(
+      final picked = await showModalBottomSheet<AdminWarehouse>(
         context: context,
         isDismissible: true,
         enableDrag: true,
         isScrollControlled: true,
+        useSafeArea: true,
         backgroundColor: Colors.transparent,
         barrierColor: Colors.black.withValues(alpha: 0.32),
+        sheetAnimationStyle: kM3PickerSheetAnimation,
         builder: (context) {
-          final items = _warehouseSuggestions();
-          return M3PickerSheet<String>(
+          return M3AsyncPickerSheet<AdminWarehouse>(
             title: 'Ombor tanlash',
             hintText: 'Ombor qidiring',
-            items: items,
-            itemTitle: (item) => item,
-            itemSubtitle: (_) => 'ERPNext ombor',
-            matchesQuery: (item, query) =>
-                item.toLowerCase().contains(query.trim().toLowerCase()),
+            pageSize: 50,
+            cacheKey: 'production-map:warehouses',
+            loadPage: (query, offset, limit) async {
+              final warehouses = await MobileApi.instance.adminWarehouses(
+                query: query,
+                limit: offset + limit,
+              );
+              return warehouses
+                  .skip(offset)
+                  .take(limit)
+                  .toList(growable: false);
+            },
+            itemTitle: (item) => item.warehouse,
+            itemSubtitle: (item) =>
+                item.company.trim().isEmpty ? 'ERPNext ombor' : item.company,
             onSelected: (item) => Navigator.of(context).pop(item),
             supportingText: 'Bu card ustidagi ombor nomini tanlang.',
           );
@@ -805,7 +803,7 @@ class _AdminProductionMapTestScreenState
       if (picked == null || !mounted) {
         return;
       }
-      setState(() => nodes[index] = node.copyWith(title: picked));
+      setState(() => nodes[index] = node.copyWith(title: picked.warehouse));
       return;
     }
     final edited = await showModalBottomSheet<ProductionMapNode>(
@@ -832,31 +830,6 @@ class _AdminProductionMapTestScreenState
       nodes.removeAt(index);
       edges.removeWhere((edge) => edge.from == node.id || edge.to == node.id);
     });
-  }
-
-  List<String> _warehouseSuggestions() {
-    final seen = <String>{};
-    final out = <String>[];
-    for (final node in nodes) {
-      if (node.kind != 'location') {
-        continue;
-      }
-      final title = node.title.trim();
-      if (title.isEmpty) {
-        continue;
-      }
-      final key = title.toLowerCase();
-      if (seen.add(key)) {
-        out.add(title);
-      }
-    }
-    for (final suggestion in _warehousePickerSuggestions) {
-      final key = suggestion.toLowerCase();
-      if (seen.add(key)) {
-        out.add(suggestion);
-      }
-    }
-    return out;
   }
 
   void _toggleMapToolsMenu() {

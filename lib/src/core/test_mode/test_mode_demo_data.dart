@@ -50,6 +50,12 @@ class TestModeDemoData {
     ),
   ];
 
+  static const List<AdminWarehouse> warehouses = [
+    AdminWarehouse(warehouse: 'Xomashyo ombori - DEMO'),
+    AdminWarehouse(warehouse: 'Qadoqlash ombori - DEMO'),
+    AdminWarehouse(warehouse: 'Tayyor mahsulot ombori - DEMO'),
+  ];
+
   static const List<AdminSupplier> suppliers = [
     AdminSupplier(
       ref: 'demo-supplier-1',

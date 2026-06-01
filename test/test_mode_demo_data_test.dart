@@ -40,4 +40,13 @@ void main() {
     expect(filtered, hasLength(1));
     expect(filtered.single.code, 'DEMO-CPP');
   });
+
+  test('test mode returns demo warehouses without server', () async {
+    await TestModeController.instance.setEnabled(true);
+
+    final warehouses = await MobileApi.instance.adminWarehouses(query: 'xom');
+
+    expect(warehouses, hasLength(1));
+    expect(warehouses.single.warehouse, 'Xomashyo ombori - DEMO');
+  });
 }

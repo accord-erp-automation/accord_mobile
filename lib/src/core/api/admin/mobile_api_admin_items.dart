@@ -110,6 +110,41 @@ extension MobileApiAdminItems on MobileApi {
         .toList();
   }
 
+  Future<List<AdminWarehouse>> adminWarehouses({
+    String query = '',
+    int limit = 50,
+  }) async {
+    if (await TestModeController.instance.isEnabled()) {
+      final normalized = query.trim().toLowerCase();
+      return TestModeDemoData.warehouses
+          .where(
+            (warehouse) =>
+                normalized.isEmpty ||
+                warehouse.warehouse.toLowerCase().contains(normalized),
+          )
+          .take(limit)
+          .toList(growable: false);
+    }
+    final response = await _sendAuthorized(
+      () => http.get(
+        Uri.parse('${MobileApi.baseUrl}/v1/mobile/admin/warehouses').replace(
+          queryParameters: {
+            if (query.trim().isNotEmpty) 'q': query.trim(),
+            if (limit > 0) 'limit': '$limit',
+          },
+        ),
+        headers: _headers(requireToken()),
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Admin warehouses failed');
+    }
+    final List<dynamic> json = jsonDecode(response.body) as List<dynamic>;
+    return json
+        .map((item) => AdminWarehouse.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<AdminItemGroupBulkMoveResult> adminMoveItemsToGroup({
     required List<String> itemCodes,
     required String itemGroup,
