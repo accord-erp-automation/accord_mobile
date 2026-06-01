@@ -1449,7 +1449,10 @@ class _ProductionMapCanvasState extends State<_ProductionMapCanvas> {
     final toRect = _nodeRect(to);
     final branchKey = edge.branch.trim().toLowerCase();
     final start = _startAnchor(from, branchKey, toRect.center);
-    final end = _edgeAnchor(toRect, fromRect.center);
+    final isWarehouseTarget = to.kind == 'location';
+    final end = isWarehouseTarget
+        ? _externalPortCenter(toRect, fromRect.center)
+        : _edgeAnchor(toRect, fromRect.center);
     return Offset(
       (start.dx + end.dx) / 2,
       (start.dy + end.dy) / 2,
@@ -1704,7 +1707,10 @@ class _MapCanvasPainter extends CustomPainter {
     final toRect = _nodeRect(to);
     final branchKey = branch.trim().toLowerCase();
     final start = _startAnchor(from, branchKey, toRect.center);
-    final end = _edgeAnchor(toRect, fromRect.center);
+    final isWarehouseTarget = to.kind == 'location';
+    final end = isWarehouseTarget
+        ? _externalPortCenter(toRect, fromRect.center)
+        : _edgeAnchor(toRect, fromRect.center);
     final path = _elasticPath(
       start: start,
       end: end,
@@ -1723,7 +1729,11 @@ class _MapCanvasPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
     canvas.drawPath(path, paint);
     _paintStartPort(canvas, from, branchKey, start, color);
-    _paintArrow(canvas, end, start, color);
+    if (isWarehouseTarget) {
+      _paintEndPort(canvas, end, color);
+    } else {
+      _paintArrow(canvas, end, start, color);
+    }
     if (branchKey.isNotEmpty) {
       _paintBranchLabel(
         canvas,
@@ -1859,6 +1869,24 @@ class _MapCanvasPainter extends CustomPainter {
     if (node.kind == 'condition' && branchKey.isNotEmpty) {
       return;
     }
+    canvas.drawCircle(
+      center,
+      portRadius,
+      Paint()
+        ..color = scheme.surface
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawCircle(
+      center,
+      portRadius,
+      Paint()
+        ..color = color
+        ..strokeWidth = 2.4
+        ..style = PaintingStyle.stroke,
+    );
+  }
+
+  void _paintEndPort(Canvas canvas, Offset center, Color color) {
     canvas.drawCircle(
       center,
       portRadius,
@@ -2217,7 +2245,7 @@ class _WarehouseLocationNode extends StatelessWidget {
         onTap: onTap,
         onPanUpdate: onDragUpdate,
         child: SizedBox(
-          height: 60,
+          height: 68,
           child: Center(
             child: Stack(
               clipBehavior: Clip.none,
@@ -2225,11 +2253,11 @@ class _WarehouseLocationNode extends StatelessWidget {
               children: [
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 120),
-                  width: 58,
-                  height: 58,
+                  width: 66,
+                  height: 66,
                   decoration: BoxDecoration(
                     color: scheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                     border: Border.all(
                       color: borderColor,
                       width: awaiting || highlighted ? 2.4 : 1.2,
@@ -2246,12 +2274,12 @@ class _WarehouseLocationNode extends StatelessWidget {
                   ),
                   child: Icon(
                     Icons.storefront_rounded,
-                    size: 33,
+                    size: 38,
                     color: scheme.onPrimaryContainer,
                   ),
                 ),
                 Positioned(
-                  right: -40,
+                  right: -44,
                   child: GestureDetector(
                     key: ValueKey('production-map-node-connect-${node.id}'),
                     behavior: HitTestBehavior.opaque,
@@ -2269,8 +2297,8 @@ class _WarehouseLocationNode extends StatelessWidget {
                 ),
                 if (onDelete != null)
                   Positioned(
-                    top: -14,
-                    right: -24,
+                    top: -16,
+                    right: -26,
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: onDelete,
@@ -2307,10 +2335,10 @@ class _WarehouseMiniButton extends StatelessWidget {
         border: Border.all(color: scheme.outlineVariant),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(6),
+        padding: const EdgeInsets.all(7),
         child: Icon(
           icon,
-          size: 17,
+          size: 18,
           color: scheme.onSurfaceVariant,
         ),
       ),
