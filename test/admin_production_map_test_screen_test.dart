@@ -49,6 +49,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('ERPNext ombor'), findsWidgets);
     expect(find.text('ombor'), findsWidgets);
+    expect(find.byIcon(Icons.storefront_rounded), findsWidgets);
 
     final warehouseTitle = find.text('ERPNext ombor').first;
     await tester.ensureVisible(warehouseTitle);

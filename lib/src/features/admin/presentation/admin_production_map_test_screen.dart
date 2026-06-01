@@ -1966,6 +1966,7 @@ class _MapNodeVisual extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final isLocation = node.kind == 'location';
     return Semantics(
       button: true,
       label: '${node.title} node',
@@ -1998,84 +1999,112 @@ class _MapNodeVisual extends StatelessWidget {
                   ]
                 : null,
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: scheme.surface.withValues(alpha: 0.55),
-                  child: Icon(_iconFor(node.kind), size: 19),
+          child: Stack(
+            children: [
+              if (isLocation) ...[
+                Positioned(
+                  left: 18,
+                  top: 0,
+                  right: 18,
+                  height: 10,
+                  child: _WarehouseAwning(scheme: scheme),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        node.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                Positioned(
+                  left: 0,
+                  top: 10,
+                  right: 0,
+                  child: Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: scheme.outlineVariant.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  14,
+                  isLocation ? 14 : 12,
+                  14,
+                  isLocation ? 10 : 12,
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 18,
+                      backgroundColor: scheme.surface.withValues(alpha: 0.55),
+                      child: Icon(_iconFor(node.kind), size: 19),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            node.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _subtitleFor(node),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _subtitleFor(node),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _labelFor(node.kind),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      key: ValueKey('production-map-node-connect-${node.id}'),
+                      behavior: HitTestBehavior.opaque,
+                      onPanStart: (details) =>
+                          onConnectionDragStart(details.globalPosition),
+                      onPanUpdate: (details) =>
+                          onConnectionDragUpdate(details.globalPosition),
+                      onPanEnd: (_) => onConnectionDragEnd(),
+                      onPanCancel: onConnectionDragCancel,
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.add_link_rounded,
+                          size: 20,
                           color: scheme.onSurfaceVariant,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  _labelFor(node.kind),
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  key: ValueKey('production-map-node-connect-${node.id}'),
-                  behavior: HitTestBehavior.opaque,
-                  onPanStart: (details) =>
-                      onConnectionDragStart(details.globalPosition),
-                  onPanUpdate: (details) =>
-                      onConnectionDragUpdate(details.globalPosition),
-                  onPanEnd: (_) => onConnectionDragEnd(),
-                  onPanCancel: onConnectionDragCancel,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Icon(
-                      Icons.add_link_rounded,
-                      size: 20,
-                      color: scheme.onSurfaceVariant,
                     ),
-                  ),
-                ),
-                if (onDelete != null) ...[
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: onDelete,
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Icon(
-                        Icons.close_rounded,
-                        size: 20,
-                        color: scheme.onSurfaceVariant,
+                    if (onDelete != null) ...[
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: onDelete,
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 20,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -2160,6 +2189,36 @@ class _MapNodeVisual extends StatelessWidget {
       );
     }
     return BorderRadius.circular(28);
+  }
+}
+
+class _WarehouseAwning extends StatelessWidget {
+  const _WarehouseAwning({required this.scheme});
+
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    final stripeColors = [
+      scheme.primary.withValues(alpha: 0.24),
+      scheme.surfaceContainerHighest,
+    ];
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(
+        bottom: Radius.circular(7),
+      ),
+      child: Row(
+        children: [
+          for (var index = 0; index < 6; index++)
+            Expanded(
+              child: ColoredBox(
+                color: stripeColors[index.isEven ? 0 : 1],
+                child: const SizedBox.expand(),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 
