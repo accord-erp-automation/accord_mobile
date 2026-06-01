@@ -57,6 +57,92 @@ class _FormulaVariable {
   final String token;
 }
 
+class _FormulaAutocompleteController extends TextEditingController {
+  _FormulaAutocompleteController({required String text}) : super(text: text);
+
+  _FormulaVariable? get suggestion {
+    final prefix = _currentSegment().trim().toLowerCase();
+    if (prefix.length < 2) {
+      return null;
+    }
+    for (final variable in _formulaVariables) {
+      if (variable.label.toLowerCase().startsWith(prefix) ||
+          variable.token.toLowerCase().startsWith(prefix)) {
+        return variable;
+      }
+    }
+    return null;
+  }
+
+  String get ghostCompletion {
+    final active = suggestion;
+    if (active == null) {
+      return '';
+    }
+    final cursor = _cursor;
+    if (cursor != text.length) {
+      return '';
+    }
+    final prefix = _currentSegment().trim();
+    if (prefix.isEmpty) {
+      return '';
+    }
+    if (active.label.toLowerCase().startsWith(prefix.toLowerCase())) {
+      return active.label.substring(prefix.length);
+    }
+    if (active.token.toLowerCase().startsWith(prefix.toLowerCase())) {
+      return active.label;
+    }
+    return '';
+  }
+
+  int get _cursor {
+    final selection = this.selection;
+    return selection.isValid ? selection.baseOffset : text.length;
+  }
+
+  int segmentStart() {
+    var start = _cursor.clamp(0, text.length);
+    while (start > 0 && !'+-*/()<>!=&|,'.contains(text[start - 1])) {
+      start--;
+    }
+    return start;
+  }
+
+  String _currentSegment() {
+    final cursor = _cursor.clamp(0, text.length);
+    return text.substring(segmentStart(), cursor);
+  }
+
+  @override
+  TextSpan buildTextSpan({
+    required BuildContext context,
+    TextStyle? style,
+    required bool withComposing,
+  }) {
+    final baseStyle = style ?? DefaultTextStyle.of(context).style;
+    final ghost = ghostCompletion;
+    if (ghost.isEmpty) {
+      return TextSpan(style: baseStyle, text: text);
+    }
+    return TextSpan(
+      style: baseStyle,
+      children: [
+        TextSpan(text: text),
+        TextSpan(
+          text: ghost,
+          style: baseStyle.copyWith(
+            color: Theme.of(context)
+                .colorScheme
+                .onSurfaceVariant
+                .withValues(alpha: 0.42),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class AdminProductionMapTestScreen extends StatefulWidget {
   const AdminProductionMapTestScreen({super.key});
 
@@ -169,8 +255,11 @@ class _AdminProductionMapTestScreenState
   Future<void> _run() async {
     final input = await showModalBottomSheet<_RunMapInput>(
       context: context,
+      isDismissible: true,
+      enableDrag: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.32),
       builder: (context) => const _RunMapSheet(),
     );
     if (input == null || input.orderQty <= 0 || !mounted) {
@@ -197,8 +286,11 @@ class _AdminProductionMapTestScreenState
         });
         final next = await showModalBottomSheet<_RuntimeVariableInput>(
           context: context,
+          isDismissible: true,
+          enableDrag: true,
           isScrollControlled: true,
           backgroundColor: Colors.transparent,
+          barrierColor: Colors.black.withValues(alpha: 0.32),
           builder: (context) => _RunResultSheet(result: result),
         );
         if (next == null || next.name.trim().isEmpty) {
@@ -605,8 +697,11 @@ class _AdminProductionMapTestScreenState
   Future<void> _editMapInfo() async {
     final edited = await showModalBottomSheet<_MapInfo>(
       context: context,
+      isDismissible: true,
+      enableDrag: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.32),
       builder: (context) => _MapInfoSheet(
         mapID: mapID,
         title: mapTitle,
@@ -666,8 +761,11 @@ class _AdminProductionMapTestScreenState
     final node = nodes[index];
     final edited = await showModalBottomSheet<ProductionMapNode>(
       context: context,
+      isDismissible: true,
+      enableDrag: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.32),
       builder: (context) => _NodeEditSheet(node: node),
     );
     if (edited == null || !mounted) {
@@ -911,6 +1009,50 @@ class _PlainActionButtonState extends State<_PlainActionButton> {
                       ),
                     ),
                   ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DismissibleBottomSheetFrame extends StatelessWidget {
+  const _DismissibleBottomSheetFrame({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final media = MediaQuery.sizeOf(context);
+    final viewInsets = MediaQuery.viewInsetsOf(context).bottom;
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(bottom: viewInsets),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => Navigator.of(context).maybePop(),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: GestureDetector(
+            onTap: () {},
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: media.height * 0.9,
+              ),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainer,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(28)),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: child,
                 ),
               ),
             ),
@@ -2038,93 +2180,87 @@ class _NodeEditSheetState extends State<_NodeEditSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final viewInsets = MediaQuery.viewInsetsOf(context).bottom;
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(bottom: viewInsets),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainer,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: ListView(
-            shrinkWrap: true,
-            padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
-            children: [
-              Center(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: scheme.onSurfaceVariant.withValues(alpha: 0.45),
-                    borderRadius: BorderRadius.circular(99),
+    return _DismissibleBottomSheetFrame(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: const SizedBox(width: 44, height: 4),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'Node sozlash',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
                   ),
-                  child: const SizedBox(width: 44, height: 4),
-                ),
+            ),
+            const SizedBox(height: 14),
+            _SheetField(label: 'Nomi', controller: _title),
+            if (widget.node.kind == 'material' ||
+                widget.node.kind == 'task' ||
+                widget.node.kind == 'output') ...[
+              const SizedBox(height: 10),
+              _SheetField(label: 'Mahsulot code', controller: _itemCode),
+            ],
+            if (widget.node.kind == 'task') ...[
+              const SizedBox(height: 10),
+              _SheetField(label: 'Vazifa / role code', controller: _roleCode),
+            ],
+            if (widget.node.kind == 'material' ||
+                widget.node.kind == 'task' ||
+                widget.node.kind == 'wait' ||
+                widget.node.kind == 'output') ...[
+              const SizedBox(height: 10),
+              _FormulaSheetField(
+                label: 'Miqdor formulasi',
+                controller: _qtyFormula,
               ),
-              const SizedBox(height: 18),
-              Text(
-                'Node sozlash',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
+              const SizedBox(height: 10),
+              _SheetField(
+                label: 'Qayerdan',
+                controller: _fromLocation,
               ),
-              const SizedBox(height: 14),
-              _SheetField(label: 'Nomi', controller: _title),
-              if (widget.node.kind == 'material' ||
-                  widget.node.kind == 'task' ||
-                  widget.node.kind == 'output') ...[
-                const SizedBox(height: 10),
-                _SheetField(label: 'Mahsulot code', controller: _itemCode),
-              ],
-              if (widget.node.kind == 'task') ...[
-                const SizedBox(height: 10),
-                _SheetField(label: 'Vazifa / role code', controller: _roleCode),
-              ],
-              if (widget.node.kind == 'material' ||
-                  widget.node.kind == 'task' ||
-                  widget.node.kind == 'wait' ||
-                  widget.node.kind == 'output') ...[
-                const SizedBox(height: 10),
-                _FormulaSheetField(
-                  label: 'Miqdor formulasi',
-                  controller: _qtyFormula,
-                ),
-                const SizedBox(height: 10),
-                _SheetField(
-                  label: 'Qayerdan',
-                  controller: _fromLocation,
-                ),
-                const SizedBox(height: 10),
-                _SheetField(
-                  label: 'Qayerga',
-                  controller: _toLocation,
-                ),
-              ],
-              if (widget.node.kind == 'formula') ...[
-                const SizedBox(height: 10),
-                _SheetField(
-                    label: 'Formula target', controller: _formulaTarget),
-                const SizedBox(height: 10),
-                _FormulaSheetField(
-                  label: 'Formula',
-                  controller: _formulaExpression,
-                ),
-              ],
-              if (widget.node.kind == 'condition') ...[
-                const SizedBox(height: 10),
-                _FormulaSheetField(
-                  label: 'Shart',
-                  controller: _formulaExpression,
-                ),
-              ],
-              const SizedBox(height: 16),
-              _PlainActionButton(
-                label: 'Saqlash',
-                icon: Icons.check_rounded,
-                onTap: _save,
+              const SizedBox(height: 10),
+              _SheetField(
+                label: 'Qayerga',
+                controller: _toLocation,
               ),
             ],
-          ),
+            if (widget.node.kind == 'formula') ...[
+              const SizedBox(height: 10),
+              _SheetField(label: 'Formula target', controller: _formulaTarget),
+              const SizedBox(height: 10),
+              _FormulaSheetField(
+                label: 'Formula',
+                controller: _formulaExpression,
+              ),
+            ],
+            if (widget.node.kind == 'condition') ...[
+              const SizedBox(height: 10),
+              _FormulaSheetField(
+                label: 'Shart',
+                controller: _formulaExpression,
+              ),
+            ],
+            const SizedBox(height: 16),
+            _PlainActionButton(
+              label: 'Saqlash',
+              icon: Icons.check_rounded,
+              onTap: _save,
+            ),
+          ],
         ),
       ),
     );
@@ -2207,49 +2343,41 @@ class _MapInfoSheetState extends State<_MapInfoSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final viewInsets = MediaQuery.viewInsetsOf(context).bottom;
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(bottom: viewInsets),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainer,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+    return _DismissibleBottomSheetFrame(
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+        children: [
+          Center(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurfaceVariant
+                    .withValues(alpha: 0.45),
+                borderRadius: BorderRadius.circular(99),
+              ),
+              child: const SizedBox(width: 44, height: 4),
+            ),
           ),
-          child: ListView(
-            shrinkWrap: true,
-            padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
-            children: [
-              Center(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: scheme.onSurfaceVariant.withValues(alpha: 0.45),
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                  child: const SizedBox(width: 44, height: 4),
+          const SizedBox(height: 18),
+          Text(
+            'Map sozlash',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
                 ),
-              ),
-              const SizedBox(height: 18),
-              Text(
-                'Map sozlash',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
-              ),
-              const SizedBox(height: 14),
-              _SheetField(label: 'Map ID', controller: _mapID),
-              const SizedBox(height: 10),
-              _SheetField(label: 'Nomi', controller: _title),
-              const SizedBox(height: 16),
-              _PlainActionButton(
-                label: 'Saqlash',
-                icon: Icons.check_rounded,
-                onTap: _save,
-              ),
-            ],
           ),
-        ),
+          const SizedBox(height: 14),
+          _SheetField(label: 'Map ID', controller: _mapID),
+          const SizedBox(height: 10),
+          _SheetField(label: 'Nomi', controller: _title),
+          const SizedBox(height: 16),
+          _PlainActionButton(
+            label: 'Saqlash',
+            icon: Icons.check_rounded,
+            onTap: _save,
+          ),
+        ],
       ),
     );
   }
@@ -2306,71 +2434,63 @@ class _RunMapSheetState extends State<_RunMapSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final viewInsets = MediaQuery.viewInsetsOf(context).bottom;
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(bottom: viewInsets),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainer,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+    return _DismissibleBottomSheetFrame(
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+        children: [
+          Center(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurfaceVariant
+                    .withValues(alpha: 0.45),
+                borderRadius: BorderRadius.circular(99),
+              ),
+              child: const SizedBox(width: 44, height: 4),
+            ),
           ),
-          child: ListView(
-            shrinkWrap: true,
-            padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
-            children: [
-              Center(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: scheme.onSurfaceVariant.withValues(alpha: 0.45),
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                  child: const SizedBox(width: 44, height: 4),
+          const SizedBox(height: 18),
+          Text(
+            'Production hisob',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
                 ),
-              ),
-              const SizedBox(height: 18),
-              Text(
-                'Production hisob',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: _qty,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: InputDecoration(
-                  labelText: 'Buyurtma miqdori',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _variables,
-                minLines: 2,
-                maxLines: 5,
-                decoration: InputDecoration(
-                  labelText: 'Runtime variablelar',
-                  hintText: 'pechat_ok=1',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _PlainActionButton(
-                label: 'Hisoblash',
-                icon: Icons.play_arrow_rounded,
-                onTap: _run,
-              ),
-            ],
           ),
-        ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _qty,
+            keyboardType: const TextInputType.numberWithOptions(
+              decimal: true,
+            ),
+            decoration: InputDecoration(
+              labelText: 'Buyurtma miqdori',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _variables,
+            minLines: 2,
+            maxLines: 5,
+            decoration: InputDecoration(
+              labelText: 'Runtime variablelar',
+              hintText: 'pechat_ok=1',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _PlainActionButton(
+            label: 'Hisoblash',
+            icon: Icons.play_arrow_rounded,
+            onTap: _run,
+          ),
+        ],
       ),
     );
   }
@@ -2434,116 +2554,112 @@ class _RunResultSheetState extends State<_RunResultSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final result = widget.result;
     final variables = result.variables.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
-    return SafeArea(
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainer,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: ListView(
-          shrinkWrap: true,
-          padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
-          children: [
-            Center(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: scheme.onSurfaceVariant.withValues(alpha: 0.45),
-                  borderRadius: BorderRadius.circular(99),
-                ),
-                child: const SizedBox(width: 44, height: 4),
+    return _DismissibleBottomSheetFrame(
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+        children: [
+          Center(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurfaceVariant
+                    .withValues(alpha: 0.45),
+                borderRadius: BorderRadius.circular(99),
               ),
+              child: const SizedBox(width: 44, height: 4),
             ),
-            const SizedBox(height: 18),
-            Text(
-              'Run natijasi',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w900,
-                  ),
-            ),
-            if (result.awaitingVariable.trim().isNotEmpty) ...[
-              const SizedBox(height: 12),
-              ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.pending_actions_rounded),
-                title: Text('${result.awaitingVariable} kutilmoqda'),
-                subtitle: Text(result.awaitingExpression),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _runtimeValue,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                  signed: true,
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'Run natijasi',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
                 ),
-                decoration: InputDecoration(
-                  labelText: result.awaitingVariable,
-                  hintText: '1 yoki 0',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: _PlainActionButton(
-                      label: 'Shunda',
-                      icon: Icons.check_rounded,
-                      onTap: () => _continueWith(1),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _PlainActionButton(
-                      label: 'Aks holda',
-                      icon: Icons.close_rounded,
-                      onTap: () => _continueWith(0),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              _PlainActionButton(
-                label: 'Qiymat bilan davom etish',
-                icon: Icons.play_arrow_rounded,
-                onTap: _continueWithTypedValue,
-              ),
-            ],
+          ),
+          if (result.awaitingVariable.trim().isNotEmpty) ...[
             const SizedBox(height: 12),
-            for (final variable in variables)
-              ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.functions_rounded),
-                title: Text(variable.key),
-                trailing: Text(_formatQty(variable.value)),
+            ListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.pending_actions_rounded),
+              title: Text('${result.awaitingVariable} kutilmoqda'),
+              subtitle: Text(result.awaitingExpression),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _runtimeValue,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: true,
               ),
-            if (result.tasks.isNotEmpty) ...[
-              const Divider(height: 24),
-              for (final task in result.tasks)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.engineering_rounded),
-                  title: Text(task.title),
-                  subtitle: Text([
-                    if (task.roleCode.trim().isNotEmpty) task.roleCode,
-                    if (task.itemCode.trim().isNotEmpty) task.itemCode,
-                    if (task.fromLocation.trim().isNotEmpty ||
-                        task.toLocation.trim().isNotEmpty)
-                      '${task.fromLocation.trim().isEmpty ? '—' : task.fromLocation} → ${task.toLocation.trim().isEmpty ? '—' : task.toLocation}',
-                    task.taskKind,
-                  ].join(' · ')),
-                  trailing: Text(_formatQty(task.qty)),
+              decoration: InputDecoration(
+                labelText: result.awaitingVariable,
+                hintText: '1 yoki 0',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
-            ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _PlainActionButton(
+                    label: 'Shunda',
+                    icon: Icons.check_rounded,
+                    onTap: () => _continueWith(1),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _PlainActionButton(
+                    label: 'Aks holda',
+                    icon: Icons.close_rounded,
+                    onTap: () => _continueWith(0),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            _PlainActionButton(
+              label: 'Qiymat bilan davom etish',
+              icon: Icons.play_arrow_rounded,
+              onTap: _continueWithTypedValue,
+            ),
           ],
-        ),
+          const SizedBox(height: 12),
+          for (final variable in variables)
+            ListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.functions_rounded),
+              title: Text(variable.key),
+              trailing: Text(_formatQty(variable.value)),
+            ),
+          if (result.tasks.isNotEmpty) ...[
+            const Divider(height: 24),
+            for (final task in result.tasks)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.engineering_rounded),
+                title: Text(task.title),
+                subtitle: Text([
+                  if (task.roleCode.trim().isNotEmpty) task.roleCode,
+                  if (task.itemCode.trim().isNotEmpty) task.itemCode,
+                  if (task.fromLocation.trim().isNotEmpty ||
+                      task.toLocation.trim().isNotEmpty)
+                    '${task.fromLocation.trim().isEmpty ? '—' : task.fromLocation} → ${task.toLocation.trim().isEmpty ? '—' : task.toLocation}',
+                  task.taskKind,
+                ].join(' · ')),
+                trailing: Text(_formatQty(task.qty)),
+              ),
+          ],
+        ],
       ),
     );
   }
@@ -2641,8 +2757,11 @@ class _FormulaSheetFieldState extends State<_FormulaSheetField> {
   Future<void> _openEditor() async {
     final edited = await showModalBottomSheet<String>(
       context: context,
+      isDismissible: true,
+      enableDrag: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.32),
       builder: (context) => _FormulaEditorSheet(
         title: widget.label,
         expression: widget.controller.text,
@@ -2690,13 +2809,14 @@ class _FormulaEditorSheet extends StatefulWidget {
 }
 
 class _FormulaEditorSheetState extends State<_FormulaEditorSheet> {
-  late final TextEditingController _expression;
+  late final _FormulaAutocompleteController _expression;
+  final FocusNode _expressionFocusNode = FocusNode();
   _FormulaVariable? _suggestion;
 
   @override
   void initState() {
     super.initState();
-    _expression = TextEditingController(
+    _expression = _FormulaAutocompleteController(
       text: _formulaDisplayText(widget.expression),
     );
     _expression.addListener(_updateSuggestion);
@@ -2706,87 +2826,41 @@ class _FormulaEditorSheetState extends State<_FormulaEditorSheet> {
   @override
   void dispose() {
     _expression.dispose();
+    _expressionFocusNode.dispose();
     super.dispose();
   }
 
   void _updateSuggestion() {
-    final next = _currentSuggestion();
+    final next = _expression.suggestion;
     if (next == _suggestion) {
       return;
     }
     setState(() => _suggestion = next);
   }
 
-  _FormulaVariable? _currentSuggestion() {
+  void _insertVariable(_FormulaVariable variable,
+      {bool addTrailingSpace = false}) {
     final selection = _expression.selection;
     final text = _expression.text;
     final cursor = selection.isValid ? selection.baseOffset : text.length;
-    final prefix = _currentSegment(text, cursor).trim().toLowerCase();
-    if (prefix.length < 2) {
-      return null;
-    }
-    for (final variable in _formulaVariables) {
-      if (variable.label.toLowerCase().startsWith(prefix) ||
-          variable.token.toLowerCase().startsWith(prefix)) {
-        return variable;
-      }
-    }
-    return null;
-  }
-
-  String _currentSegment(String text, int cursor) {
-    var start = cursor.clamp(0, text.length);
-    while (start > 0) {
-      final char = text[start - 1];
-      if ('+-*/()<>!=&|,'.contains(char)) {
-        break;
-      }
-      start--;
-    }
-    return text.substring(start, cursor.clamp(0, text.length));
-  }
-
-  String _ghostCompletion() {
-    final suggestion = _suggestion;
-    if (suggestion == null) {
-      return '';
-    }
-    final selection = _expression.selection;
-    final text = _expression.text;
-    final cursor = selection.isValid ? selection.baseOffset : text.length;
-    if (cursor != text.length) {
-      return '';
-    }
-    final prefix = _currentSegment(text, cursor).trim();
-    if (prefix.isEmpty) {
-      return '';
-    }
-    final label = suggestion.label;
-    if (label.toLowerCase().startsWith(prefix.toLowerCase())) {
-      return label.substring(prefix.length);
-    }
-    if (suggestion.token.toLowerCase().startsWith(prefix.toLowerCase())) {
-      return label;
-    }
-    return '';
-  }
-
-  void _insertVariable(_FormulaVariable variable) {
-    final selection = _expression.selection;
-    final text = _expression.text;
-    final cursor = selection.isValid ? selection.baseOffset : text.length;
-    var start = cursor.clamp(0, text.length);
-    while (start > 0 && !'+-*/()<>!=&|,'.contains(text[start - 1])) {
-      start--;
-    }
+    final start = _expression.segmentStart();
     final before = text.substring(0, start);
     final after = text.substring(cursor.clamp(0, text.length));
-    final nextText = '$before${variable.label}$after';
-    final nextOffset = before.length + variable.label.length;
+    final insertText = addTrailingSpace ? '${variable.label} ' : variable.label;
+    final nextText = '$before$insertText$after';
+    final nextOffset = before.length + insertText.length;
     _expression.value = TextEditingValue(
       text: nextText,
       selection: TextSelection.collapsed(offset: nextOffset),
     );
+  }
+
+  void _keepFormulaFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _expressionFocusNode.requestFocus();
+      }
+    });
   }
 
   void _save() {
@@ -2797,120 +2871,79 @@ class _FormulaEditorSheetState extends State<_FormulaEditorSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final viewInsets = MediaQuery.viewInsetsOf(context).bottom;
-    final ghostCompletion = _ghostCompletion();
     final textStyle = Theme.of(context).textTheme.bodyLarge ??
         const TextStyle(fontSize: 16, height: 1.35);
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(bottom: viewInsets),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainer,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: scheme.onSurfaceVariant.withValues(alpha: 0.45),
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                    child: const SizedBox(width: 44, height: 4),
+    return _DismissibleBottomSheetFrame(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: const SizedBox(width: 44, height: 4),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              '${widget.title} yozish',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
                   ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _expression,
+              focusNode: _expressionFocusNode,
+              autofocus: true,
+              minLines: 5,
+              maxLines: 8,
+              style: textStyle,
+              textInputAction: TextInputAction.done,
+              onEditingComplete: () {},
+              onSubmitted: (_) {
+                final active = _suggestion;
+                if (active != null && _expression.ghostCompletion.isNotEmpty) {
+                  _insertVariable(active, addTrailingSpace: true);
+                }
+                _keepFormulaFocus();
+              },
+              decoration: InputDecoration(
+                labelText: widget.title,
+                alignLabelWithHint: true,
+                contentPadding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                const SizedBox(height: 18),
-                Text(
-                  '${widget.title} yozish',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                ),
-                const SizedBox(height: 14),
-                Stack(
-                  children: [
-                    if (ghostCompletion.isNotEmpty)
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 25, 16, 16),
-                            child: RichText(
-                              text: TextSpan(
-                                style: textStyle,
-                                children: [
-                                  TextSpan(
-                                    text: _expression.text,
-                                    style: const TextStyle(
-                                      color: Colors.transparent,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: ghostCompletion,
-                                    style: textStyle.copyWith(
-                                      color: scheme.onSurfaceVariant
-                                          .withValues(alpha: 0.42),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    TextField(
-                      controller: _expression,
-                      autofocus: true,
-                      minLines: 5,
-                      maxLines: 8,
-                      style: textStyle,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) {
-                        final active = _suggestion;
-                        if (active != null && ghostCompletion.isNotEmpty) {
-                          _insertVariable(active);
-                          return;
-                        }
-                        _save();
-                      },
-                      decoration: InputDecoration(
-                        labelText: widget.title,
-                        alignLabelWithHint: true,
-                        contentPadding:
-                            const EdgeInsets.fromLTRB(16, 20, 16, 16),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final variable in _formulaVariables)
-                      InputChip(
-                        label: Text(variable.label),
-                        onPressed: () => _insertVariable(variable),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _PlainActionButton(
-                  label: 'Saqlash',
-                  icon: Icons.check_rounded,
-                  onTap: _save,
-                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final variable in _formulaVariables)
+                  InputChip(
+                    label: Text(variable.label),
+                    onPressed: () => _insertVariable(variable),
+                  ),
               ],
             ),
-          ),
+            const SizedBox(height: 16),
+            _PlainActionButton(
+              label: 'Saqlash',
+              icon: Icons.check_rounded,
+              onTap: _save,
+            ),
+          ],
         ),
       ),
     );

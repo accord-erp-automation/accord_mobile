@@ -62,6 +62,36 @@ void main() {
     expect(find.text('Rezka location'), findsOneWidget);
   });
 
+  testWidgets('production map sheet closes when tapping the dimmed barrier',
+      (tester) async {
+    await _usePhoneViewport(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(useMaterial3: true),
+        locale: const Locale('uz'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const AdminProductionMapTestScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Katta partiyami?'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Node sozlash'), findsOneWidget);
+
+    await tester.tapAt(const Offset(200, 90));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Node sozlash'), findsNothing);
+  });
+
   testWidgets('production map page shows default condition flow',
       (tester) async {
     await _usePhoneViewport(tester);
@@ -128,8 +158,20 @@ void main() {
 
     await tester.enterText(find.byType(TextField).last, 'buyu');
     await tester.pump();
+    final formulaField = tester.widget<TextField>(find.byType(TextField).last);
+    final formulaSpan = formulaField.controller!.buildTextSpan(
+      context: tester.element(find.byType(TextField).last),
+      style: const TextStyle(),
+      withComposing: false,
+    );
+    expect(formulaSpan.toPlainText(), 'buyurtma miqdori');
+
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pump();
+    expect(find.text('Formula yozish'), findsOneWidget);
+    expect(formulaField.focusNode?.hasFocus, isTrue);
+    expect(formulaField.controller!.text, 'Buyurtma miqdori ');
+
     await tester.tap(find.text('Saqlash').last);
     await tester.pumpAndSettle();
 
