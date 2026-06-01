@@ -2225,11 +2225,11 @@ class _WarehouseLocationNode extends StatelessWidget {
               children: [
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 120),
-                  width: 46,
-                  height: 46,
+                  width: 58,
+                  height: 58,
                   decoration: BoxDecoration(
                     color: scheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(13),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: borderColor,
                       width: awaiting || highlighted ? 2.4 : 1.2,
@@ -2246,12 +2246,12 @@ class _WarehouseLocationNode extends StatelessWidget {
                   ),
                   child: Icon(
                     Icons.storefront_rounded,
-                    size: 26,
+                    size: 33,
                     color: scheme.onPrimaryContainer,
                   ),
                 ),
                 Positioned(
-                  right: -34,
+                  right: -40,
                   child: GestureDetector(
                     key: ValueKey('production-map-node-connect-${node.id}'),
                     behavior: HitTestBehavior.opaque,
@@ -2269,8 +2269,8 @@ class _WarehouseLocationNode extends StatelessWidget {
                 ),
                 if (onDelete != null)
                   Positioned(
-                    top: -12,
-                    right: -20,
+                    top: -14,
+                    right: -24,
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: onDelete,
@@ -2307,10 +2307,10 @@ class _WarehouseMiniButton extends StatelessWidget {
         border: Border.all(color: scheme.outlineVariant),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(5),
+        padding: const EdgeInsets.all(6),
         child: Icon(
           icon,
-          size: 15,
+          size: 17,
           color: scheme.onSurfaceVariant,
         ),
       ),
