@@ -326,6 +326,13 @@ class _AdminProductionMapTestScreenState
   ProductionMapNode _newNode(String id, String kind) {
     final end = nodes.firstWhere((node) => node.kind == 'end');
     return switch (kind) {
+      'location' => ProductionMapNode(
+          id: id,
+          kind: 'location',
+          title: 'ERPNext ombor',
+          x: end.x,
+          y: end.y - 132,
+        ),
       'material' => ProductionMapNode(
           id: id,
           kind: 'material',
@@ -367,7 +374,7 @@ class _AdminProductionMapTestScreenState
       _ => ProductionMapNode(
           id: id,
           kind: 'task',
-          title: 'Yangi location',
+          title: 'Ishlov jarayoni',
           roleCode: 'worker',
           qtyFormula: 'order_qty',
           x: end.x,
@@ -819,7 +826,12 @@ class _AdminProductionMapTestScreenState
       ),
       AdminFabMenuAction(
         title: 'Location',
-        icon: Icons.account_tree_rounded,
+        icon: Icons.storefront_rounded,
+        onTap: () => _runMapToolAction(() => _addNode('location')),
+      ),
+      AdminFabMenuAction(
+        title: 'Ishlov',
+        icon: Icons.engineering_rounded,
         onTap: () => _runMapToolAction(() => _addNode('task')),
       ),
       AdminFabMenuAction(
@@ -1970,7 +1982,12 @@ class _MapNodeVisual extends StatelessWidget {
                 ? Border.all(color: scheme.error, width: 3)
                 : highlighted
                     ? Border.all(color: scheme.primary, width: 2)
-                    : null,
+                    : node.kind == 'location'
+                        ? Border.all(
+                            color: scheme.outlineVariant,
+                            width: 1.2,
+                          )
+                        : null,
             boxShadow: floating
                 ? [
                     BoxShadow(
@@ -2067,6 +2084,7 @@ class _MapNodeVisual extends StatelessWidget {
 
   IconData _iconFor(String kind) {
     return switch (kind) {
+      'location' => Icons.storefront_rounded,
       'formula' => Icons.functions_rounded,
       'condition' => Icons.call_split_rounded,
       'task' => Icons.engineering_rounded,
@@ -2079,10 +2097,11 @@ class _MapNodeVisual extends StatelessWidget {
 
   String _labelFor(String kind) {
     return switch (kind) {
+      'location' => 'ombor',
       'material' => 'material',
       'formula' => 'formula',
       'condition' => 'if',
-      'task' => 'location',
+      'task' => 'ishlov',
       'wait' => 'wait',
       'output' => 'output',
       'end' => 'end',
@@ -2091,6 +2110,9 @@ class _MapNodeVisual extends StatelessWidget {
   }
 
   String _subtitleFor(ProductionMapNode node) {
+    if (node.kind == 'location') {
+      return 'ERPNext ombor';
+    }
     final formula = node.formula;
     if (formula != null) {
       if (node.kind == 'condition') {
@@ -2118,6 +2140,7 @@ class _MapNodeVisual extends StatelessWidget {
 
   Color _colorFor(String kind, ColorScheme scheme) {
     return switch (kind) {
+      'location' => scheme.surfaceContainerHigh,
       'formula' => scheme.tertiaryContainer,
       'condition' => scheme.primaryContainer,
       'task' => scheme.secondaryContainer,
@@ -2128,6 +2151,14 @@ class _MapNodeVisual extends StatelessWidget {
   }
 
   BorderRadius _shapeFor(String kind) {
+    if (kind == 'location') {
+      return const BorderRadius.only(
+        topLeft: Radius.circular(18),
+        topRight: Radius.circular(18),
+        bottomLeft: Radius.circular(28),
+        bottomRight: Radius.circular(28),
+      );
+    }
     return BorderRadius.circular(28);
   }
 }
@@ -2207,7 +2238,10 @@ class _NodeEditSheetState extends State<_NodeEditSheet> {
                   ),
             ),
             const SizedBox(height: 14),
-            _SheetField(label: 'Nomi', controller: _title),
+            _SheetField(
+              label: widget.node.kind == 'location' ? 'ERPNext ombor' : 'Nomi',
+              controller: _title,
+            ),
             if (widget.node.kind == 'material' ||
                 widget.node.kind == 'task' ||
                 widget.node.kind == 'output') ...[
@@ -2270,31 +2304,33 @@ class _NodeEditSheetState extends State<_NodeEditSheet> {
     final title = _title.text.trim();
     final formulaTarget = _formulaTarget.text.trim();
     final formulaExpression = _formulaExpression.text.trim();
+    final isLocation = widget.node.kind == 'location';
     Navigator.of(context).pop(
       ProductionMapNode(
         id: widget.node.id,
         kind: widget.node.kind,
         title: title.isEmpty ? widget.node.title : title,
-        itemCode: _itemCode.text.trim(),
-        roleCode: _roleCode.text.trim(),
-        qtyFormula: _qtyFormula.text.trim(),
-        fromLocation: _fromLocation.text.trim(),
-        toLocation: _toLocation.text.trim(),
+        itemCode: isLocation ? '' : _itemCode.text.trim(),
+        roleCode: isLocation ? '' : _roleCode.text.trim(),
+        qtyFormula: isLocation ? '' : _qtyFormula.text.trim(),
+        fromLocation: isLocation ? '' : _fromLocation.text.trim(),
+        toLocation: isLocation ? '' : _toLocation.text.trim(),
         x: widget.node.x,
         y: widget.node.y,
-        formula:
-            widget.node.kind == 'formula' || widget.node.kind == 'condition'
-                ? ProductionFormula(
-                    target: widget.node.kind == 'condition'
-                        ? ''
-                        : formulaTarget.isEmpty
-                            ? 'result'
-                            : formulaTarget,
-                    expression: formulaExpression.isEmpty
-                        ? widget.node.formula?.expression ?? 'order_qty'
-                        : formulaExpression,
-                  )
-                : null,
+        formula: !isLocation &&
+                (widget.node.kind == 'formula' ||
+                    widget.node.kind == 'condition')
+            ? ProductionFormula(
+                target: widget.node.kind == 'condition'
+                    ? ''
+                    : formulaTarget.isEmpty
+                        ? 'result'
+                        : formulaTarget,
+                expression: formulaExpression.isEmpty
+                    ? widget.node.formula?.expression ?? 'order_qty'
+                    : formulaExpression,
+              )
+            : null,
       ),
     );
   }

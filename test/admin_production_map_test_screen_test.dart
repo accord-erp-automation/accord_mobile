@@ -47,19 +47,22 @@ void main() {
 
     await _tapMapTool(tester, 'Location');
     await tester.pumpAndSettle();
-    expect(find.text('Yangi location'), findsOneWidget);
+    expect(find.text('ERPNext ombor'), findsWidgets);
+    expect(find.text('ombor'), findsWidgets);
 
-    await tester.ensureVisible(find.text('Yangi location'));
+    final warehouseTitle = find.text('ERPNext ombor').first;
+    await tester.ensureVisible(warehouseTitle);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Yangi location'));
+    await tester.tap(warehouseTitle);
     await tester.pumpAndSettle();
     expect(find.text('Node sozlash'), findsOneWidget);
+    expect(find.text('ERPNext ombor'), findsWidgets);
 
-    await tester.enterText(find.byType(TextField).first, 'Rezka location');
+    await tester.enterText(find.byType(TextField).first, 'Rezka ombor');
     await tester.tap(find.text('Saqlash').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('Rezka location'), findsOneWidget);
+    expect(find.text('Rezka ombor'), findsOneWidget);
   });
 
   testWidgets('production map sheet closes when tapping the dimmed barrier',
@@ -197,7 +200,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await _tapMapTool(tester, 'Location');
+    await _tapMapTool(tester, 'Ishlov');
     await tester.pumpAndSettle();
 
     final deleteButton = find.byKey(
