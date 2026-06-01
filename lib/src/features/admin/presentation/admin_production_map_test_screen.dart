@@ -25,6 +25,19 @@ const _formulaVariables = [
   _FormulaVariable(label: 'Natija kg', token: 'result_kg'),
 ];
 
+const _warehousePickerSuggestions = [
+  'Xomashyo ombori',
+  'Qadoqlash ombori',
+  'Rezka ombor',
+  'Laminat ombor',
+  'MCP ombor',
+  'CPP ombor',
+  'Tayyor mahsulot ombori',
+  'Xomashyo ombori - DEMO',
+  'Qadoqlash ombori - DEMO',
+  'Tayyor mahsulot ombori - DEMO',
+];
+
 String _formulaDisplayText(String expression) {
   var text = expression;
   for (final variable in _formulaVariables) {
@@ -766,6 +779,35 @@ class _AdminProductionMapTestScreenState
       return;
     }
     final node = nodes[index];
+    if (node.kind == 'location') {
+      final picked = await showModalBottomSheet<String>(
+        context: context,
+        isDismissible: true,
+        enableDrag: true,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        barrierColor: Colors.black.withValues(alpha: 0.32),
+        builder: (context) {
+          final items = _warehouseSuggestions();
+          return M3PickerSheet<String>(
+            title: 'Ombor tanlash',
+            hintText: 'Ombor qidiring',
+            items: items,
+            itemTitle: (item) => item,
+            itemSubtitle: (_) => 'ERPNext ombor',
+            matchesQuery: (item, query) =>
+                item.toLowerCase().contains(query.trim().toLowerCase()),
+            onSelected: (item) => Navigator.of(context).pop(item),
+            supportingText: 'Bu card ustidagi ombor nomini tanlang.',
+          );
+        },
+      );
+      if (picked == null || !mounted) {
+        return;
+      }
+      setState(() => nodes[index] = node.copyWith(title: picked));
+      return;
+    }
     final edited = await showModalBottomSheet<ProductionMapNode>(
       context: context,
       isDismissible: true,
@@ -790,6 +832,31 @@ class _AdminProductionMapTestScreenState
       nodes.removeAt(index);
       edges.removeWhere((edge) => edge.from == node.id || edge.to == node.id);
     });
+  }
+
+  List<String> _warehouseSuggestions() {
+    final seen = <String>{};
+    final out = <String>[];
+    for (final node in nodes) {
+      if (node.kind != 'location') {
+        continue;
+      }
+      final title = node.title.trim();
+      if (title.isEmpty) {
+        continue;
+      }
+      final key = title.toLowerCase();
+      if (seen.add(key)) {
+        out.add(title);
+      }
+    }
+    for (final suggestion in _warehousePickerSuggestions) {
+      final key = suggestion.toLowerCase();
+      if (seen.add(key)) {
+        out.add(suggestion);
+      }
+    }
+    return out;
   }
 
   void _toggleMapToolsMenu() {
@@ -2266,68 +2333,96 @@ class _WarehouseLocationNode extends StatelessWidget {
         onPanUpdate: onDragUpdate,
         child: SizedBox(
           height: 68,
-          child: Center(
-            child: Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.center,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: scheme.primaryContainer,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: borderColor,
+                width: awaiting || highlighted ? 2.4 : 1.2,
+              ),
+              boxShadow: floating
+                  ? [
+                      BoxShadow(
+                        color: scheme.shadow.withValues(alpha: 0.28),
+                        blurRadius: 18,
+                        offset: const Offset(0, 10),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Row(
               children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 120),
-                  width: 66,
-                  height: 66,
+                Container(
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
-                    color: scheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: borderColor,
-                      width: awaiting || highlighted ? 2.4 : 1.2,
-                    ),
-                    boxShadow: floating
-                        ? [
-                            BoxShadow(
-                              color: scheme.shadow.withValues(alpha: 0.28),
-                              blurRadius: 18,
-                              offset: const Offset(0, 10),
-                            ),
-                          ]
-                        : null,
+                    color: scheme.surface.withValues(alpha: 0.62),
+                    shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.storefront_rounded,
-                    size: 38,
+                    size: 26,
                     color: scheme.onPrimaryContainer,
                   ),
                 ),
-                Positioned(
-                  right: -28,
-                  child: GestureDetector(
-                    key: ValueKey('production-map-node-connect-${node.id}'),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        node.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              color: scheme.onPrimaryContainer,
+                            ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'ERPNext ombor',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: scheme.onPrimaryContainer
+                                  .withValues(alpha: 0.74),
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  key: ValueKey('production-map-node-connect-${node.id}'),
+                  behavior: HitTestBehavior.opaque,
+                  onPanStart: (details) =>
+                      onConnectionDragStart(details.globalPosition),
+                  onPanUpdate: (details) =>
+                      onConnectionDragUpdate(details.globalPosition),
+                  onPanEnd: (_) => onConnectionDragEnd(),
+                  onPanCancel: onConnectionDragCancel,
+                  child: _WarehouseMiniButton(
+                    icon: Icons.add_link_rounded,
+                    scheme: scheme,
+                  ),
+                ),
+                if (onDelete != null) ...[
+                  const SizedBox(width: 6),
+                  GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onPanStart: (details) =>
-                        onConnectionDragStart(details.globalPosition),
-                    onPanUpdate: (details) =>
-                        onConnectionDragUpdate(details.globalPosition),
-                    onPanEnd: (_) => onConnectionDragEnd(),
-                    onPanCancel: onConnectionDragCancel,
+                    onTap: onDelete,
                     child: _WarehouseMiniButton(
-                      icon: Icons.add_link_rounded,
+                      icon: Icons.close_rounded,
                       scheme: scheme,
                     ),
                   ),
-                ),
-                if (onDelete != null)
-                  Positioned(
-                    top: -14,
-                    right: -18,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: onDelete,
-                      child: _WarehouseMiniButton(
-                        icon: Icons.close_rounded,
-                        scheme: scheme,
-                      ),
-                    ),
-                  ),
+                ],
               ],
             ),
           ),

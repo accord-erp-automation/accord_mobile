@@ -54,14 +54,12 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(warehouseIcon);
     await tester.pumpAndSettle();
-    expect(find.text('Node sozlash'), findsOneWidget);
-    expect(find.text('ERPNext ombor'), findsWidgets);
+    expect(find.text('Ombor tanlash'), findsOneWidget);
 
-    await tester.enterText(find.byType(TextField).first, 'Rezka ombor');
-    await tester.tap(find.text('Saqlash').last);
+    await tester.tap(find.text('Rezka ombor').last);
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.storefront_rounded), findsWidgets);
+    expect(find.text('Rezka ombor'), findsWidgets);
   });
 
   testWidgets('production map sheet closes when tapping the dimmed barrier',
