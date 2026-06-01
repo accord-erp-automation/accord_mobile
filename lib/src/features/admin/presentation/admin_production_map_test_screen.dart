@@ -2746,6 +2746,31 @@ class _FormulaEditorSheetState extends State<_FormulaEditorSheet> {
     return text.substring(start, cursor.clamp(0, text.length));
   }
 
+  String _ghostCompletion() {
+    final suggestion = _suggestion;
+    if (suggestion == null) {
+      return '';
+    }
+    final selection = _expression.selection;
+    final text = _expression.text;
+    final cursor = selection.isValid ? selection.baseOffset : text.length;
+    if (cursor != text.length) {
+      return '';
+    }
+    final prefix = _currentSegment(text, cursor).trim();
+    if (prefix.isEmpty) {
+      return '';
+    }
+    final label = suggestion.label;
+    if (label.toLowerCase().startsWith(prefix.toLowerCase())) {
+      return label.substring(prefix.length);
+    }
+    if (suggestion.token.toLowerCase().startsWith(prefix.toLowerCase())) {
+      return label;
+    }
+    return '';
+  }
+
   void _insertVariable(_FormulaVariable variable) {
     final selection = _expression.selection;
     final text = _expression.text;
@@ -2774,7 +2799,9 @@ class _FormulaEditorSheetState extends State<_FormulaEditorSheet> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final viewInsets = MediaQuery.viewInsetsOf(context).bottom;
-    final suggestion = _suggestion;
+    final ghostCompletion = _ghostCompletion();
+    final textStyle = Theme.of(context).textTheme.bodyLarge ??
+        const TextStyle(fontSize: 16, height: 1.35);
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(bottom: viewInsets),
@@ -2806,36 +2833,63 @@ class _FormulaEditorSheetState extends State<_FormulaEditorSheet> {
                       ),
                 ),
                 const SizedBox(height: 14),
-                TextField(
-                  controller: _expression,
-                  autofocus: true,
-                  minLines: 5,
-                  maxLines: 8,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) {
-                    final active = _suggestion;
-                    if (active != null) {
-                      _insertVariable(active);
-                      return;
-                    }
-                    _save();
-                  },
-                  decoration: InputDecoration(
-                    labelText: widget.title,
-                    alignLabelWithHint: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
+                Stack(
+                  children: [
+                    if (ghostCompletion.isNotEmpty)
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 25, 16, 16),
+                            child: RichText(
+                              text: TextSpan(
+                                style: textStyle,
+                                children: [
+                                  TextSpan(
+                                    text: _expression.text,
+                                    style: const TextStyle(
+                                      color: Colors.transparent,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: ghostCompletion,
+                                    style: textStyle.copyWith(
+                                      color: scheme.onSurfaceVariant
+                                          .withValues(alpha: 0.42),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    TextField(
+                      controller: _expression,
+                      autofocus: true,
+                      minLines: 5,
+                      maxLines: 8,
+                      style: textStyle,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) {
+                        final active = _suggestion;
+                        if (active != null && ghostCompletion.isNotEmpty) {
+                          _insertVariable(active);
+                          return;
+                        }
+                        _save();
+                      },
+                      decoration: InputDecoration(
+                        labelText: widget.title,
+                        alignLabelWithHint: true,
+                        contentPadding:
+                            const EdgeInsets.fromLTRB(16, 20, 16, 16),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-                if (suggestion != null) ...[
-                  const SizedBox(height: 10),
-                  ActionChip(
-                    avatar: const Icon(Icons.keyboard_return_rounded),
-                    label: Text(suggestion.label),
-                    onPressed: () => _insertVariable(suggestion),
-                  ),
-                ],
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,

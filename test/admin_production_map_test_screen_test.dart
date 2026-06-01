@@ -125,6 +125,15 @@ void main() {
 
     expect(find.text('Formula yozish'), findsOneWidget);
     expect(find.text('Buyurtma miqdori'), findsWidgets);
+
+    await tester.enterText(find.byType(TextField).last, 'buyu');
+    await tester.pump();
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+    await tester.tap(find.text('Saqlash').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Buyurtma miqdori'), findsWidgets);
   });
 
   testWidgets('production map edge delete button removes an outgoing edge',
